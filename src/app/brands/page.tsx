@@ -107,12 +107,12 @@ export default function BrandsPage() {
             <p className="text-muted-foreground mt-1">Manage product brands</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger>
+            <DialogTrigger render={
               <Button className="bg-primary hover:bg-primary-dark">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Brand
               </Button>
-            </DialogTrigger>
+            } />
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add New Brand</DialogTitle>

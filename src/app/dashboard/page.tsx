@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { 
   DollarSign, 
@@ -12,16 +13,12 @@ import {
   XCircle, 
   CheckCircle, 
   AlertTriangle,
-  TrendingUp,
-  Eye,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
 import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
+  AreaChart,
+  Area,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -39,6 +36,8 @@ const stats = [
     change: '+12.5%',
     trend: 'up',
     icon: DollarSign,
+    color: 'from-teal-500/5 to-teal-600/5',
+    borderColor: 'group-hover:border-teal-500/20',
   },
   {
     title: 'Total Orders',
@@ -46,6 +45,8 @@ const stats = [
     change: '+8.2%',
     trend: 'up',
     icon: ShoppingBag,
+    color: 'from-teal-500/5 to-teal-600/5',
+    borderColor: 'group-hover:border-teal-500/20',
   },
   {
     title: 'Total Customers',
@@ -53,6 +54,8 @@ const stats = [
     change: '+15.3%',
     trend: 'up',
     icon: Users,
+    color: 'from-teal-500/5 to-teal-600/5',
+    borderColor: 'group-hover:border-teal-500/20',
   },
   {
     title: 'Total Products',
@@ -60,6 +63,8 @@ const stats = [
     change: '+2.1%',
     trend: 'up',
     icon: Package,
+    color: 'from-teal-500/5 to-teal-600/5',
+    borderColor: 'group-hover:border-teal-500/20',
   },
 ];
 
@@ -68,29 +73,29 @@ const orderStats = [
     title: 'Pending Orders',
     value: '45',
     icon: Clock,
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
   },
   {
     title: 'Delivered Orders',
     value: '1,089',
     icon: CheckCircle,
-    color: 'text-success',
-    bgColor: 'bg-success/10',
+    color: 'text-teal-500',
+    bgColor: 'bg-teal-500/10',
   },
   {
     title: 'Cancelled Orders',
     value: '23',
     icon: XCircle,
-    color: 'text-destructive',
-    bgColor: 'bg-destructive/10',
+    color: 'text-rose-500',
+    bgColor: 'bg-rose-500/10',
   },
   {
     title: 'Low Stock Items',
     value: '12',
     icon: AlertTriangle,
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
   },
 ];
 
@@ -105,10 +110,10 @@ const salesData = [
 
 const categoryData = [
   { name: 'Dresses', value: 400, color: '#0d9488' },
-  { name: 'Tops', value: 300, color: '#14b8a6' },
-  { name: 'Bottoms', value: 200, color: '#2dd4bf' },
-  { name: 'Accessories', value: 150, color: '#5eead4' },
-  { name: 'Footwear', value: 100, color: '#99f6e4' },
+  { name: 'Tops', value: 300, color: '#0f766e' },
+  { name: 'Bottoms', value: 200, color: '#14b8a6' },
+  { name: 'Accessories', value: 150, color: '#2dd4bf' },
+  { name: 'Footwear', value: 100, color: '#042f2e' },
 ];
 
 const topProducts = [
@@ -116,31 +121,26 @@ const topProducts = [
     name: 'Summer Floral Dress',
     sales: 234,
     revenue: '$23,400',
-    image: '/placeholder-product-1.jpg',
   },
   {
     name: 'Classic White Blouse',
     sales: 189,
     revenue: '$18,900',
-    image: '/placeholder-product-2.jpg',
   },
   {
     name: 'High-Waist Jeans',
     sales: 156,
     revenue: '$15,600',
-    image: '/placeholder-product-3.jpg',
   },
   {
     name: 'Silk Scarf',
     sales: 134,
     revenue: '$13,400',
-    image: '/placeholder-product-4.jpg',
   },
   {
     name: 'Leather Handbag',
     sales: 98,
     revenue: '$19,600',
-    image: '/placeholder-product-5.jpg',
   },
 ];
 
@@ -185,40 +185,54 @@ const recentOrders = [
 export default function DashboardPage() {
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening today.</p>
+      <div className="space-y-8 pb-12">
+        {/* Welcome Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1.5 font-light">
+              Welcome back! Here&apos;s an overview of the Aura Couture fashion store today.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/30 border border-border/50 px-3.5 py-1.5 rounded-full w-fit">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            Live Store Status
+          </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Primary KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.08 }}
+              className="group"
             >
-              <Card className="border-border/50 hover:border-primary/50 transition-colors">
+              <Card className={cn("relative overflow-hidden border-border/40 hover:shadow-lg transition-all duration-300 rounded-2xl bg-card", stat.borderColor)}>
+                {/* Micro glow effect */}
+                <div className={cn("absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br blur-xl opacity-20 transition-all group-hover:scale-150", stat.color)} />
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                     {stat.title}
                   </CardTitle>
-                  <stat.icon className="h-5 w-5 text-primary" />
+                  <div className="p-2 rounded-xl bg-muted/40 text-primary">
+                    <stat.icon className="h-4.5 w-4.5" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                  <div className="flex items-center mt-1 text-sm">
+                <CardContent className="pt-1">
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight">{stat.value}</div>
+                  <div className="flex items-center mt-2.5 text-xs font-semibold">
                     {stat.trend === 'up' ? (
-                      <ArrowUpRight className="h-4 w-4 text-success mr-1" />
+                      <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500 mr-1" />
                     ) : (
-                      <ArrowDownRight className="h-4 w-4 text-destructive mr-1" />
+                      <ArrowDownRight className="h-3.5 w-3.5 text-rose-500 mr-1" />
                     )}
-                    <span className={stat.trend === 'up' ? 'text-success' : 'text-destructive'}>
+                    <span className={stat.trend === 'up' ? 'text-emerald-500' : 'text-rose-500'}>
                       {stat.change}
                     </span>
-                    <span className="text-muted-foreground ml-1">from last month</span>
+                    <span className="text-muted-foreground ml-1.5 font-light">from last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -226,25 +240,23 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Order Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Secondary Order Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {orderStats.map((stat, index) => (
             <motion.div
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + index * 0.1 }}
+              transition={{ delay: 0.32 + index * 0.08 }}
             >
-              <Card className="border-border/50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                      <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                    </div>
+              <Card className="border-border/40 rounded-2xl bg-card">
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">{stat.title}</p>
+                    <p className="text-2xl font-extrabold text-foreground tracking-tight mt-1">{stat.value}</p>
+                  </div>
+                  <div className={cn("p-2.5 rounded-xl", stat.bgColor)}>
+                    <stat.icon className={cn("h-5.5 w-5.5", stat.color)} />
                   </div>
                 </CardContent>
               </Card>
@@ -252,92 +264,135 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue & Sales Area Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Sales Trend Chart */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
+            className="lg:col-span-8"
           >
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle>Revenue & Orders</CardTitle>
+            <Card className="border-border/40 rounded-2xl bg-card overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-4">
+                <div>
+                  <CardTitle className="text-lg font-bold text-foreground">Revenue Analytics</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-light">Historical monthly store statistics</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                    Revenue
+                  </div>
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+                    Orders
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" className="text-muted-foreground" />
-                    <YAxis className="text-muted-foreground" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="var(--primary)" 
-                      strokeWidth={2}
-                      name="Revenue"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="orders" 
-                      stroke="var(--chart-2)" 
-                      strokeWidth={2}
-                      name="Orders"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <CardContent className="pt-6">
+                <div className="w-full h-[320px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={salesData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0d9488" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0}/>
+                        </linearGradient>
+                        <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" vertical={false} />
+                      <XAxis dataKey="month" className="text-xs text-muted-foreground" tickLine={false} />
+                      <YAxis className="text-xs text-muted-foreground" tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '1rem',
+                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#0d9488" 
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                        name="Revenue ($)"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="orders" 
+                        stroke="#06b6d4" 
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorOrders)"
+                        name="Orders"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
 
+          {/* Sales by Category Pie */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.68 }}
+            className="lg:col-span-4"
           >
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle>Sales by Category</CardTitle>
+            <Card className="border-border/40 rounded-2xl bg-card h-full flex flex-col justify-between">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-lg font-bold text-foreground">Categories</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-light">Product category distribution</p>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-2 mt-4">
+              <CardContent className="pt-6 flex-1 flex flex-col justify-center">
+                <div className="w-full h-[200px] relative flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '1rem',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center Text */}
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <span className="text-2xl font-black text-foreground">1,150</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Total Sales</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3.5 mt-6 pt-4 border-t border-border/30">
                   {categoryData.map((item) => (
                     <div key={item.name} className="flex items-center gap-2">
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-sm text-muted-foreground">{item.name}</span>
+                      <span className="text-xs text-muted-foreground truncate font-medium">{item.name}</span>
                     </div>
                   ))}
                 </div>
@@ -346,30 +401,32 @@ export default function DashboardPage() {
           </motion.div>
         </div>
 
-        {/* Top Products & Recent Orders */}
+        {/* Top Products & Recent Orders Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Selling Products */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.76 }}
           >
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle>Top Products</CardTitle>
+            <Card className="border-border/40 rounded-2xl bg-card">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-lg font-bold text-foreground">Top Performing Products</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-light">Best seller items by sales count</p>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topProducts.map((product, index) => (
-                    <div key={product.name} className="flex items-center gap-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                        <Package className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-4">
+                <div className="divide-y divide-border/30 space-y-1">
+                  {topProducts.map((product) => (
+                    <div key={product.name} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
+                      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
+                        <Package className="h-5.5 w-5.5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{product.sales} sales</p>
+                        <p className="font-semibold text-sm text-foreground truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.sales} sales units</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-foreground">{product.revenue}</p>
+                        <p className="font-bold text-sm text-foreground">{product.revenue}</p>
                       </div>
                     </div>
                   ))}
@@ -378,37 +435,41 @@ export default function DashboardPage() {
             </Card>
           </motion.div>
 
+          {/* Recent Store Orders */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
+            transition={{ delay: 0.84 }}
           >
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
+            <Card className="border-border/40 rounded-2xl bg-card">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-lg font-bold text-foreground">Recent Transactions</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-light">Newly placed order logs</p>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="pt-4">
+                <div className="divide-y divide-border/30 space-y-1">
                   {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center gap-4">
+                    <div key={order.id} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground">{order.customer}</p>
-                        <p className="text-sm text-muted-foreground">{order.id}</p>
+                        <p className="font-semibold text-sm text-foreground truncate">{order.customer}</p>
+                        <p className="text-xs text-muted-foreground">{order.id} • {order.date}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">{order.amount}</p>
-                        <p className="text-xs text-muted-foreground">{order.date}</p>
-                      </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        order.status === 'Delivered' 
-                          ? 'bg-success/10 text-success'
-                          : order.status === 'Processing'
-                          ? 'bg-info/10 text-info'
-                          : order.status === 'Pending'
-                          ? 'bg-warning/10 text-warning'
-                          : 'bg-destructive/10 text-destructive'
-                      }`}>
-                        {order.status}
+                      <div className="text-right flex items-center gap-3">
+                        <div>
+                          <p className="font-bold text-sm text-foreground">{order.amount}</p>
+                        </div>
+                        <div className={cn(
+                          "px-2.5 py-1 rounded-full text-xxs font-bold uppercase tracking-wider",
+                          order.status === 'Delivered' 
+                            ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400'
+                            : order.status === 'Processing'
+                            ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+                            : order.status === 'Pending'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                        )}>
+                          {order.status}
+                        </div>
                       </div>
                     </div>
                   ))}

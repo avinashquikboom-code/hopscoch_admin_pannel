@@ -129,12 +129,12 @@ export default function BannersPage() {
             <p className="text-muted-foreground mt-1">Manage promotional banners</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger>
+            <DialogTrigger render={
               <Button className="bg-primary hover:bg-primary-dark">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Banner
               </Button>
-            </DialogTrigger>
+            } />
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add New Banner</DialogTitle>

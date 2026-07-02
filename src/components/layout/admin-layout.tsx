@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { Breadcrumb } from './breadcrumb';
 import { CommandPalette } from './command-palette';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Keyboard shortcut for command palette
-  useState(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -25,7 +25,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
