@@ -44,7 +44,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     Sales: false,
     Marketing: false,
     Analytics: false,
-    Settings: false,
+    Settings: true,
   });
 
   const toggleGroup = (name: string) => {
@@ -110,10 +110,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       initial={false}
       animate={{ width: collapsed ? 76 : 260 }}
       transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-      className="fixed left-0 top-0 z-40 h-screen bg-white border-r border-slate-100 flex flex-col select-none"
+      className="fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border/40 backdrop-blur-md flex flex-col select-none"
     >
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-5 border-b border-slate-50 bg-white">
+      <div className="flex h-16 items-center justify-between px-5 border-b border-sidebar-border/30 bg-sidebar/90">
         <AnimatePresence mode="wait">
           {!collapsed ? (
             <motion.div
@@ -122,10 +122,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               exit={{ opacity: 0, x: -8 }}
               className="flex items-center gap-2.5"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-600 text-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black">
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
-              <span className="text-xs font-bold tracking-widest text-slate-800 uppercase">
+              <span className="text-xs font-black tracking-[0.2em] text-foreground uppercase shimmer-text">
                 AURA COUTURE
               </span>
             </motion.div>
@@ -136,7 +136,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               exit={{ opacity: 0, scale: 0.8 }}
               className="mx-auto"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-600 text-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] to-[#0f766e] text-black">
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
             </motion.div>
@@ -146,7 +146,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         {!collapsed && (
           <button
             onClick={onToggle}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all cursor-pointer border border-transparent"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted/65 hover:text-foreground transition-all cursor-pointer border border-transparent"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -162,12 +162,12 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative',
               pathname === '/dashboard'
-                ? 'bg-teal-50/50 text-teal-600 font-semibold'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                ? 'bg-[#14b8a6]/10 text-[#14b8a6] font-bold'
+                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
             )}
           >
             {pathname === '/dashboard' && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-teal-600" />
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
             )}
             <LayoutDashboard className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Dashboard</span>}
@@ -189,8 +189,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                   className={cn(
                     'w-full flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative text-left',
                     isGroupActive
-                      ? 'text-teal-600 font-semibold'
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900',
+                      ? 'text-[#14b8a6] font-bold'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
                     collapsed && 'cursor-default'
                   )}
                 >
@@ -199,7 +199,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                     {!collapsed && <span>{group.name}</span>}
                   </div>
                   {!collapsed && (
-                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform text-slate-400", isOpen && "rotate-180")} />
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform text-muted-foreground", isOpen && "rotate-180")} />
                   )}
                 </button>
 
@@ -213,7 +213,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       className="overflow-hidden"
                     >
-                      <div className={cn("space-y-0.5 pl-3 border-l border-slate-100 mt-0.5", !collapsed ? "ml-5" : "ml-4")}>
+                      <div className={cn("space-y-0.5 pl-3 border-l border-sidebar-border/30 mt-0.5", !collapsed ? "ml-5" : "ml-4")}>
                         {group.items.map((item) => {
                           const isActive = pathname === item.href;
                           const ItemIcon = item.icon;
@@ -224,12 +224,12 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                               className={cn(
                                 'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all group relative',
                                 isActive
-                                  ? 'text-teal-600 bg-teal-50/50 font-semibold'
-                                  : 'text-slate-400 hover:text-slate-800 hover:bg-slate-50'
+                                  ? 'text-[#14b8a6] bg-[#14b8a6]/5 font-semibold'
+                                  : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/30'
                               )}
                             >
                               {isActive && (
-                                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-teal-600" />
+                                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
                               )}
                               {ItemIcon && <ItemIcon className="h-3.5 w-3.5" />}
                               {!collapsed && <span>{item.name}</span>}
@@ -246,18 +246,18 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </div>
 
         {/* Admin Profile & Logout direct sections */}
-        <div className="space-y-1 pt-3.5 border-t border-slate-50">
+        <div className="space-y-1 pt-3.5 border-t border-sidebar-border/30">
           <Link
             href="/profile"
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative',
               pathname === '/profile'
-                ? 'bg-teal-50/50 text-teal-600 font-semibold'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                ? 'bg-[#14b8a6]/10 text-[#14b8a6] font-bold'
+                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
             )}
           >
             {pathname === '/profile' && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-teal-600" />
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
             )}
             <User className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Admin Profile</span>}
@@ -265,7 +265,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
           <Link
             href="/login"
-            className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group text-red-600 hover:bg-red-50 cursor-pointer"
+            className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
@@ -275,10 +275,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       {/* Collapse Trigger when Collapsed */}
       {collapsed && (
-        <div className="flex justify-center p-3 border-t border-slate-50 bg-white">
+        <div className="flex justify-center p-3 border-t border-sidebar-border/30 bg-sidebar/90">
           <button
             onClick={onToggle}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all cursor-pointer"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/65 hover:text-foreground transition-all cursor-pointer"
           >
             <ChevronRight className="h-4.5 w-4.5" />
           </button>
@@ -287,14 +287,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       {/* User Info Footer */}
       {!collapsed && (
-        <div className="border-t border-slate-50 p-4 bg-slate-50/40">
+        <div className="border-t border-sidebar-border/30 p-4 bg-sidebar/40">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white font-bold text-xs">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs">
               AD
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-700 truncate">Admin User</p>
-              <p className="text-[10px] text-slate-400 truncate font-light">admin@aura.com</p>
+              <p className="text-xs font-bold text-foreground truncate">Admin User</p>
+              <p className="text-[10px] text-muted-foreground truncate font-light">admin@aura.com</p>
             </div>
           </div>
         </div>

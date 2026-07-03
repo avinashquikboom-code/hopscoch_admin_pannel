@@ -13,8 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -29,7 +29,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/40 bg-background/70 backdrop-blur-md px-6 transition-all duration-300">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/20 bg-background/60 backdrop-blur-lg px-6 transition-all duration-300">
       <div className="flex items-center gap-4 flex-1">
         <Button
           variant="ghost"
@@ -43,11 +43,11 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Global Search */}
         <div className="hidden md:flex flex-1 max-w-md">
           <div className="relative w-full group">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-[#14b8a6] transition-colors" />
             <Input
               type="search"
               placeholder="Search products, orders, customers..."
-              className="pl-11 bg-muted/40 border-border/60 hover:border-border focus:border-primary/80 focus:ring-1 focus:ring-primary/40 h-10 rounded-xl transition-all"
+              className="pl-11 bg-muted/30 border-border/30 hover:border-border/55 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/30 h-10 rounded-xl transition-all"
             />
           </div>
         </div>
@@ -69,44 +69,52 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Notifications Dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors">
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+            >
               <Bell className="h-5 w-5" />
-              <Badge className="absolute top-1.5 right-1.5 h-4.5 w-4.5 flex items-center justify-center p-0 bg-primary text-white text-[10px] font-bold border border-background animate-pulse">
+              {/* Notification badge — positioned in top-right corner of the button */}
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#14b8a6] text-black text-[10px] font-black leading-none border-2 border-background">
                 3
-              </Badge>
+              </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl bg-card border border-border/60 shadow-xl backdrop-blur-md">
+          <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="font-bold text-sm text-foreground px-2 py-1.5">
               Notifications
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="my-1 border-border/40" />
+            <DropdownMenuSeparator className="my-1 border-border/20" />
             <div className="max-h-80 overflow-y-auto space-y-1">
               <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-[#14b8a6] flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">New Order</span>
-                  <span className="text-xxs text-muted-foreground ml-auto">2m ago</span>
+                  <span className="text-[11px] text-muted-foreground ml-auto">2m ago</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Order #12345 has been placed</p>
+                <p className="text-xs text-muted-foreground pl-4">Order #12345 has been placed</p>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">Low Stock Alert</span>
-                  <span className="text-xxs text-muted-foreground ml-auto">1h ago</span>
+                  <span className="text-[11px] text-muted-foreground ml-auto">1h ago</span>
                 </div>
-                <p className="text-xs text-muted-foreground">5 products are running low on stock</p>
+                <p className="text-xs text-muted-foreground pl-4">5 products are running low on stock</p>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-violet-400 flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">New Review</span>
-                  <span className="text-xxs text-muted-foreground ml-auto">3h ago</span>
+                  <span className="text-[11px] text-muted-foreground ml-auto">3h ago</span>
                 </div>
-                <p className="text-xs text-muted-foreground">New review received on Summer Dress</p>
+                <p className="text-xs text-muted-foreground pl-4">New review received on Summer Dress</p>
               </DropdownMenuItem>
             </div>
-            <DropdownMenuSeparator className="my-1 border-border/40" />
-            <DropdownMenuItem className="text-center text-xs font-semibold text-primary hover:text-primary-dark cursor-pointer py-2 justify-center rounded-xl">
+            <DropdownMenuSeparator className="my-1 border-border/20" />
+            <DropdownMenuItem className="text-center text-xs font-semibold text-[#14b8a6] hover:text-[#2dd4bf] cursor-pointer py-2 justify-center rounded-xl">
               View all notifications
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -114,35 +122,35 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* User Account Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-xl hover:bg-muted/65 p-0 border border-border/30">
               <Avatar className="h-9 w-9 rounded-lg">
                 <AvatarImage src="/avatar.png" alt="User" className="rounded-lg" />
-                <AvatarFallback className="bg-gradient-to-tr from-primary to-secondary text-white font-bold text-xs rounded-lg">
+                <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-lg">
                   AD
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl bg-card border border-border/60 shadow-xl backdrop-blur-md">
+          <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="px-2 py-2">
               <div className="flex flex-col space-y-0.5">
                 <p className="text-sm font-bold text-foreground">Admin User</p>
                 <p className="text-xs text-muted-foreground font-light">admin@aura.com</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="my-1 border-border/40" />
+            <DropdownMenuSeparator className="my-1 border-border/20" />
             <DropdownMenuItem className="p-2.5 rounded-xl hover:bg-muted/50 cursor-pointer text-sm font-medium">
-              <User className="mr-2.5 h-4 w-4 text-muted-foreground" />
+              <User className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
               Profile
             </DropdownMenuItem>
             <DropdownMenuItem className="p-2.5 rounded-xl hover:bg-muted/50 cursor-pointer text-sm font-medium">
-              <Settings className="mr-2.5 h-4 w-4 text-muted-foreground" />
+              <Settings className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1 border-border/40" />
-            <DropdownMenuItem className="p-2.5 rounded-xl text-destructive hover:bg-destructive/10 cursor-pointer text-sm font-medium">
-              <LogOut className="mr-2.5 h-4 w-4 text-destructive" />
+            <DropdownMenuSeparator className="my-1 border-border/20" />
+            <DropdownMenuItem className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-sm font-medium">
+              <LogOut className="mr-2.5 h-4 w-4 text-rose-500" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

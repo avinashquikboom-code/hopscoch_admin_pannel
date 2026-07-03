@@ -15,7 +15,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Globe, Save, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const initialRates = [
   { id: '1', zone: 'North America', type: 'Standard Ground', rate: 5.99, freeThreshold: 75.0, active: true },
@@ -50,64 +51,89 @@ export default function SettingsShippingPage() {
 
   const handleSave = () => {
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12 max-w-4xl">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Zones & Rates</h1>
-          <p className="text-muted-foreground mt-1 font-light">
-            Set up geolocated shipping rates, custom courier types, and free thresholds.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">Shipping Zones & Rates</h1>
+            <p className="text-muted-foreground mt-1.5 font-light">
+              Set up geolocated shipping rates, custom courier types, and free thresholds.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-[#14b8a6] bg-teal-500/10 border border-teal-500/15 px-3.5 py-1.5 rounded-full w-fit">
+            <Globe className="w-3.5 h-3.5" />
+            Global Delivery Network
+          </div>
         </div>
 
+        <AnimatePresence>
+          {isSaved && (
+            <motion.div
+              initial={{ opacity: 0, y: -15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.95 }}
+              className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-[#14b8a6] text-sm flex items-center gap-2 font-medium"
+            >
+              <Check className="h-4.5 w-4.5" />
+              Shipping zones configurations and flat rates successfully saved.
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Rates Table Card */}
-        <Card className="border-border/40 rounded-2xl bg-card">
-          <CardHeader className="border-b border-border/30 pb-4">
+        <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+          <CardHeader className="border-b border-border/25 pb-4">
             <CardTitle className="text-base font-bold">Configured Zones</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="border border-border/40 rounded-xl overflow-hidden">
+            <div className="border border-border/20 rounded-xl overflow-hidden">
               <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead>Delivery Zone</TableHead>
-                    <TableHead>Courier Service</TableHead>
-                    <TableHead className="text-right">Flat Rate</TableHead>
-                    <TableHead className="text-right">Free Delivery Over</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="w-16"></TableHead>
+                <TableHeader className="bg-muted/40">
+                  <TableRow className="border-b border-border/20">
+                    <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider h-11">Delivery Zone</TableHead>
+                    <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider h-11">Courier Service</TableHead>
+                    <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider h-11 text-right">Flat Rate</TableHead>
+                    <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider h-11 text-right">Free Delivery Over</TableHead>
+                    <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider h-11 text-center">Status</TableHead>
+                    <TableHead className="w-16 h-11"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rates.map((r) => (
-                    <TableRow key={r.id} className="hover:bg-muted/10">
-                      <TableCell className="font-semibold text-sm text-foreground">{r.zone}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.type}</TableCell>
-                      <TableCell className="text-right text-sm font-semibold">${r.rate.toFixed(2)}</TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">${r.freeThreshold.toFixed(2)}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={r.active ? 'default' : 'outline'}
-                          className={r.active ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold border-transparent rounded-full px-2.5 py-0.5' : 'text-muted-foreground rounded-full px-2.5 py-0.5'}
-                        >
-                          {r.active ? 'Active' : 'Disabled'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(r.id)}
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  <AnimatePresence initial={false}>
+                    {rates.map((r) => (
+                      <TableRow key={r.id} className="hover:bg-muted/20 border-b border-border/20 transition-colors">
+                        <TableCell className="font-semibold text-sm text-foreground py-3.5">{r.zone}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground py-3.5">{r.type}</TableCell>
+                        <TableCell className="text-right text-sm font-semibold text-foreground py-3.5">${r.rate.toFixed(2)}</TableCell>
+                        <TableCell className="text-right text-sm text-muted-foreground py-3.5">${r.freeThreshold.toFixed(2)}</TableCell>
+                        <TableCell className="text-center py-3.5">
+                          <Badge
+                            className={`rounded-full font-bold border-transparent px-2.5 py-0.5 text-xxs ${
+                              r.active 
+                                ? 'bg-teal-500/10 text-teal-600 dark:text-[#14b8a6]' 
+                                : 'bg-zinc-500/10 text-zinc-500'
+                            }`}
+                          >
+                            {r.active ? 'Active' : 'Disabled'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(r.id)}
+                            className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg cursor-pointer transition-all active:scale-[0.96]"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </AnimatePresence>
                 </TableBody>
               </Table>
             </div>
@@ -115,32 +141,32 @@ export default function SettingsShippingPage() {
         </Card>
 
         {/* Add Zone Card */}
-        <Card className="border-border/40 rounded-2xl bg-card">
-          <CardHeader className="border-b border-border/30 pb-4">
+        <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+          <CardHeader className="border-b border-border/25 pb-4">
             <CardTitle className="text-base font-bold">Add Delivery Zone Rate</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="zone" className="text-xs font-semibold">Zone / Country</Label>
+                  <Label htmlFor="zone" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Zone / Country</Label>
                   <Input
                     id="zone"
                     value={newZone.zone}
                     onChange={(e) => setNewZone({ ...newZone, zone: e.target.value })}
                     placeholder="e.g. UK & Europe"
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type" className="text-xs font-semibold">Courier / Service Name</Label>
+                  <Label htmlFor="type" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Courier / Service Name</Label>
                   <Input
                     id="type"
                     value={newZone.type}
                     onChange={(e) => setNewZone({ ...newZone, type: e.target.value })}
                     placeholder="e.g. Royal Mail Tracker"
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                     required
                   />
                 </div>
@@ -148,25 +174,25 @@ export default function SettingsShippingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rate" className="text-xs font-semibold">Flat Shipping Fee ($)</Label>
+                  <Label htmlFor="rate" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Flat Shipping Fee ($)</Label>
                   <Input
                     id="rate"
                     type="number"
                     step="0.01"
                     value={newZone.rate}
                     onChange={(e) => setNewZone({ ...newZone, rate: Number(e.target.value) })}
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="threshold" className="text-xs font-semibold">Free Shipping Threshold ($)</Label>
+                  <Label htmlFor="threshold" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Free Shipping Threshold ($)</Label>
                   <Input
                     id="threshold"
                     type="number"
                     step="0.01"
                     value={newZone.freeThreshold}
                     onChange={(e) => setNewZone({ ...newZone, freeThreshold: Number(e.target.value) })}
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   />
                 </div>
               </div>
@@ -174,9 +200,9 @@ export default function SettingsShippingPage() {
               <Button
                 type="submit"
                 variant="outline"
-                className="rounded-xl border-border/60 hover:bg-muted/50 flex items-center gap-2 cursor-pointer"
+                className="rounded-xl border-border/40 hover:bg-muted/50 flex items-center gap-2 cursor-pointer transition-all hover:text-[#14b8a6] hover:border-[#14b8a6]/45 active:scale-[0.98] h-10 px-4 text-xs font-semibold"
               >
-                <Plus className="h-4 w-4" /> Add Zone Rate
+                <Plus className="h-4 w-4 text-[#14b8a6]" /> Add Zone Rate
               </Button>
             </form>
           </CardContent>
@@ -185,9 +211,10 @@ export default function SettingsShippingPage() {
         <div className="flex justify-end gap-3 pt-2">
           <Button
             onClick={handleSave}
-            className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
+            className="rounded-xl teal-gradient-bg text-black font-bold hover:opacity-95 shadow-md shadow-[#14b8a6]/15 h-11 px-6 cursor-pointer flex items-center gap-2 border border-[#14b8a6]/20 transition-all active:scale-[0.99]"
           >
-            {isSaved ? 'Rates Saved' : 'Save Shipping Settings'}
+            <Save className="h-4.5 w-4.5" />
+            Save Shipping Settings
           </Button>
         </div>
       </div>
