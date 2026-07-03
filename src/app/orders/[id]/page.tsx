@@ -1,0 +1,513 @@
+'use client';
+
+import { useState } from 'react';
+import { AdminLayout } from '@/components/layout/admin-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Truck,
+  Package,
+  RefreshCw,
+  FileText,
+  Download,
+  Eye,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  DollarSign,
+  AlertCircle,
+  Info,
+  Printer,
+  Ship,
+  Box
+} from 'lucide-react';
+
+const orderDetails = {
+  id: 'ORD-1234',
+  invoiceNumber: 'INV-1234',
+  customer: {
+    name: 'Sarah Johnson',
+    email: 'sarah@email.com',
+    phone: '+1 234 567 8900',
+  },
+  deliveryAddress: {
+    name: 'Sarah Johnson',
+    street: '123 Fashion Street',
+    city: 'New York',
+    state: 'NY',
+    zipCode: '10001',
+    country: 'United States',
+  },
+  billingAddress: {
+    name: 'Sarah Johnson',
+    street: '123 Fashion Street',
+    city: 'New York',
+    state: 'NY',
+    zipCode: '10001',
+    country: 'United States',
+  },
+  status: 'processing',
+  paymentStatus: 'paid',
+  paymentMethod: 'Credit Card',
+  items: [
+    {
+      id: 'SKU-001',
+      name: 'Premium Silk Dress',
+      size: 'M',
+      color: 'Teal',
+      quantity: 2,
+      price: 189.00,
+      discount: 0,
+      image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=100&h=100&fit=crop',
+    },
+    {
+      id: 'SKU-002',
+      name: 'Cashmere Cardigan',
+      size: 'M',
+      color: 'Beige',
+      quantity: 1,
+      price: 45.50,
+      discount: 5.00,
+      image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=100&h=100&fit=crop',
+    },
+  ],
+  subtotal: 423.50,
+  discount: 15.00,
+  coupon: 'SAVE10',
+  shippingCharges: 10.00,
+  tax: 42.35,
+  total: 460.85,
+  orderDate: '2024-01-15',
+  expectedDelivery: '2024-01-25',
+  courierPartner: 'FedEx',
+  trackingNumber: 'TRK123456789',
+  awbNumber: 'AWB987654321',
+  adminNotes: '',
+};
+
+const statusConfig = {
+  pending: { label: 'Pending', icon: Clock, color: 'bg-warning/10 text-warning' },
+  confirmed: { label: 'Confirmed', icon: CheckCircle, color: 'bg-success/10 text-success' },
+  processing: { label: 'Processing', icon: Package, color: 'bg-info/10 text-info' },
+  packed: { label: 'Packed', icon: Box, color: 'bg-primary/10 text-primary' },
+  shipped: { label: 'Shipped', icon: Truck, color: 'bg-primary/10 text-primary' },
+  out_for_delivery: { label: 'Out For Delivery', icon: Ship, color: 'bg-info/10 text-info' },
+  delivered: { label: 'Delivered', icon: CheckCircle, color: 'bg-success/10 text-success' },
+  cancelled: { label: 'Cancelled', icon: XCircle, color: 'bg-destructive/10 text-destructive' },
+};
+
+const timeline = [
+  {
+    status: 'order_placed',
+    label: 'Order Placed',
+    date: '2024-01-15',
+    time: '10:30 AM',
+    updatedBy: 'Sarah Johnson',
+    remarks: 'Order successfully placed',
+  },
+  {
+    status: 'payment_successful',
+    label: 'Payment Successful',
+    date: '2024-01-15',
+    time: '10:31 AM',
+    updatedBy: 'System',
+    remarks: 'Payment of $460.85 processed via Credit Card',
+  },
+  {
+    status: 'confirmed',
+    label: 'Order Confirmed',
+    date: '2024-01-15',
+    time: '11:00 AM',
+    updatedBy: 'Admin',
+    remarks: 'Order confirmed by admin',
+  },
+  {
+    status: 'processing',
+    label: 'Processing',
+    date: '2024-01-16',
+    time: '09:00 AM',
+    updatedBy: 'Admin',
+    remarks: 'Order is being processed',
+  },
+];
+
+export default function OrderDetailsPage({ params }: { params: { id: string } }) {
+  const [adminNotes, setAdminNotes] = useState(orderDetails.adminNotes);
+  const statusInfo = statusConfig[orderDetails.status as keyof typeof statusConfig];
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Order Details</h1>
+              <p className="text-muted-foreground mt-1">{orderDetails.id}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className={statusInfo.color}>
+              <statusInfo.icon className="h-4 w-4 mr-1" />
+              {statusInfo.label}
+            </Badge>
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Download Invoice
+            </Button>
+            <Button variant="outline" size="sm">
+              <Printer className="mr-2 h-4 w-4" />
+              Print Invoice
+            </Button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Order Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Order ID</p>
+                    <p className="font-semibold font-mono">{orderDetails.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Invoice Number</p>
+                    <p className="font-semibold font-mono">{orderDetails.invoiceNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Order Date</p>
+                    <p className="font-semibold">{orderDetails.orderDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Expected Delivery</p>
+                    <p className="font-semibold">{orderDetails.expectedDelivery}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Status</p>
+                    <Badge variant="default" className="bg-success">
+                      {orderDetails.paymentStatus}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Method</p>
+                    <p className="font-semibold">{orderDetails.paymentMethod}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Customer Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{orderDetails.customer.name}</p>
+                    <p className="text-sm text-muted-foreground">{orderDetails.customer.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{orderDetails.customer.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{orderDetails.customer.email}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Delivery Address</p>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                    <div>
+                      <p className="text-sm font-medium">{orderDetails.deliveryAddress.name}</p>
+                      <p className="text-sm">{orderDetails.deliveryAddress.street}</p>
+                      <p className="text-sm">{orderDetails.deliveryAddress.city}, {orderDetails.deliveryAddress.state} {orderDetails.deliveryAddress.zipCode}</p>
+                      <p className="text-sm">{orderDetails.deliveryAddress.country}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Billing Address</p>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                    <div>
+                      <p className="text-sm font-medium">{orderDetails.billingAddress.name}</p>
+                      <p className="text-sm">{orderDetails.billingAddress.street}</p>
+                      <p className="text-sm">{orderDetails.billingAddress.city}, {orderDetails.billingAddress.state} {orderDetails.billingAddress.zipCode}</p>
+                      <p className="text-sm">{orderDetails.billingAddress.country}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Products */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Products Ordered</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {orderDetails.items.map((item) => (
+                    <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">SKU: {item.id}</p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-sm">Size: {item.size}</span>
+                          <span className="text-sm">Color: {item.color}</span>
+                          <span className="text-sm">Qty: {item.quantity}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${item.price.toFixed(2)}</p>
+                        {item.discount > 0 && (
+                          <p className="text-sm text-destructive">-${item.discount.toFixed(2)}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>${orderDetails.subtotal.toFixed(2)}</span>
+                  </div>
+                  {orderDetails.discount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Discount</span>
+                      <span className="text-destructive">-${orderDetails.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {orderDetails.coupon && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Coupon ({orderDetails.coupon})</span>
+                      <span className="text-success">-${orderDetails.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>${orderDetails.shippingCharges.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>${orderDetails.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-lg font-semibold">Total</span>
+                    <span className="text-2xl font-bold text-primary">${orderDetails.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Order Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {timeline.map((item, index) => (
+                    <div key={index} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        {index < timeline.length - 1 && (
+                          <div className="w-0.5 h-16 bg-border" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-6">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold">{item.label}</p>
+                          <div className="text-right">
+                            <p className="text-sm text-muted-foreground">{item.date}</p>
+                            <p className="text-sm text-muted-foreground">{item.time}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">Updated by: {item.updatedBy}</p>
+                        <p className="text-sm mt-2">{item.remarks}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Order Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {orderDetails.status === 'pending' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Confirm Order
+                    </Button>
+                    <Button className="w-full" variant="destructive">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Reject Order
+                    </Button>
+                  </>
+                )}
+                {orderDetails.status === 'confirmed' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <Package className="mr-2 h-4 w-4" />
+                      Mark as Processing
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel Order
+                    </Button>
+                  </>
+                )}
+                {orderDetails.status === 'processing' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <Box className="mr-2 h-4 w-4" />
+                      Mark as Packed
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Generate Invoice
+                    </Button>
+                  </>
+                )}
+                {orderDetails.status === 'packed' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <Ship className="mr-2 h-4 w-4" />
+                      Mark as Shipped
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Truck className="mr-2 h-4 w-4" />
+                      Assign Courier
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Generate Tracking
+                    </Button>
+                  </>
+                )}
+                {orderDetails.status === 'shipped' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <Ship className="mr-2 h-4 w-4" />
+                      Mark Out for Delivery
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Update Tracking
+                    </Button>
+                  </>
+                )}
+                {orderDetails.status === 'out_for_delivery' && (
+                  <>
+                    <Button className="w-full" variant="default">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark as Delivered
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Shipping Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Shipping Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Courier Partner</p>
+                    <p className="font-semibold">{orderDetails.courierPartner}</p>
+                  </div>
+                  <Truck className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tracking Number</p>
+                    <p className="font-semibold font-mono">{orderDetails.trackingNumber}</p>
+                  </div>
+                  <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">AWB Number</p>
+                    <p className="font-semibold font-mono">{orderDetails.awbNumber}</p>
+                  </div>
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Expected Delivery</p>
+                    <p className="font-semibold">{orderDetails.expectedDelivery}</p>
+                  </div>
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Admin Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Add internal notes about this order..."
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button className="w-full mt-3" variant="outline">
+                  <Info className="mr-2 h-4 w-4" />
+                  Save Notes
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}

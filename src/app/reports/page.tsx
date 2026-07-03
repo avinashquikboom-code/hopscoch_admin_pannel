@@ -81,11 +81,17 @@ export default function ReportsPage() {
         </div>
 
         <Tabs defaultValue="sales" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="sales">Sales Report</TabsTrigger>
-            <TabsTrigger value="customers">Customer Report</TabsTrigger>
-            <TabsTrigger value="products">Product Report</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory Report</TabsTrigger>
+          <TabsList className="grid grid-cols-3 lg:grid-cols-7 w-full">
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="refunds">Refunds</TabsTrigger>
+            <TabsTrigger value="returns">Returns</TabsTrigger>
+            <TabsTrigger value="courier">Courier</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales">
@@ -357,6 +363,273 @@ export default function ReportsPage() {
                       <Badge variant="outline" className="text-warning">Low Stock</Badge>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Order Report</CardTitle>
+                    <CardDescription>Order volume and fulfillment metrics</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                      <p className="text-2xl font-bold">2,440</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold text-warning">142</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Delivered</p>
+                      <p className="text-2xl font-bold text-success">2,120</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                      <p className="text-2xl font-bold text-destructive">178</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="shipping">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Shipping Report</CardTitle>
+                    <CardDescription>Shipping performance and delivery metrics</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Shipments</p>
+                      <p className="text-2xl font-bold">4,821</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Avg Delivery Time</p>
+                      <p className="text-2xl font-bold">3.2 days</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">On-Time Delivery</p>
+                      <p className="text-2xl font-bold text-success">94.5%</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Returns</p>
+                      <p className="text-2xl font-bold">2.1%</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Payment Report</CardTitle>
+                    <CardDescription>Payment transactions and revenue</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                      <p className="text-2xl font-bold">$336,000</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Successful</p>
+                      <p className="text-2xl font-bold text-success">8,241</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Failed</p>
+                      <p className="text-2xl font-bold text-destructive">48</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Refunded</p>
+                      <p className="text-2xl font-bold text-warning">67</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="refunds">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Refund Report</CardTitle>
+                    <CardDescription>Refund requests and processing</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Refunds</p>
+                      <p className="text-2xl font-bold">67</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold text-warning">12</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Approved</p>
+                      <p className="text-2xl font-bold text-success">45</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                      <p className="text-2xl font-bold">$12,450</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="returns">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Return Report</CardTitle>
+                    <CardDescription>Return requests and processing</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Total Returns</p>
+                      <p className="text-2xl font-bold">98</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
+                      <p className="text-2xl font-bold text-warning">15</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Approved</p>
+                      <p className="text-2xl font-bold text-success">58</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Rejected</p>
+                      <p className="text-2xl font-bold text-destructive">25</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="courier">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Courier Report</CardTitle>
+                    <CardDescription>Courier partner performance</CardDescription>
+                  </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Delhivery</p>
+                      <p className="text-2xl font-bold">1,820</p>
+                      <p className="text-xs text-success mt-1">96.5% delivery rate</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">Blue Dart</p>
+                      <p className="text-2xl font-bold">980</p>
+                      <p className="text-xs text-success mt-1">94.8% delivery rate</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <p className="text-sm font-medium text-muted-foreground">DTDC</p>
+                      <p className="text-2xl font-bold">640</p>
+                      <p className="text-xs text-warning mt-1">91.2% delivery rate</p>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
