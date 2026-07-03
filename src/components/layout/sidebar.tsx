@@ -81,6 +81,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       icon: ShoppingBag,
       items: [
         { name: 'Orders', href: '/orders' },
+        { name: 'Returns', href: '/returns' },
         { name: 'Customers', href: '/customers' },
         { name: 'Reviews', href: '/reviews' },
         { name: 'Coupons', href: '/coupons' },
