@@ -14,14 +14,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,20 +83,20 @@ export default function SubCategoriesPage() {
               Manage product sub-categories and their mappings to parent categories.
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger render={
+          <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+            <SheetTrigger render={
               <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                 <Plus className="h-4 w-4" />
                 Add Sub Category
               </Button>
             } />
-            <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">Add Sub Category</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Add Sub Category</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">
                   Create a new sub-category linked to a parent category.
-                </DialogDescription>
-              </DialogHeader>
+                </SheetDescription>
+              </SheetHeader>
               <form onSubmit={handleCreate} className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-xs font-semibold">Sub Category Name</Label>
@@ -145,17 +145,17 @@ export default function SubCategoriesPage() {
                     Visible on website catalog
                   </Label>
                 </div>
-                <DialogFooter className="pt-4 flex gap-2 justify-end">
+                <SheetFooter className="pt-4 flex gap-2 justify-end">
                   <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="rounded-md">
                     Cancel
                   </Button>
                   <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     Save Sub Category
                   </Button>
-                </DialogFooter>
+                </SheetFooter>
               </form>
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <Card className="border-border/40 rounded-lg bg-card">

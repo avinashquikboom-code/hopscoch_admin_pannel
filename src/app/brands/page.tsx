@@ -16,14 +16,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -148,22 +148,22 @@ export default function BrandsPage() {
               Manage and organize your product brands and labels.
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={
+          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <SheetTrigger render={
               <Button className="gap-2 rounded-md">
                 <Plus className="h-4 w-4" />
                 Add Brand
               </Button>
             } />
-            <DialogContent className="sm:max-w-[520px] rounded-lg p-6">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">Add New Brand</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Add New Brand</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">
                   Create a new product brand for your catalog.
-                </DialogDescription>
-              </DialogHeader>
+                </SheetDescription>
+              </SheetHeader>
               <Separator className="my-2" />
-              <div className="space-y-4 py-2">
+              <div className="space-y-4 py-4 px-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-xs font-semibold">Brand Name *</Label>
@@ -193,14 +193,14 @@ export default function BrandsPage() {
                   </Label>
                 </div>
               </div>
-              <DialogFooter className="gap-2 pt-2">
+              <SheetFooter className="gap-2 pt-2">
                 <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
                   Cancel
                 </Button>
                 <Button className="rounded-lg">Save Brand</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Stats Row */}

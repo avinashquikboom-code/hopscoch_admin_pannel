@@ -23,14 +23,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,22 +162,22 @@ export default function NotificationsPage() {
               Send and manage push notifications to your customers.
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={
+          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <SheetTrigger render={
               <Button className="gap-2 rounded-md">
                 <Plus className="h-4 w-4" />
                 Send Notification
               </Button>
             } />
-            <DialogContent className="sm:max-w-[540px] rounded-lg p-6">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">Send New Notification</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Send New Notification</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">
                   Compose and send a push notification to users.
-                </DialogDescription>
-              </DialogHeader>
+                </SheetDescription>
+              </SheetHeader>
               <Separator className="my-2" />
-              <div className="space-y-4 py-2">
+              <div className="space-y-4 py-4 px-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="title" className="text-xs font-semibold">Title *</Label>
                   <Input id="title" placeholder="Summer Sale is Live!" className="h-9 rounded-lg" />
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
                   </div>
                 )}
               </div>
-              <DialogFooter className="gap-2 pt-2">
+              <SheetFooter className="gap-2 pt-2">
                 <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
                   Cancel
                 </Button>
@@ -238,9 +238,9 @@ export default function NotificationsPage() {
                   <Send className="h-4 w-4" />
                   Send Notification
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Stats Row */}

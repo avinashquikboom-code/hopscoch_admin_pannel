@@ -16,14 +16,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,20 +175,20 @@ export default function CategoriesPage() {
               Organize products into collections, root departments, and subcategories.
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={
+          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <SheetTrigger render={
               <Button className="rounded-md flex items-center gap-2 cursor-pointer">
                 <Plus className="h-4 w-4" /> Add Category
               </Button>
             } />
-            <DialogContent className="rounded-lg max-w-md p-6">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">Add New Category</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Add New Category</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">
                   Create a new product category
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
+                </SheetDescription>
+              </SheetHeader>
+              <div className="space-y-4 py-4 px-4">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-xs font-semibold">Category Name *</Label>
                   <Input id="name" placeholder="Enter category name" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
@@ -215,16 +215,16 @@ export default function CategoriesPage() {
                   <Label htmlFor="visible" className="text-sm text-muted-foreground select-none cursor-pointer">Visible</Label>
                 </div>
               </div>
-              <DialogFooter className="pt-4 flex gap-2 justify-end">
+              <SheetFooter className="pt-4 flex gap-2 justify-end">
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-md">
                   Cancel
                 </Button>
                 <Button className="rounded-md">
                   Save Category
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Stats */}

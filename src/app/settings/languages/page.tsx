@@ -15,14 +15,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -160,19 +160,19 @@ export default function LanguagesAndCurrencyPage() {
           <TabsContent value="languages" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold text-foreground">Supported Languages</h2>
-              <Dialog open={isLangDialogOpen} onOpenChange={setIsLangDialogOpen}>
-                <DialogTrigger render={
+              <Sheet open={isLangDialogOpen} onOpenChange={setIsLangDialogOpen}>
+                <SheetTrigger render={
                   <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     <Plus className="h-4 w-4" /> Add Language
                   </Button>
                 } />
-                <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-bold">Add Language</DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground">
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="text-lg font-bold">Add Language</SheetTitle>
+                    <SheetDescription className="text-xs text-muted-foreground">
                       Configure a new language locale option for users.
-                    </DialogDescription>
-                  </DialogHeader>
+                    </SheetDescription>
+                  </SheetHeader>
                   <form onSubmit={handleCreateLanguage} className="space-y-4 pt-2">
                     <div className="space-y-2">
                       <Label htmlFor="langName" className="text-xs font-semibold">Language Name</Label>
@@ -218,17 +218,17 @@ export default function LanguagesAndCurrencyPage() {
                         Set as default language
                       </Label>
                     </div>
-                    <DialogFooter className="pt-4 flex gap-2 justify-end">
+                    <SheetFooter className="pt-4 flex gap-2 justify-end">
                       <Button type="button" variant="ghost" onClick={() => setIsLangDialogOpen(false)} className="rounded-md">
                         Cancel
                       </Button>
                       <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                         Save Language
                       </Button>
-                    </DialogFooter>
+                    </SheetFooter>
                   </form>
-                </DialogContent>
-              </Dialog>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <Card className="border-border/40 rounded-lg bg-card">
@@ -300,19 +300,19 @@ export default function LanguagesAndCurrencyPage() {
           <TabsContent value="currencies" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold text-foreground">Supported Currencies</h2>
-              <Dialog open={isCurrDialogOpen} onOpenChange={setIsCurrDialogOpen}>
-                <DialogTrigger render={
+              <Sheet open={isCurrDialogOpen} onOpenChange={setIsCurrDialogOpen}>
+                <SheetTrigger render={
                   <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     <Plus className="h-4 w-4" /> Add Currency
                   </Button>
                 } />
-                <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-bold">Add Currency</DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground">
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="text-lg font-bold">Add Currency</SheetTitle>
+                    <SheetDescription className="text-xs text-muted-foreground">
                       Configure a new currency option and standard exchange rates.
-                    </DialogDescription>
-                  </DialogHeader>
+                    </SheetDescription>
+                  </SheetHeader>
                   <form onSubmit={handleCreateCurrency} className="space-y-4 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -373,17 +373,17 @@ export default function LanguagesAndCurrencyPage() {
                         Set as default currency
                       </Label>
                     </div>
-                    <DialogFooter className="pt-4 flex gap-2 justify-end">
+                    <SheetFooter className="pt-4 flex gap-2 justify-end">
                       <Button type="button" variant="ghost" onClick={() => setIsCurrDialogOpen(false)} className="rounded-md">
                         Cancel
                       </Button>
                       <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                         Save Currency
                       </Button>
-                    </DialogFooter>
+                    </SheetFooter>
                   </form>
-                </DialogContent>
-              </Dialog>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <Card className="border-border/40 rounded-lg bg-card">

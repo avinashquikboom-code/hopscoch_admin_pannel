@@ -22,14 +22,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,21 +121,21 @@ export default function CouponsPage() {
             <h1 className="text-3xl font-bold text-foreground">Coupons</h1>
             <p className="text-muted-foreground mt-1">Manage discount coupons and promotions</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger render={
+          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <SheetTrigger render={
               <Button className="bg-primary hover:bg-primary-dark">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Coupon
               </Button>
             } />
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Coupon</DialogTitle>
-                <DialogDescription>
+            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Create New Coupon</SheetTitle>
+                <SheetDescription>
                   Create a new discount coupon
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
+                </SheetDescription>
+              </SheetHeader>
+              <div className="space-y-4 py-4 px-4">
                 <div className="space-y-2">
                   <Label htmlFor="code">Coupon Code *</Label>
                   <Input id="code" placeholder="Enter coupon code" />
@@ -181,16 +181,16 @@ export default function CouponsPage() {
                   <Label htmlFor="active">Active</Label>
                 </div>
               </div>
-              <DialogFooter>
+              <SheetFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button className="bg-primary hover:bg-primary-dark">
                   Create Coupon
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Stats */}
