@@ -70,17 +70,19 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Bell className="h-5 w-5" />
-              {/* Notification badge — positioned in top-right corner of the button */}
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#14b8a6] text-black text-[10px] font-black leading-none border-2 border-background">
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bell className="h-5 w-5" />
+              </Button>
+              {/* Badge rendered outside Button so it's always visible */}
+              <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#14b8a6] text-black text-[10px] font-black leading-none px-1 border-2 border-background">
                 3
               </span>
-            </Button>
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="font-bold text-sm text-foreground px-2 py-1.5">
