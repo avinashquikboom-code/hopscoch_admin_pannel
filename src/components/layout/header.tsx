@@ -69,7 +69,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Notifications Dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button
               variant="ghost"
               size="icon"
@@ -122,7 +122,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* User Account Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button variant="ghost" className="relative h-10 w-10 rounded-xl hover:bg-muted/65 p-0 border border-border/30">
               <Avatar className="h-9 w-9 rounded-lg">
                 <AvatarImage src="/avatar.png" alt="User" className="rounded-lg" />

@@ -31,7 +31,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { 
   Plus, 
   Search, 
@@ -170,17 +171,17 @@ export default function CategoriesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Categories</h1>
-            <p className="text-muted-foreground mt-1 font-light">
+            <p className="text-muted-foreground mt-1 text-sm font-light">
               Organize products into collections, root departments, and subcategories.
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger render={
-              <Button className="rounded-xl flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+              <Button className="rounded-xl flex items-center gap-2 cursor-pointer">
                 <Plus className="h-4 w-4" /> Add Category
               </Button>
             } />
-            <DialogContent className="rounded-2xl max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
+            <DialogContent className="rounded-2xl max-w-md p-6">
               <DialogHeader>
                 <DialogTitle className="text-lg font-bold">Add New Category</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
@@ -218,7 +219,7 @@ export default function CategoriesPage() {
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
                   Cancel
                 </Button>
-                <Button className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                <Button className="rounded-xl">
                   Save Category
                 </Button>
               </DialogFooter>
@@ -325,11 +326,11 @@ export default function CategoriesPage() {
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger render={
+                            <DropdownMenuTrigger>
                               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
-                            } />
+                            </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl bg-card border border-border/60 shadow-lg">
                               <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                 <Eye className="h-3.5 w-3.5" /> View
@@ -359,11 +360,11 @@ export default function CategoriesPage() {
                             </TableCell>
                             <TableCell>
                               <DropdownMenu>
-                                <DropdownMenuTrigger render={
+                                <DropdownMenuTrigger>
                                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
-                                } />
+                                </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl bg-card border border-border/60 shadow-lg">
                                   <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                     <Edit className="h-3.5 w-3.5" /> Edit
