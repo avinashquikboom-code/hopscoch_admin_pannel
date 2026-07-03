@@ -127,7 +127,6 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuTrigger>
             <Button variant="ghost" className="relative h-10 w-10 rounded-md hover:bg-muted/65 p-0 border border-border/30">
               <Avatar className="h-9 w-9 rounded-lg">
-                <AvatarImage src="/avatar.png" alt="User" className="rounded-lg" />
                 <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-lg">
                   AD
                 </AvatarFallback>

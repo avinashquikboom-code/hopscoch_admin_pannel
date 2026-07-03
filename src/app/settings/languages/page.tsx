@@ -269,11 +269,11 @@ export default function LanguagesAndCurrencyPage() {
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
-                              <DropdownMenuTrigger render={
+                              <DropdownMenuTrigger>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
-                              } />
+                              </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit
@@ -425,11 +425,11 @@ export default function LanguagesAndCurrencyPage() {
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
-                              <DropdownMenuTrigger render={
+                              <DropdownMenuTrigger>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
-                              } />
+                              </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit

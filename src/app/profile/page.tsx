@@ -84,8 +84,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative group">
                   <Avatar className="h-24 w-24 border border-border/60">
-                    <AvatarImage src="/avatar.png" alt="Profile" />
-                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                    <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black text-2xl font-bold">
                       AD
                     </AvatarFallback>
                   </Avatar>
