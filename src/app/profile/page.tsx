@@ -79,7 +79,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Overview Card */}
-          <Card className="lg:col-span-1 border-border/40 rounded-2xl bg-card">
+          <Card className="lg:col-span-1 border-border/40 rounded-lg bg-card">
             <CardContent className="p-6 space-y-6">
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative group">
@@ -121,7 +121,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-2">
-                <Button variant="outline" className="w-full rounded-xl border-border/60 hover:bg-muted/50 cursor-pointer flex items-center justify-center gap-2">
+                <Button variant="outline" className="w-full rounded-md border-border/60 hover:bg-muted/50 cursor-pointer flex items-center justify-center gap-2">
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </Button>
@@ -132,14 +132,14 @@ export default function ProfilePage() {
           {/* Settings Tabs */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="bg-muted/30 p-1 rounded-xl border border-border/40">
+              <TabsList className="bg-muted/30 p-1 rounded-md border border-border/40">
                 <TabsTrigger value="profile" className="rounded-lg px-4 py-1.5 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Profile Info</TabsTrigger>
                 <TabsTrigger value="security" className="rounded-lg px-4 py-1.5 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Security & Access</TabsTrigger>
                 <TabsTrigger value="sessions" className="rounded-lg px-4 py-1.5 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Login Sessions</TabsTrigger>
               </TabsList>
 
               <TabsContent value="profile">
-                <Card className="border-border/40 rounded-2xl bg-card">
+                <Card className="border-border/40 rounded-lg bg-card">
                   <CardHeader className="border-b border-border/30 pb-4">
                     <CardTitle className="text-base font-bold">Personal Information</CardTitle>
                     <CardDescription className="text-xs font-light">Configure details shown on your public profile</CardDescription>
@@ -148,22 +148,22 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName" className="text-xs font-semibold">First Name</Label>
-                        <Input id="firstName" defaultValue="Admin" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                        <Input id="firstName" defaultValue="Admin" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName" className="text-xs font-semibold">Last Name</Label>
-                        <Input id="lastName" defaultValue="User" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                        <Input id="lastName" defaultValue="User" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-xs font-semibold">Administrator Email Address</Label>
-                      <Input id="email" type="email" defaultValue="admin@auracouture.com" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                      <Input id="email" type="email" defaultValue="admin@auracouture.com" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-xs font-semibold">Contact Phone Number</Label>
-                      <Input id="phone" type="tel" defaultValue="+1 234 567 8900" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                      <Input id="phone" type="tel" defaultValue="+1 234 567 8900" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                     </div>
 
                     <div className="space-y-2">
@@ -172,7 +172,7 @@ export default function ProfilePage() {
                         id="bio" 
                         rows={4}
                         defaultValue="Fashion director and administrative supervisor at AURA COUTURE."
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40"
                       />
                     </div>
 
@@ -180,7 +180,7 @@ export default function ProfilePage() {
                       <Button 
                         onClick={handleSave}
                         disabled={isLoading}
-                        className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
+                        className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
                       >
                         <Save className="mr-2 h-4 w-4" />
                         {isLoading ? 'Saving...' : isSaved ? 'Details Saved' : 'Save Profile details'}
@@ -191,7 +191,7 @@ export default function ProfilePage() {
               </TabsContent>
 
               <TabsContent value="security">
-                <Card className="border-border/40 rounded-2xl bg-card">
+                <Card className="border-border/40 rounded-lg bg-card">
                   <CardHeader className="border-b border-border/30 pb-4">
                     <CardTitle className="text-base font-bold">Change Password</CardTitle>
                     <CardDescription className="text-xs font-light">Update your password regularly to keep your administrator account secure</CardDescription>
@@ -199,24 +199,24 @@ export default function ProfilePage() {
                   <CardContent className="p-6 space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="currentPassword" className="text-xs font-semibold">Current Password</Label>
-                      <Input id="currentPassword" type="password" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                      <Input id="currentPassword" type="password" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="newPassword" className="text-xs font-semibold">New Password</Label>
-                      <Input id="newPassword" type="password" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                      <Input id="newPassword" type="password" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword" className="text-xs font-semibold">Confirm New Password</Label>
-                      <Input id="confirmPassword" type="password" className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+                      <Input id="confirmPassword" type="password" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
                     </div>
 
                     <div className="flex justify-end pt-2">
                       <Button 
                         onClick={handleSave}
                         disabled={isLoading}
-                        className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
+                        className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
                       >
                         <Lock className="mr-2 h-4 w-4" />
                         {isLoading ? 'Updating...' : 'Update Password'}
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="mt-6 border-border/40 rounded-2xl bg-card">
+                <Card className="mt-6 border-border/40 rounded-lg bg-card">
                   <CardHeader className="border-b border-border/30 pb-4">
                     <CardTitle className="text-base font-bold">Two-Factor Authentication</CardTitle>
                     <CardDescription className="text-xs font-light">Add an extra layer of access verification</CardDescription>
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3.5">
-                        <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                        <div className="p-3 bg-primary/10 rounded-md text-primary">
                           <Key className="h-5 w-5" />
                         </div>
                         <div>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
                           <p className="text-xs text-muted-foreground font-light">Not currently active</p>
                         </div>
                       </div>
-                      <Button variant="outline" className="rounded-xl border-border/60 hover:bg-muted/50 cursor-pointer">
+                      <Button variant="outline" className="rounded-md border-border/60 hover:bg-muted/50 cursor-pointer">
                         Enable
                       </Button>
                     </div>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
               </TabsContent>
 
               <TabsContent value="sessions">
-                <Card className="border-border/40 rounded-2xl bg-card">
+                <Card className="border-border/40 rounded-lg bg-card">
                   <CardHeader className="border-b border-border/30 pb-4">
                     <CardTitle className="text-base font-bold">Active Login Sessions</CardTitle>
                     <CardDescription className="text-xs font-light">Review other browsers logged into your account</CardDescription>
@@ -258,7 +258,7 @@ export default function ProfilePage() {
                   <CardContent className="p-6 space-y-4">
                     <div className="space-y-3.5">
                       {sessions.map((session) => (
-                        <div key={session.id} className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/10">
+                        <div key={session.id} className="flex items-center justify-between p-4 border border-border/30 rounded-md bg-muted/10">
                           <div className="flex items-center gap-4">
                             <div className="p-2.5 bg-muted/40 border border-border/30 rounded-lg text-slate-500">
                               {session.os.includes('macOS') || session.os.includes('iOS') ? (
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-border/30">
-                      <Button variant="outline" className="w-full rounded-xl border-red-200/50 hover:bg-red-50 text-red-600 cursor-pointer flex items-center justify-center gap-2">
+                      <Button variant="outline" className="w-full rounded-md border-red-200/50 hover:bg-red-50 text-red-600 cursor-pointer flex items-center justify-center gap-2">
                         <Shield className="h-4 w-4" />
                         Revoke All Other Sessions
                       </Button>

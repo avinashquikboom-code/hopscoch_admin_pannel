@@ -85,12 +85,12 @@ export default function SubCategoriesPage() {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger render={
-              <Button className="rounded-xl flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+              <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                 <Plus className="h-4 w-4" />
                 Add Sub Category
               </Button>
             } />
-            <DialogContent className="rounded-2xl max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
+            <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
               <DialogHeader>
                 <DialogTitle className="text-lg font-bold">Add Sub Category</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
@@ -106,7 +106,7 @@ export default function SubCategoriesPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Casual Jackets"
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -115,7 +115,7 @@ export default function SubCategoriesPage() {
                     id="parent"
                     value={formData.parentName}
                     onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-border/60 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none"
+                    className="w-full h-10 rounded-md border border-border/60 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none"
                   >
                     <option value="Dresses">Dresses</option>
                     <option value="Tops">Tops</option>
@@ -130,7 +130,7 @@ export default function SubCategoriesPage() {
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     placeholder="e.g. casual-jackets"
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                   />
                 </div>
                 <div className="flex items-center gap-2.5 pt-2">
@@ -146,10 +146,10 @@ export default function SubCategoriesPage() {
                   </Label>
                 </div>
                 <DialogFooter className="pt-4 flex gap-2 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="rounded-xl">
+                  <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="rounded-md">
                     Cancel
                   </Button>
-                  <Button type="submit" className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     Save Sub Category
                   </Button>
                 </DialogFooter>
@@ -158,7 +158,7 @@ export default function SubCategoriesPage() {
           </Dialog>
         </div>
 
-        <Card className="border-border/40 rounded-2xl bg-card">
+        <Card className="border-border/40 rounded-lg bg-card">
           <CardContent className="p-6 space-y-6">
             <div className="relative max-w-sm group">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -166,11 +166,11 @@ export default function SubCategoriesPage() {
                 placeholder="Search sub categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10 rounded-xl"
+                className="pl-11 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10 rounded-md"
               />
             </div>
 
-            <div className="border border-border/40 rounded-xl overflow-hidden">
+            <div className="border border-border/40 rounded-md overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
@@ -204,7 +204,7 @@ export default function SubCategoriesPage() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl bg-card border border-border/60 shadow-lg">
+                          <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                             <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                               <Edit className="h-3.5 w-3.5" /> Edit
                             </DropdownMenuItem>

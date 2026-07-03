@@ -76,7 +76,7 @@ export default function SettingsShippingPage() {
               initial={{ opacity: 0, y: -15, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -15, scale: 0.95 }}
-              className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-[#14b8a6] text-sm flex items-center gap-2 font-medium"
+              className="p-4 rounded-md bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-[#14b8a6] text-sm flex items-center gap-2 font-medium"
             >
               <Check className="h-4.5 w-4.5" />
               Shipping zones configurations and flat rates successfully saved.
@@ -85,12 +85,12 @@ export default function SettingsShippingPage() {
         </AnimatePresence>
 
         {/* Rates Table Card */}
-        <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+        <Card className="border-border/20 rounded-lg bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
           <CardHeader className="border-b border-border/25 pb-4">
             <CardTitle className="text-base font-bold">Configured Zones</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="border border-border/20 rounded-xl overflow-hidden">
+            <div className="border border-border/20 rounded-md overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow className="border-b border-border/20">
@@ -141,7 +141,7 @@ export default function SettingsShippingPage() {
         </Card>
 
         {/* Add Zone Card */}
-        <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+        <Card className="border-border/20 rounded-lg bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
           <CardHeader className="border-b border-border/25 pb-4">
             <CardTitle className="text-base font-bold">Add Delivery Zone Rate</CardTitle>
           </CardHeader>
@@ -155,7 +155,7 @@ export default function SettingsShippingPage() {
                     value={newZone.zone}
                     onChange={(e) => setNewZone({ ...newZone, zone: e.target.value })}
                     placeholder="e.g. UK & Europe"
-                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                    className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                     required
                   />
                 </div>
@@ -166,7 +166,7 @@ export default function SettingsShippingPage() {
                     value={newZone.type}
                     onChange={(e) => setNewZone({ ...newZone, type: e.target.value })}
                     placeholder="e.g. Royal Mail Tracker"
-                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                    className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                     required
                   />
                 </div>
@@ -181,7 +181,7 @@ export default function SettingsShippingPage() {
                     step="0.01"
                     value={newZone.rate}
                     onChange={(e) => setNewZone({ ...newZone, rate: Number(e.target.value) })}
-                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                    className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function SettingsShippingPage() {
                     step="0.01"
                     value={newZone.freeThreshold}
                     onChange={(e) => setNewZone({ ...newZone, freeThreshold: Number(e.target.value) })}
-                    className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                    className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   />
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function SettingsShippingPage() {
               <Button
                 type="submit"
                 variant="outline"
-                className="rounded-xl border-border/40 hover:bg-muted/50 flex items-center gap-2 cursor-pointer transition-all hover:text-[#14b8a6] hover:border-[#14b8a6]/45 active:scale-[0.98] h-10 px-4 text-xs font-semibold"
+                className="rounded-md border-border/40 hover:bg-muted/50 flex items-center gap-2 cursor-pointer transition-all hover:text-[#14b8a6] hover:border-[#14b8a6]/45 active:scale-[0.98] h-10 px-4 text-xs font-semibold"
               >
                 <Plus className="h-4 w-4 text-[#14b8a6]" /> Add Zone Rate
               </Button>
@@ -211,7 +211,7 @@ export default function SettingsShippingPage() {
         <div className="flex justify-end gap-3 pt-2">
           <Button
             onClick={handleSave}
-            className="rounded-xl teal-gradient-bg text-black font-bold hover:opacity-95 shadow-md shadow-[#14b8a6]/15 h-11 px-6 cursor-pointer flex items-center gap-2 border border-[#14b8a6]/20 transition-all active:scale-[0.99]"
+            className="rounded-md teal-gradient-bg text-black font-bold hover:opacity-95 shadow-md shadow-[#14b8a6]/15 h-11 px-6 cursor-pointer flex items-center gap-2 border border-[#14b8a6]/20 transition-all active:scale-[0.99]"
           >
             <Save className="h-4.5 w-4.5" />
             Save Shipping Settings

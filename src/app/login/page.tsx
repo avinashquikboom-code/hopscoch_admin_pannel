@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         {/* Brand Logo */}
         <div className="relative z-10 flex items-center space-x-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e]">
+          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e]">
             <Sparkles className="w-5 h-5 text-black" />
           </div>
           <span className="text-xl font-black tracking-[0.25em] text-white">
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + i * 0.1 }}
-                  className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10"
+                  className="p-4 rounded-lg bg-white/10 backdrop-blur-md border border-white/10"
                 >
                   <div className="p-2 w-fit rounded-lg bg-[#14b8a6]/20 text-[#14b8a6] mb-2.5">
                     <Icon className="w-4 h-4" />
@@ -159,7 +159,7 @@ export default function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center text-center space-y-3 mb-8">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#14b8a6] to-[#2dd4bf]">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-tr from-[#14b8a6] to-[#2dd4bf]">
               <Sparkles className="w-6 h-6 text-black" />
             </div>
             <h1 className="text-2xl font-black tracking-[0.25em] text-slate-800 dark:text-zinc-100">
@@ -168,7 +168,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form card */}
-          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/60 rounded-2xl p-8 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/60 rounded-lg p-8 backdrop-blur-sm">
             {/* Heading */}
             <div className="space-y-1.5 mb-8">
               <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -186,7 +186,7 @@ export default function LoginPage() {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
-                  className="flex items-start gap-2.5 mb-6 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-300 text-sm"
+                  className="flex items-start gap-2.5 mb-6 p-3.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-300 text-sm"
                 >
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
@@ -209,7 +209,7 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     placeholder="admin@aura.com"
-                    className="pl-11 h-11 rounded-xl
+                    className="pl-11 h-11 rounded-md
                                bg-slate-50 dark:bg-zinc-950
                                border-slate-200 dark:border-zinc-800
                                text-slate-900 dark:text-zinc-100
@@ -245,7 +245,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-11 pr-11 h-11 rounded-xl
+                    className="pl-11 pr-11 h-11 rounded-md
                                bg-slate-50 dark:bg-zinc-950
                                border-slate-200 dark:border-zinc-800
                                text-slate-900 dark:text-zinc-100
@@ -293,7 +293,7 @@ export default function LoginPage() {
               {/* Submit */}
               <Button
                 type="submit"
-                className="w-full h-11 mt-2 rounded-xl
+                className="w-full h-11 mt-2 rounded-md
                            bg-gradient-to-r from-[#14b8a6] via-[#2dd4bf] to-[#14b8a6]
                            hover:opacity-90 text-black font-bold tracking-wider
                            transition-all flex items-center justify-center gap-2
@@ -304,7 +304,7 @@ export default function LoginPage() {
                   <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                 ) : (
                   <>
-                    Enter Dashboard
+                    Sign In
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

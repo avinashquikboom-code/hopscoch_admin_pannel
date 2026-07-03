@@ -164,12 +164,12 @@ export default function NotificationsPage() {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger render={
-              <Button className="gap-2 rounded-xl">
+              <Button className="gap-2 rounded-md">
                 <Plus className="h-4 w-4" />
                 Send Notification
               </Button>
             } />
-            <DialogContent className="sm:max-w-[540px] rounded-2xl p-6">
+            <DialogContent className="sm:max-w-[540px] rounded-lg p-6">
               <DialogHeader>
                 <DialogTitle className="text-lg font-bold">Send New Notification</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
@@ -188,7 +188,7 @@ export default function NotificationsPage() {
                     <SelectTrigger className="h-9 rounded-lg">
                       <SelectValue placeholder="Select a type..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl">
+                    <SelectContent className="rounded-md">
                       {notificationTypes.map((type) => (
                         <SelectItem key={type.value} value={type.value} className="rounded-lg">
                           {type.label}
@@ -207,12 +207,12 @@ export default function NotificationsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Image <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <div className="border-2 border-dashed border-border/60 rounded-xl p-4 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                  <div className="border-2 border-dashed border-border/60 rounded-md p-4 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
                     <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
                     <p className="text-xs text-muted-foreground">Click to upload notification image</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-muted/30 rounded-xl px-3 py-2.5">
+                <div className="flex items-center gap-2.5 bg-muted/30 rounded-md px-3 py-2.5">
                   <Checkbox
                     id="sendToAll"
                     checked={sendToAll}
@@ -248,7 +248,7 @@ export default function NotificationsPage() {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="border-border/40 rounded-2xl">
+              <Card key={stat.label} className="border-border/40 rounded-lg">
                 <CardContent className="p-5 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -256,7 +256,7 @@ export default function NotificationsPage() {
                     </p>
                     <h3 className={`text-3xl font-bold mt-1.5 ${stat.color}`}>{stat.value}</h3>
                   </div>
-                  <div className={`h-11 w-11 rounded-xl ${stat.bg} flex items-center justify-center ${stat.color}`}>
+                  <div className={`h-11 w-11 rounded-md ${stat.bg} flex items-center justify-center ${stat.color}`}>
                     <Icon className="h-5 w-5" />
                   </div>
                 </CardContent>
@@ -266,7 +266,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notifications Table */}
-        <Card className="border-border/40 rounded-2xl">
+        <Card className="border-border/40 rounded-lg">
           <CardHeader className="pb-4 px-6 pt-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -277,7 +277,7 @@ export default function NotificationsPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
                   placeholder="Search notifications..."
-                  className="pl-10 h-9 rounded-xl border-border/50"
+                  className="pl-10 h-9 rounded-md border-border/50"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -285,7 +285,7 @@ export default function NotificationsPage() {
             </div>
           </CardHeader>
           <CardContent className="px-6 pb-6">
-            <div className="border border-border/40 rounded-xl overflow-hidden">
+            <div className="border border-border/40 rounded-md overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border/40">
@@ -357,7 +357,7 @@ export default function NotificationsPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 p-1 rounded-xl border-border/50">
+                            <DropdownMenuContent align="end" className="w-40 p-1 rounded-md border-border/50">
                               {!notification.isSent && (
                                 <>
                                   <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">

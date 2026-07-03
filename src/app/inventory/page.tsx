@@ -85,19 +85,19 @@ export default function InventoryPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-border/40 rounded-2xl bg-card">
+          <Card className="border-border/40 rounded-lg bg-card">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Items tracked</p>
                 <h3 className="text-3xl font-bold mt-2 text-foreground">{inventory.length}</h3>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                 <RefreshCw className="h-5 w-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/40 rounded-2xl bg-card">
+          <Card className="border-border/40 rounded-lg bg-card">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Low Stock Warnings</p>
@@ -105,13 +105,13 @@ export default function InventoryPage() {
                   {inventory.filter((i) => i.stock > 0 && i.stock <= i.minStock).length}
                 </h3>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <div className="h-12 w-12 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500">
                 <AlertTriangle className="h-5 w-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/40 rounded-2xl bg-card">
+          <Card className="border-border/40 rounded-lg bg-card">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Out of Stock Alert</p>
@@ -119,7 +119,7 @@ export default function InventoryPage() {
                   {inventory.filter((i) => i.stock === 0).length}
                 </h3>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
+              <div className="h-12 w-12 rounded-md bg-red-500/10 flex items-center justify-center text-red-500">
                 <AlertTriangle className="h-5 w-5" />
               </div>
             </CardContent>
@@ -127,7 +127,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Inventory List Card */}
-        <Card className="border-border/40 rounded-2xl bg-card">
+        <Card className="border-border/40 rounded-lg bg-card">
           <CardContent className="p-6 space-y-6">
             <div className="relative max-w-sm group">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -135,11 +135,11 @@ export default function InventoryPage() {
                 placeholder="Search inventory by SKU or product name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10 rounded-xl"
+                className="pl-11 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10 rounded-md"
               />
             </div>
 
-            <div className="border border-border/40 rounded-xl overflow-hidden">
+            <div className="border border-border/40 rounded-md overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>

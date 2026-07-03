@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
           Back to login
         </Link>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/60 backdrop-blur-sm overflow-hidden">
+        <Card className="rounded-lg border-slate-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/60 backdrop-blur-sm overflow-hidden">
           <CardHeader className="space-y-1.5 pb-4">
             <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">
               Forgot Password?
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
-                        className="flex items-start gap-2.5 p-3.5 rounded-xl
+                        className="flex items-start gap-2.5 p-3.5 rounded-md
                                    bg-red-50 dark:bg-red-950/30
                                    border border-red-200 dark:border-red-900/50
                                    text-red-600 dark:text-red-300 text-sm"
@@ -115,7 +115,7 @@ export default function ForgotPasswordPage() {
                         id="email"
                         type="email"
                         placeholder="admin@aura.com"
-                        className="pl-11 h-11 rounded-xl
+                        className="pl-11 h-11 rounded-md
                                    bg-slate-50 dark:bg-zinc-950
                                    border-slate-200 dark:border-zinc-800
                                    text-slate-900 dark:text-zinc-100
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
                 <CardFooter className="pt-2 pb-6 flex-col gap-3">
                   <Button
                     type="submit"
-                    className="w-full h-11 rounded-xl
+                    className="w-full h-11 rounded-md
                                bg-gradient-to-r from-[#14b8a6] via-[#2dd4bf] to-[#14b8a6]
                                hover:opacity-90 text-black font-bold tracking-wider
                                transition-all border border-[#14b8a6]/20 cursor-pointer"
@@ -156,7 +156,7 @@ export default function ForgotPasswordPage() {
               <Link href="/login" className="w-full">
                 <Button
                   variant="outline"
-                  className="w-full rounded-xl h-11
+                  className="w-full rounded-md h-11
                              border-slate-200 dark:border-zinc-800
                              text-slate-600 dark:text-zinc-400
                              hover:bg-slate-50 dark:hover:bg-zinc-800/50

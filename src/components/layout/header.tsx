@@ -47,7 +47,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Input
               type="search"
               placeholder="Search products, orders, customers..."
-              className="pl-11 bg-muted/30 border-border/30 hover:border-border/55 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/30 h-10 rounded-xl transition-all"
+              className="pl-11 bg-muted/30 border-border/30 hover:border-border/55 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/30 h-10 rounded-md transition-all"
             />
           </div>
         </div>
@@ -60,7 +60,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={toggleDarkMode}
-          className="relative rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+          className="relative rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -73,7 +73,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="relative rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+              className="relative rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Bell className="h-5 w-5" />
               {/* Notification badge — positioned in top-right corner of the button */}
@@ -82,13 +82,13 @@ export function Header({ onMenuClick }: HeaderProps) {
               </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl bg-card/95 border border-border/30 backdrop-blur-lg">
+          <DropdownMenuContent align="end" className="w-80 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="font-bold text-sm text-foreground px-2 py-1.5">
               Notifications
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="my-1 border-border/20" />
             <div className="max-h-80 overflow-y-auto space-y-1">
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
+              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-md hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
                   <span className="inline-flex h-2 w-2 rounded-full bg-[#14b8a6] flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">New Order</span>
@@ -96,7 +96,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </div>
                 <p className="text-xs text-muted-foreground pl-4">Order #12345 has been placed</p>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
+              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-md hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
                   <span className="inline-flex h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">Low Stock Alert</span>
@@ -104,7 +104,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </div>
                 <p className="text-xs text-muted-foreground pl-4">5 products are running low on stock</p>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-xl hover:bg-muted/50 cursor-pointer">
+              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 rounded-md hover:bg-muted/50 cursor-pointer">
                 <div className="flex items-center gap-2 w-full">
                   <span className="inline-flex h-2 w-2 rounded-full bg-violet-400 flex-shrink-0" />
                   <span className="font-semibold text-sm text-foreground">New Review</span>
@@ -114,7 +114,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="text-center text-xs font-semibold text-[#14b8a6] hover:text-[#2dd4bf] cursor-pointer py-2 justify-center rounded-xl">
+            <DropdownMenuItem className="text-center text-xs font-semibold text-[#14b8a6] hover:text-[#2dd4bf] cursor-pointer py-2 justify-center rounded-md">
               View all notifications
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -123,7 +123,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* User Account Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-xl hover:bg-muted/65 p-0 border border-border/30">
+            <Button variant="ghost" className="relative h-10 w-10 rounded-md hover:bg-muted/65 p-0 border border-border/30">
               <Avatar className="h-9 w-9 rounded-lg">
                 <AvatarImage src="/avatar.png" alt="User" className="rounded-lg" />
                 <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-lg">
@@ -132,7 +132,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl bg-card/95 border border-border/30 backdrop-blur-lg">
+          <DropdownMenuContent align="end" className="w-56 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="px-2 py-2">
               <div className="flex flex-col space-y-0.5">
                 <p className="text-sm font-bold text-foreground">Admin User</p>
@@ -140,16 +140,16 @@ export function Header({ onMenuClick }: HeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="p-2.5 rounded-xl hover:bg-muted/50 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium">
               <User className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="p-2.5 rounded-xl hover:bg-muted/50 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium">
               <Settings className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem className="p-2.5 rounded-md text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-sm font-medium">
               <LogOut className="mr-2.5 h-4 w-4 text-rose-500" />
               Logout
             </DropdownMenuItem>

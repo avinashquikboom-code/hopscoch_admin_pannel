@@ -147,7 +147,7 @@ export default function LanguagesAndCurrencyPage() {
         </div>
 
         <Tabs defaultValue="languages" className="space-y-6">
-          <TabsList className="bg-muted/30 p-1 rounded-xl border border-border/40 w-fit">
+          <TabsList className="bg-muted/30 p-1 rounded-md border border-border/40 w-fit">
             <TabsTrigger value="languages" className="rounded-lg px-4 py-1.5 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center gap-2">
               <Globe className="h-3.5 w-3.5" /> Languages
             </TabsTrigger>
@@ -162,11 +162,11 @@ export default function LanguagesAndCurrencyPage() {
               <h2 className="text-lg font-bold text-foreground">Supported Languages</h2>
               <Dialog open={isLangDialogOpen} onOpenChange={setIsLangDialogOpen}>
                 <DialogTrigger render={
-                  <Button className="rounded-xl flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                  <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     <Plus className="h-4 w-4" /> Add Language
                   </Button>
                 } />
-                <DialogContent className="rounded-2xl max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
+                <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-bold">Add Language</DialogTitle>
                     <DialogDescription className="text-xs text-muted-foreground">
@@ -182,7 +182,7 @@ export default function LanguagesAndCurrencyPage() {
                         value={langForm.name}
                         onChange={(e) => setLangForm({ ...langForm, name: e.target.value })}
                         placeholder="e.g. Italian"
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                       />
                     </div>
                     <div className="space-y-2">
@@ -193,7 +193,7 @@ export default function LanguagesAndCurrencyPage() {
                         value={langForm.code}
                         onChange={(e) => setLangForm({ ...langForm, code: e.target.value })}
                         placeholder="e.g. it"
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                       />
                     </div>
                     <div className="space-y-2">
@@ -203,7 +203,7 @@ export default function LanguagesAndCurrencyPage() {
                         value={langForm.flag}
                         onChange={(e) => setLangForm({ ...langForm, flag: e.target.value })}
                         placeholder="e.g. 🇮🇹"
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                       />
                     </div>
                     <div className="flex items-center gap-2.5 pt-2">
@@ -219,10 +219,10 @@ export default function LanguagesAndCurrencyPage() {
                       </Label>
                     </div>
                     <DialogFooter className="pt-4 flex gap-2 justify-end">
-                      <Button type="button" variant="ghost" onClick={() => setIsLangDialogOpen(false)} className="rounded-xl">
+                      <Button type="button" variant="ghost" onClick={() => setIsLangDialogOpen(false)} className="rounded-md">
                         Cancel
                       </Button>
-                      <Button type="submit" className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                      <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                         Save Language
                       </Button>
                     </DialogFooter>
@@ -231,9 +231,9 @@ export default function LanguagesAndCurrencyPage() {
               </Dialog>
             </div>
 
-            <Card className="border-border/40 rounded-2xl bg-card">
+            <Card className="border-border/40 rounded-lg bg-card">
               <CardContent className="p-6">
-                <div className="border border-border/40 rounded-xl overflow-hidden">
+                <div className="border border-border/40 rounded-md overflow-hidden">
                   <Table>
                     <TableHeader className="bg-muted/30">
                       <TableRow>
@@ -274,7 +274,7 @@ export default function LanguagesAndCurrencyPage() {
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               } />
-                              <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl bg-card border border-border/60 shadow-lg">
+                              <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit
                                 </DropdownMenuItem>
@@ -302,11 +302,11 @@ export default function LanguagesAndCurrencyPage() {
               <h2 className="text-lg font-bold text-foreground">Supported Currencies</h2>
               <Dialog open={isCurrDialogOpen} onOpenChange={setIsCurrDialogOpen}>
                 <DialogTrigger render={
-                  <Button className="rounded-xl flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                  <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                     <Plus className="h-4 w-4" /> Add Currency
                   </Button>
                 } />
-                <DialogContent className="rounded-2xl max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
+                <DialogContent className="rounded-lg max-w-md p-6 bg-card border border-border/60 shadow-xl backdrop-blur-md">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-bold">Add Currency</DialogTitle>
                     <DialogDescription className="text-xs text-muted-foreground">
@@ -323,7 +323,7 @@ export default function LanguagesAndCurrencyPage() {
                           value={currForm.code}
                           onChange={(e) => setCurrForm({ ...currForm, code: e.target.value })}
                           placeholder="e.g. CAD"
-                          className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                          className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                         />
                       </div>
                       <div className="space-y-2">
@@ -334,7 +334,7 @@ export default function LanguagesAndCurrencyPage() {
                           value={currForm.symbol}
                           onChange={(e) => setCurrForm({ ...currForm, symbol: e.target.value })}
                           placeholder="e.g. C$"
-                          className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                          className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                         />
                       </div>
                     </div>
@@ -346,7 +346,7 @@ export default function LanguagesAndCurrencyPage() {
                         value={currForm.name}
                         onChange={(e) => setCurrForm({ ...currForm, name: e.target.value })}
                         placeholder="e.g. Canadian Dollar"
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                       />
                     </div>
                     <div className="space-y-2">
@@ -358,7 +358,7 @@ export default function LanguagesAndCurrencyPage() {
                         required
                         value={currForm.exchangeRate}
                         onChange={(e) => setCurrForm({ ...currForm, exchangeRate: Number(e.target.value) })}
-                        className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                       />
                     </div>
                     <div className="flex items-center gap-2.5 pt-2">
@@ -374,10 +374,10 @@ export default function LanguagesAndCurrencyPage() {
                       </Label>
                     </div>
                     <DialogFooter className="pt-4 flex gap-2 justify-end">
-                      <Button type="button" variant="ghost" onClick={() => setIsCurrDialogOpen(false)} className="rounded-xl">
+                      <Button type="button" variant="ghost" onClick={() => setIsCurrDialogOpen(false)} className="rounded-md">
                         Cancel
                       </Button>
-                      <Button type="submit" className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
+                      <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
                         Save Currency
                       </Button>
                     </DialogFooter>
@@ -386,9 +386,9 @@ export default function LanguagesAndCurrencyPage() {
               </Dialog>
             </div>
 
-            <Card className="border-border/40 rounded-2xl bg-card">
+            <Card className="border-border/40 rounded-lg bg-card">
               <CardContent className="p-6">
-                <div className="border border-border/40 rounded-xl overflow-hidden">
+                <div className="border border-border/40 rounded-md overflow-hidden">
                   <Table>
                     <TableHeader className="bg-muted/30">
                       <TableRow>
@@ -430,7 +430,7 @@ export default function LanguagesAndCurrencyPage() {
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               } />
-                              <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl bg-card border border-border/60 shadow-lg">
+                              <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit
                                 </DropdownMenuItem>

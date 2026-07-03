@@ -37,7 +37,7 @@ export default function SettingsGeneralPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border-border/40 rounded-2xl bg-card">
+          <Card className="border-border/40 rounded-lg bg-card">
             <CardHeader className="border-b border-border/30 pb-4">
               <CardTitle className="text-base font-bold">Store Details</CardTitle>
             </CardHeader>
@@ -49,7 +49,7 @@ export default function SettingsGeneralPage() {
                     id="storeName"
                     value={formData.storeName}
                     onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -59,7 +59,7 @@ export default function SettingsGeneralPage() {
                     type="email"
                     value={formData.supportEmail}
                     onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })}
-                    className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                   />
                 </div>
               </div>
@@ -70,7 +70,7 @@ export default function SettingsGeneralPage() {
                   id="phone"
                   value={formData.supportPhone}
                   onChange={(e) => setFormData({ ...formData, supportPhone: e.target.value })}
-                  className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                 />
               </div>
 
@@ -80,13 +80,13 @@ export default function SettingsGeneralPage() {
                   id="address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 min-h-[80px]"
+                  className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 min-h-[80px]"
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/40 rounded-2xl bg-card">
+          <Card className="border-border/40 rounded-lg bg-card">
             <CardHeader className="border-b border-border/30 pb-4">
               <CardTitle className="text-base font-bold">SEO & Metadata</CardTitle>
             </CardHeader>
@@ -97,7 +97,7 @@ export default function SettingsGeneralPage() {
                   id="metaTitle"
                   value={formData.metaTitle}
                   onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                  className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
                 />
               </div>
               <div className="space-y-2">
@@ -106,7 +106,7 @@ export default function SettingsGeneralPage() {
                   id="metaDescription"
                   value={formData.metaDescription}
                   onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                  className="rounded-xl border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 min-h-[80px]"
+                  className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 min-h-[80px]"
                 />
               </div>
             </CardContent>
@@ -115,7 +115,7 @@ export default function SettingsGeneralPage() {
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="submit"
-              className="rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
+              className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10 h-11 px-6 cursor-pointer"
             >
               {isSaved ? 'Settings Saved' : 'Save General Config'}
             </Button>

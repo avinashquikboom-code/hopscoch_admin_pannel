@@ -70,7 +70,7 @@ export default function SettingsPaymentsPage() {
               initial={{ opacity: 0, y: -15, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -15, scale: 0.95 }}
-              className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-[#14b8a6] text-sm flex items-center gap-2 font-medium"
+              className="p-4 rounded-md bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-[#14b8a6] text-sm flex items-center gap-2 font-medium"
             >
               <Check className="h-4.5 w-4.5" />
               Payment gateway settings and API keys updated successfully.
@@ -80,10 +80,10 @@ export default function SettingsPaymentsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Stripe Card */}
-          <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+          <Card className="border-border/20 rounded-lg bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
             <CardHeader className="border-b border-border/20 pb-4.5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-[#14b8a6]/10 text-[#14b8a6]">
+                <div className="p-2.5 rounded-md bg-[#14b8a6]/10 text-[#14b8a6]">
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div>
@@ -112,7 +112,7 @@ export default function SettingsPaymentsPage() {
                   value={gateways.stripe.publishableKey}
                   onChange={(e) => setGateways({ ...gateways, stripe: { ...gateways.stripe, publishableKey: e.target.value } })}
                   placeholder="pk_live_..."
-                  className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11 font-mono text-sm"
+                  className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11 font-mono text-sm"
                   disabled={!gateways.stripe.enabled}
                 />
               </div>
@@ -124,7 +124,7 @@ export default function SettingsPaymentsPage() {
                   value={gateways.stripe.secretKey}
                   onChange={(e) => setGateways({ ...gateways, stripe: { ...gateways.stripe, secretKey: e.target.value } })}
                   placeholder="sk_live_..."
-                  className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11 font-mono text-sm"
+                  className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11 font-mono text-sm"
                   disabled={!gateways.stripe.enabled}
                 />
               </div>
@@ -132,10 +132,10 @@ export default function SettingsPaymentsPage() {
           </Card>
 
           {/* Apple Pay Card */}
-          <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+          <Card className="border-border/20 rounded-lg bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
             <CardHeader className="border-b border-border/20 pb-4.5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-[#14b8a6]/10 text-[#14b8a6]">
+                <div className="p-2.5 rounded-md bg-[#14b8a6]/10 text-[#14b8a6]">
                   <Smartphone className="h-5 w-5" />
                 </div>
                 <div>
@@ -164,7 +164,7 @@ export default function SettingsPaymentsPage() {
                   value={gateways.applePay.merchantId}
                   onChange={(e) => setGateways({ ...gateways, applePay: { ...gateways.applePay, merchantId: e.target.value } })}
                   placeholder="merchant.com.yourdomain"
-                  className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                  className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   disabled={!gateways.applePay.enabled}
                 />
               </div>
@@ -172,10 +172,10 @@ export default function SettingsPaymentsPage() {
           </Card>
 
           {/* COD Card */}
-          <Card className="border-border/20 rounded-2xl bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
+          <Card className="border-border/20 rounded-lg bg-card/40 backdrop-blur-md hover:border-[#14b8a6]/20 transition-all duration-300 luxury-glow">
             <CardHeader className="border-b border-border/20 pb-4.5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-[#14b8a6]/10 text-[#14b8a6]">
+                <div className="p-2.5 rounded-md bg-[#14b8a6]/10 text-[#14b8a6]">
                   <Truck className="h-5 w-5" />
                 </div>
                 <div>
@@ -205,7 +205,7 @@ export default function SettingsPaymentsPage() {
                   step="0.01"
                   value={gateways.cod.extraFee}
                   onChange={(e) => setGateways({ ...gateways, cod: { ...gateways.cod, extraFee: Number(e.target.value) } })}
-                  className="rounded-xl border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
+                  className="rounded-md border-border/40 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/40 h-11"
                   disabled={!gateways.cod.enabled}
                 />
               </div>
@@ -215,7 +215,7 @@ export default function SettingsPaymentsPage() {
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="submit"
-              className="rounded-xl teal-gradient-bg text-black font-bold hover:opacity-95 shadow-md shadow-[#14b8a6]/15 h-11 px-6 cursor-pointer flex items-center gap-2 border border-[#14b8a6]/20 transition-all active:scale-[0.99]"
+              className="rounded-md teal-gradient-bg text-black font-bold hover:opacity-95 shadow-md shadow-[#14b8a6]/15 h-11 px-6 cursor-pointer flex items-center gap-2 border border-[#14b8a6]/20 transition-all active:scale-[0.99]"
             >
               <Save className="h-4.5 w-4.5" />
               Save Payment Gateways

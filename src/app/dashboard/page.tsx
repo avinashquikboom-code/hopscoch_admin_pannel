@@ -210,14 +210,14 @@ export default function DashboardPage() {
               transition={{ delay: index * 0.08 }}
               className="group"
             >
-              <Card className={cn("relative overflow-hidden border-border/30 hover:shadow-md hover:shadow-[#14b8a6]/2 hover:border-[#14b8a6]/20 transition-all duration-300 rounded-2xl bg-card/60 backdrop-blur-md", stat.borderColor)}>
+              <Card className={cn("relative overflow-hidden border-border/30 hover:shadow-md hover:shadow-[#14b8a6]/2 hover:border-[#14b8a6]/20 transition-all duration-300 rounded-lg bg-card/60 backdrop-blur-md", stat.borderColor)}>
                 {/* Micro glow effect */}
                 <div className={cn("absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br blur-xl opacity-20 transition-all group-hover:scale-150", stat.color)} />
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     {stat.title}
                   </CardTitle>
-                  <div className="p-2 rounded-xl bg-muted/50 text-[#14b8a6]">
+                  <div className="p-2 rounded-md bg-muted/50 text-[#14b8a6]">
                     <stat.icon className="h-4.5 w-4.5" />
                   </div>
                 </CardHeader>
@@ -249,13 +249,13 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.32 + index * 0.08 }}
             >
-              <Card className="border-border/30 rounded-2xl bg-card/60 backdrop-blur-md hover:border-border/50 transition-all">
+              <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md hover:border-border/50 transition-all">
                 <CardContent className="p-5 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{stat.title}</p>
                     <p className="text-2xl font-black text-foreground tracking-tight mt-1">{stat.value}</p>
                   </div>
-                  <div className={cn("p-2.5 rounded-xl", stat.bgColor)}>
+                  <div className={cn("p-2.5 rounded-md", stat.bgColor)}>
                     <stat.icon className={cn("h-5.5 w-5.5", stat.color)} />
                   </div>
                 </CardContent>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.6 }}
             className="lg:col-span-8"
           >
-            <Card className="border-border/30 rounded-2xl bg-card/60 backdrop-blur-md overflow-hidden">
+            <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b border-border/20 pb-4">
                 <div>
                   <CardTitle className="text-lg font-bold text-foreground">Revenue Analytics</CardTitle>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.68 }}
             className="lg:col-span-4"
           >
-            <Card className="border-border/30 rounded-2xl bg-card/60 backdrop-blur-md h-full flex flex-col justify-between">
+            <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md h-full flex flex-col justify-between">
               <CardHeader className="border-b border-border/20 pb-4">
                 <CardTitle className="text-lg font-bold text-foreground">Categories</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5 font-light">Product category distribution</p>
@@ -409,7 +409,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.76 }}
           >
-            <Card className="border-border/30 rounded-2xl bg-card/60 backdrop-blur-md">
+            <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md">
               <CardHeader className="border-b border-border/20 pb-4">
                 <CardTitle className="text-lg font-bold text-foreground">Top Performing Products</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5 font-light">Best seller items by sales count</p>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                 <div className="divide-y divide-border/20 space-y-1">
                   {topProducts.map((product) => (
                     <div key={product.name} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
-                      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#14b8a6]/10 flex items-center justify-center text-[#14b8a6] border border-[#14b8a6]/15">
+                      <div className="flex-shrink-0 w-11 h-11 rounded-md bg-[#14b8a6]/10 flex items-center justify-center text-[#14b8a6] border border-[#14b8a6]/15">
                         <Package className="h-5.5 w-5.5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -441,7 +441,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.84 }}
           >
-            <Card className="border-border/30 rounded-2xl bg-card/60 backdrop-blur-md">
+            <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md">
               <CardHeader className="border-b border-border/20 pb-4">
                 <CardTitle className="text-lg font-bold text-foreground">Recent Transactions</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5 font-light">Newly placed order logs</p>
