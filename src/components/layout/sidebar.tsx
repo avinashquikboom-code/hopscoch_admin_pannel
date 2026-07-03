@@ -19,7 +19,16 @@ import {
   Sparkles,
   CreditCard,
   Truck,
-  LogOut
+  LogOut,
+  MapPin,
+  Zap,
+  FileText,
+  RefreshCcw,
+  Receipt,
+  BarChart2,
+  Box,
+  Radio,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,6 +110,40 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         { name: 'Languages & Currency', href: '/settings/languages', icon: Languages },
         { name: 'Payments', href: '/settings/payments', icon: CreditCard },
         { name: 'Shipping', href: '/settings/shipping', icon: Truck },
+      ],
+    },
+    {
+      name: 'Shipping',
+      icon: Truck,
+      items: [
+        { name: 'Dashboard', href: '/shipping' },
+        { name: 'Partners', href: '/shipping/partners' },
+        { name: 'Charges', href: '/shipping/charges' },
+        { name: 'Zones', href: '/shipping/zones' },
+        { name: 'Delivery Methods', href: '/shipping/delivery-methods' },
+        { name: 'Pincode', href: '/shipping/pincode', icon: MapPin },
+        { name: 'Free Shipping', href: '/shipping/free-shipping', icon: Zap },
+        { name: 'COD Settings', href: '/shipping/cod' },
+        { name: 'Packaging', href: '/shipping/packaging', icon: Box },
+        { name: 'Tracking', href: '/shipping/tracking', icon: Radio },
+        { name: 'Reports', href: '/shipping/reports', icon: BarChart2 },
+        { name: 'Settings', href: '/shipping/settings', icon: SlidersHorizontal },
+      ],
+    },
+    {
+      name: 'Payments',
+      icon: CreditCard,
+      items: [
+        { name: 'Dashboard', href: '/payments' },
+        { name: 'Transactions', href: '/payments/transactions' },
+        { name: 'Payment Methods', href: '/payments/methods' },
+        { name: 'Gateway', href: '/payments/gateway' },
+        { name: 'Refunds', href: '/payments/refunds', icon: RefreshCcw },
+        { name: 'Invoices', href: '/payments/invoices', icon: FileText },
+        { name: 'Taxes', href: '/payments/taxes', icon: Receipt },
+        { name: 'Reports', href: '/payments/reports', icon: BarChart2 },
+        { name: 'Analytics', href: '/payments/analytics', icon: BarChart3 },
+        { name: 'Settings', href: '/payments/settings', icon: SlidersHorizontal },
       ],
     },
   ];

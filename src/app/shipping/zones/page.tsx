@@ -1,0 +1,132 @@
+'use client';
+
+import { useState } from 'react';
+import { AdminLayout } from '@/components/layout/admin-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetTrigger } from '@/components/ui/sheet';
+import { Plus, Search, Edit, Trash2, Globe } from 'lucide-react';
+
+const initialZones = [
+  { id: '1', name: 'Zone A — Metro', country: 'India', states: 'MH, DL, KA, TN', cities: 'Mumbai, Delhi, Bangalore, Chennai', pincodes: '400001-400099, 110001-110099', status: true },
+  { id: '2', name: 'Zone B — Tier 1', country: 'India', states: 'GJ, RJ, UP', cities: 'Ahmedabad, Jaipur, Lucknow', pincodes: '380001-380099, 302001-302099', status: true },
+  { id: '3', name: 'Zone C — Tier 2', country: 'India', states: 'BR, JH, OR', cities: 'Patna, Ranchi, Bhubaneswar', pincodes: '800001-800099', status: true },
+  { id: '4', name: 'Zone D — Remote', country: 'India', states: 'NE States, J&K', cities: 'Remote Areas', pincodes: 'Various', status: false },
+  { id: '5', name: 'International — SAARC', country: 'Global', states: 'BD, LK, NP, PK', cities: 'Dhaka, Colombo, Kathmandu', pincodes: 'N/A', status: false },
+];
+
+export default function ShippingZonesPage() {
+  const [zones, setZones] = useState(initialZones);
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', country: 'India', states: '', cities: '', pincodes: '' });
+
+  const filtered = zones.filter(z =>
+    z.name.toLowerCase().includes(search.toLowerCase()) || z.country.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    setZones(zs => [...zs, { id: String(zs.length + 1), ...form, status: true }]);
+    setForm({ name: '', country: 'India', states: '', cities: '', pincodes: '' });
+    setOpen(false);
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-8 pb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Zones</h1>
+            <p className="text-muted-foreground mt-1 font-light">Define geographic zones for shipping rate assignments.</p>
+          </div>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger render={
+              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
+                <Plus className="h-4 w-4" /> Add Zone
+              </Button>
+            } />
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Add Shipping Zone</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">Define a new geographic delivery zone.</SheetDescription>
+              </SheetHeader>
+              <form onSubmit={handleAdd} className="space-y-5 py-4 px-4">
+                {[
+                  { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
+                  { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
+                  { key: 'states', label: 'States / Regions', placeholder: 'e.g. MH, DL, KA', required: false },
+                  { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
+                  { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
+                ].map(f => (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label className="text-xs font-semibold">{f.label}</Label>
+                    <Input required={f.required} value={(form as Record<string, string>)[f.key]}
+                      onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                      placeholder={f.placeholder} className="h-10 rounded-md" />
+                  </div>
+                ))}
+                <SheetFooter className="pt-4">
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-md">Cancel</Button>
+                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">Save Zone</Button>
+                </SheetFooter>
+              </form>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        <div className="relative max-w-sm group">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Input placeholder="Search zones..." value={search} onChange={e => setSearch(e.target.value)} className="pl-11 h-10 rounded-md border-border/60" />
+        </div>
+
+        <Card className="border-border/40 rounded-lg bg-card">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    {['Zone Name', 'Country', 'States', 'Cities', 'Pincodes', 'Status', ''].map(h => (
+                      <TableHead key={h} className="text-xs font-bold uppercase tracking-wider">{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((z) => (
+                    <TableRow key={z.id} className="hover:bg-muted/10">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="font-semibold text-sm">{z.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{z.country}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">{z.states}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate">{z.cities}</TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground/80 max-w-[140px] truncate">{z.pincodes}</TableCell>
+                      <TableCell>
+                        <Badge className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold ${z.status ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+                          {z.status ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60"><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => setZones(z2 => z2.filter(x => x.id !== z.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+}
