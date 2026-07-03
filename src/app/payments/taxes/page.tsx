@@ -51,45 +51,47 @@ export default function TaxesPage() {
                 <Plus className="h-4 w-4" /> Add Tax Rule
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add Tax Rule</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">Create a new GST/tax configuration.</SheetDescription>
+            <SheetContent side="right" className="w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Add Tax Rule</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">Create a new GST/tax configuration.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-5 py-4 px-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Rule Name *</Label>
-                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. GST 5% — Apparel" className="h-10 rounded-md" />
+              <form onSubmit={handleAdd} className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Rule Name *</Label>
+                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. GST 5% — Apparel" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Category</Label>
-                  <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="h-10 rounded-md" />
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Category</Label>
+                  <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="h-11 rounded-lg" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Tax Rate (%)</Label>
-                    <Input type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-10 rounded-md" />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Tax Rate (%)</Label>
+                    <Input type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-11 rounded-lg" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">HSN Code</Label>
-                    <Input value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} placeholder="e.g. 6101" className="h-10 rounded-md" />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">HSN Code</Label>
+                    <Input value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} placeholder="e.g. 6101" className="h-11 rounded-lg" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Tax Type</Label>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Tax Type</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {['inclusive', 'exclusive'].map(t => (
                       <button type="button" key={t} onClick={() => setForm({ ...form, type: t })}
-                        className={`p-2.5 rounded-md border text-xs capitalize font-semibold transition-all ${form.type === t ? 'border-primary bg-primary/5 text-primary' : 'border-border/60 text-muted-foreground'}`}>
+                        className={`p-3 rounded-lg border text-sm capitalize font-semibold transition-all ${form.type === t ? 'border-primary bg-primary/5 text-primary' : 'border-border/60 text-muted-foreground'}`}>
                         {t}
                       </button>
                     ))}
                   </div>
                 </div>
-                <SheetFooter className="pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-md">Cancel</Button>
-                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                </SheetFooter>
+                <div className="pt-4 border-t border-border/40">
+                  <SheetFooter className="pt-4 gap-3 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
+                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
+                  </SheetFooter>
+                </div>
               </form>
             </SheetContent>
           </Sheet>

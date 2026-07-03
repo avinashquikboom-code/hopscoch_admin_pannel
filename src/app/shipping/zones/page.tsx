@@ -50,12 +50,12 @@ export default function ShippingZonesPage() {
                 <Plus className="h-4 w-4" /> Add Zone
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add Shipping Zone</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">Define a new geographic delivery zone.</SheetDescription>
+            <SheetContent side="right" className="w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Add Shipping Zone</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">Define a new geographic delivery zone.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-5 py-4 px-4">
+              <form onSubmit={handleAdd} className="space-y-6">
                 {[
                   { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
                   { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
@@ -63,17 +63,19 @@ export default function ShippingZonesPage() {
                   { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
                   { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
                 ].map(f => (
-                  <div key={f.key} className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{f.label}</Label>
+                  <div key={f.key} className="space-y-3">
+                    <Label className="text-sm font-semibold">{f.label}</Label>
                     <Input required={f.required} value={(form as Record<string, string>)[f.key]}
                       onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                      placeholder={f.placeholder} className="h-10 rounded-md" />
+                      placeholder={f.placeholder} className="h-11 rounded-lg" />
                   </div>
                 ))}
-                <SheetFooter className="pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-md">Cancel</Button>
-                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">Save Zone</Button>
-                </SheetFooter>
+                <div className="pt-4 border-t border-border/40">
+                  <SheetFooter className="pt-4 gap-3 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
+                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Zone</Button>
+                  </SheetFooter>
+                </div>
               </form>
             </SheetContent>
           </Sheet>

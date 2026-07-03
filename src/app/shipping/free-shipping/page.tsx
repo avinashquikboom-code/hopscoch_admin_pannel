@@ -52,39 +52,41 @@ export default function FreeShippingPage() {
                 <Plus className="h-4 w-4" /> Add Rule
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add Free Shipping Rule</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">Define when free shipping is applied.</SheetDescription>
+            <SheetContent side="right" className="w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Add Free Shipping Rule</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">Define when free shipping is applied.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-5 py-4 px-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Rule Name *</Label>
-                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Free on ₹999+" className="h-10 rounded-md" />
+              <form onSubmit={handleAdd} className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Rule Name *</Label>
+                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Free on ₹999+" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Rule Type</Label>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Rule Type</Label>
                   <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleType })}
-                    className="w-full h-10 rounded-md border border-border/60 bg-background px-3 text-sm focus:border-primary outline-none">
+                    className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary outline-none">
                     {Object.entries(ruleConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
                 {(form.type === 'min_order' || form.type === 'max_order' || form.type === 'festival') && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Minimum Order Value (₹)</Label>
-                    <Input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. 999" className="h-10 rounded-md" />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Minimum Order Value (₹)</Label>
+                    <Input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. 999" className="h-11 rounded-lg" />
                   </div>
                 )}
                 {form.type === 'coupon' && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Coupon Code</Label>
-                    <Input value={form.coupon} onChange={e => setForm({ ...form, coupon: e.target.value })} placeholder="e.g. FREESHIP" className="h-10 rounded-md uppercase" />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Coupon Code</Label>
+                    <Input value={form.coupon} onChange={e => setForm({ ...form, coupon: e.target.value })} placeholder="e.g. FREESHIP" className="h-11 rounded-lg uppercase" />
                   </div>
                 )}
-                <SheetFooter className="pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-md">Cancel</Button>
-                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                </SheetFooter>
+                <div className="pt-4 border-t border-border/40">
+                  <SheetFooter className="pt-4 gap-3 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
+                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
+                  </SheetFooter>
+                </div>
               </form>
             </SheetContent>
           </Sheet>

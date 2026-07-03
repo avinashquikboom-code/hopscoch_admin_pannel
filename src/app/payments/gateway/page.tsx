@@ -8,6 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Eye, EyeOff, Plus, Settings, CheckCircle2 } from 'lucide-react';
 
 const gateways = [
@@ -34,9 +43,17 @@ const gateways = [
 export default function PaymentGatewayPage() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [active, setActive] = useState<Record<string, boolean>>({ razorpay: true, stripe: false, paypal: false });
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', apiKey: '', secret: '', webhook: '' });
 
   const toggle = (id: string) => setActive(a => ({ ...a, [id]: !a[id] }));
   const toggleSecret = (id: string) => setShowSecrets(s => ({ ...s, [id]: !s[id] }));
+
+  const handleAddGateway = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSheetOpen(false);
+    setForm({ name: '', apiKey: '', secret: '', webhook: '' });
+  };
 
   return (
     <AdminLayout>
@@ -46,9 +63,74 @@ export default function PaymentGatewayPage() {
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Payment Gateway</h1>
             <p className="text-muted-foreground mt-1 font-light">Configure and manage payment gateway integrations.</p>
           </div>
-          <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-            <Plus className="h-4 w-4" /> Add Gateway
-          </Button>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger render={
+              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
+                <Plus className="h-4 w-4" /> Add Gateway
+              </Button>
+            } />
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Add Payment Gateway</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground">
+                  Configure a new payment gateway integration.
+                </SheetDescription>
+              </SheetHeader>
+              <form onSubmit={handleAddGateway} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-xs font-semibold">Gateway Name</Label>
+                  <Input
+                    id="name"
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="e.g. Razorpay"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="apiKey" className="text-xs font-semibold">API Key</Label>
+                  <Input
+                    id="apiKey"
+                    required
+                    value={form.apiKey}
+                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                    placeholder="e.g. rzp_live_xxxxxxxxxx"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="secret" className="text-xs font-semibold">Secret Key</Label>
+                  <Input
+                    id="secret"
+                    required
+                    value={form.secret}
+                    onChange={(e) => setForm({ ...form, secret: e.target.value })}
+                    placeholder="e.g. sk_live_xxxxxxxxxx"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="webhook" className="text-xs font-semibold">Webhook URL</Label>
+                  <Input
+                    id="webhook"
+                    value={form.webhook}
+                    onChange={(e) => setForm({ ...form, webhook: e.target.value })}
+                    placeholder="e.g. https://yourdomain.com/api/gateway"
+                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                  />
+                </div>
+                <SheetFooter className="pt-4 gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-md">
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">
+                    Add Gateway
+                  </Button>
+                </SheetFooter>
+              </form>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

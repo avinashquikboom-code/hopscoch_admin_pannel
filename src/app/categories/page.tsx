@@ -33,17 +33,24 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Edit,
+  Trash2,
   Eye,
   ChevronRight,
   ChevronDown,
   Layers,
-  FolderOpen
+  FolderOpen,
+  Tag,
+  Hash,
+  AlignLeft,
+  FolderTree,
+  Globe,
+  Info,
+  Sparkles
 } from 'lucide-react';
 
 const categories = [
@@ -181,45 +188,151 @@ export default function CategoriesPage() {
                 <Plus className="h-4 w-4" /> Add Category
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add New Category</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
-                  Create a new product category
+            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
+              <SheetHeader className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <SheetTitle className="text-2xl font-bold">Add New Category</SheetTitle>
+                </div>
+                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
+                  Create a new product category to organize your store inventory
                 </SheetDescription>
               </SheetHeader>
-              <div className="space-y-4 py-4 px-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-xs font-semibold">Category Name *</Label>
-                  <Input id="name" placeholder="Enter category name" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
+
+              <div className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                        Category Name <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="name" 
+                          placeholder="e.g., Summer Collection" 
+                          className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
+                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                          Slug
+                        </Label>
+                        <Input 
+                          id="slug" 
+                          placeholder="summer-collection" 
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="order" className="text-sm font-medium flex items-center gap-2">
+                          <span className="text-muted-foreground">#</span>
+                          Order
+                        </Label>
+                        <Input 
+                          id="order" 
+                          type="number" 
+                          defaultValue="1"
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
+                        <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                        Description
+                      </Label>
+                      <Textarea 
+                        id="description" 
+                        placeholder="Describe this category to help customers understand what products it contains..." 
+                        rows={4} 
+                        className="rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all" 
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        A good description helps with SEO and improves customer experience
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug" className="text-xs font-semibold">Slug</Label>
-                  <Input id="slug" placeholder="category-slug" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-xs font-semibold">Description</Label>
-                  <Textarea id="description" placeholder="Enter description" rows={3} className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="parent" className="text-xs font-semibold">Parent Category</Label>
-                  <select id="parent" className="w-full h-10 rounded-md border border-border/60 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none">
-                    <option value="">None (Root Category)</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2.5 pt-2">
-                  <Checkbox id="visible" defaultChecked className="rounded border-border/60 accent-primary h-4 w-4" />
-                  <Label htmlFor="visible" className="text-sm text-muted-foreground select-none cursor-pointer">Visible</Label>
+
+                <Separator className="bg-border/60" />
+
+                {/* Hierarchy Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FolderTree className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Hierarchy & Visibility</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="parent" className="text-sm font-medium flex items-center gap-2">
+                        <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
+                        Parent Category
+                      </Label>
+                      <select 
+                        id="parent" 
+                        className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      >
+                        <option value="">None (Root Category)</option>
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        Select a parent category to create a subcategory structure
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Checkbox 
+                            id="visible" 
+                            defaultChecked 
+                            className="rounded-md border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-5 w-5"
+                          />
+                          <div className="space-y-0.5">
+                            <Label htmlFor="visible" className="text-sm font-semibold cursor-pointer">
+                              Visible in store
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Show this category to customers on your storefront
+                            </p>
+                          </div>
+                        </div>
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Globe className="h-4 w-4 text-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <SheetFooter className="pt-4 flex gap-2 justify-end">
-                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-md">
+
+              <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)} 
+                  className="rounded-lg h-10 px-6 font-medium"
+                >
                   Cancel
                 </Button>
-                <Button className="rounded-md">
+                <Button className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20">
                   Save Category
                 </Button>
               </SheetFooter>
@@ -326,11 +439,11 @@ export default function CategoriesPage() {
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                            <DropdownMenuTrigger render={
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                 <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                              </div>
+                            } />
                             <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                               <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                 <Eye className="h-3.5 w-3.5" /> View
@@ -360,11 +473,11 @@ export default function CategoriesPage() {
                             </TableCell>
                             <TableCell>
                               <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                                <DropdownMenuTrigger render={
+                                  <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                     <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                  </div>
+                                } />
                                 <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                   <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                     <Edit className="h-3.5 w-3.5" /> Edit

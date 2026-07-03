@@ -169,26 +169,26 @@ export default function NotificationsPage() {
                 Send Notification
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Send New Notification</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
+            <SheetContent side="right" className="w-[550px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Send New Notification</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">
                   Compose and send a push notification to users.
                 </SheetDescription>
               </SheetHeader>
-              <Separator className="my-2" />
-              <div className="space-y-4 py-4 px-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="title" className="text-xs font-semibold">Title *</Label>
-                  <Input id="title" placeholder="Summer Sale is Live!" className="h-9 rounded-lg" />
+              <Separator className="mb-6" />
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="title" className="text-sm font-semibold">Title *</Label>
+                  <Input id="title" placeholder="Summer Sale is Live!" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="type" className="text-xs font-semibold">Notification Type *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="type" className="text-sm font-semibold">Notification Type *</Label>
                   <Select>
-                    <SelectTrigger className="h-9 rounded-lg">
+                    <SelectTrigger className="h-11 rounded-lg">
                       <SelectValue placeholder="Select a type..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-md">
+                    <SelectContent className="rounded-lg">
                       {notificationTypes.map((type) => (
                         <SelectItem key={type.value} value={type.value} className="rounded-lg">
                           {type.label}
@@ -197,48 +197,53 @@ export default function NotificationsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="message" className="text-xs font-semibold">Message *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="message" className="text-sm font-semibold">Message *</Label>
                   <Textarea id="message" placeholder="Write your notification message..." rows={3} className="rounded-lg resize-none" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="link" className="text-xs font-semibold">Link URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Input id="link" placeholder="https://example.com/page" className="h-9 rounded-lg" />
+                <div className="space-y-3">
+                  <Label htmlFor="link" className="text-sm font-semibold">Link URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input id="link" placeholder="https://example.com/page" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Image <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <div className="border-2 border-dashed border-border/60 rounded-md p-4 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                    <p className="text-xs text-muted-foreground">Click to upload notification image</p>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Image <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <div className="border-2 border-dashed border-border/60 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload notification image</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-muted/30 rounded-md px-3 py-2.5">
-                  <Checkbox
-                    id="sendToAll"
-                    checked={sendToAll}
-                    onCheckedChange={(checked) => setSendToAll(checked as boolean)}
-                    className="rounded"
-                  />
-                  <Label htmlFor="sendToAll" className="text-sm text-foreground cursor-pointer select-none">
-                    Send to all users
-                  </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border/40">
+                    <Checkbox
+                      id="sendToAll"
+                      checked={sendToAll}
+                      onCheckedChange={(checked) => setSendToAll(checked as boolean)}
+                      className="h-5 w-5"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="sendToAll" className="text-sm font-semibold cursor-pointer">Send to All Users</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Broadcast this notification to all registered users</p>
+                    </div>
+                  </div>
                 </div>
                 {!sendToAll && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="targetUsers" className="text-xs font-semibold">Target Users</Label>
-                    <Input id="targetUsers" placeholder="Enter user IDs separated by comma..." className="h-9 rounded-lg" />
+                  <div className="space-y-3">
+                    <Label htmlFor="targetUsers" className="text-sm font-semibold">Target Users</Label>
+                    <Input id="targetUsers" placeholder="Enter user IDs separated by comma..." className="h-11 rounded-lg" />
                   </div>
                 )}
+                <div className="pt-4 border-t border-border/40">
+                  <SheetFooter className="gap-3 justify-end pt-4">
+                    <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
+                      Cancel
+                    </Button>
+                    <Button className="rounded-lg gap-2 bg-primary text-white hover:bg-primary/95">
+                      <Send className="h-4 w-4" />
+                      Send Notification
+                    </Button>
+                  </SheetFooter>
+                </div>
               </div>
-              <SheetFooter className="gap-2 pt-2">
-                <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
-                  Cancel
-                </Button>
-                <Button className="rounded-lg gap-2">
-                  <Send className="h-4 w-4" />
-                  Send Notification
-                </Button>
-              </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
@@ -352,11 +357,11 @@ export default function NotificationsPage() {
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                            <DropdownMenuTrigger render={
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                 <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                              </div>
+                            } />
                             <DropdownMenuContent align="end" className="w-40 p-1 rounded-md border-border/50">
                               {!notification.isSent && (
                                 <>

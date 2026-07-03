@@ -97,6 +97,28 @@
   --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.05), 0 2px 6px -1px rgb(0 0 0 / 0.03);
   --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.06), 0 4px 12px -2px rgb(0 0 0 / 0.04);
   --shadow-xl: 0 24px 36px -8px rgb(0 0 0 / 0.08), 0 8px 18px -4px rgb(0 0 0 / 0.04);
+  
+  /* Typography Scale */
+  --font-size-display: 48px;
+  --font-size-hero-title: 40px;
+  --font-size-page-title: 32px;
+  --font-size-section-title: 24px;
+  --font-size-card-title: 20px;
+  --font-size-product-name: 18px;
+  --font-size-body: 16px;
+  --font-size-button-text: 16px;
+  --font-size-secondary-text: 14px;
+  --font-size-sidebar: 14px;
+  --font-size-table-header: 14px;
+  --font-size-table-content: 14px;
+  --font-size-input-text: 14px;
+  --font-size-caption: 12px;
+  --font-size-badge: 12px;
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 }
 
 .dark {

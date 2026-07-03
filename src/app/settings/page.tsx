@@ -32,16 +32,14 @@ export default function SettingsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your store settings</p>
+          <h1 className="text-3xl font-semibold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-1 font-normal">Manage your store settings</p>
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="store">Store</TabsTrigger>
-            <TabsTrigger value="payment">Payment</TabsTrigger>
-            <TabsTrigger value="shipping">Shipping</TabsTrigger>
             <TabsTrigger value="notification">Notifications</TabsTrigger>
             <TabsTrigger value="theme">Theme</TabsTrigger>
           </TabsList>
@@ -49,8 +47,8 @@ export default function SettingsPage() {
           <TabsContent value="general">
             <Card>
               <CardHeader>
-                <CardTitle>General Settings</CardTitle>
-                <CardDescription>Configure general store settings</CardDescription>
+                <CardTitle className="font-semibold">General Settings</CardTitle>
+                <CardDescription className="font-normal">Configure general store settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -129,8 +127,8 @@ export default function SettingsPage() {
           <TabsContent value="store">
             <Card>
               <CardHeader>
-                <CardTitle>Store Information</CardTitle>
-                <CardDescription>Manage store branding and identity</CardDescription>
+                <CardTitle className="font-semibold">Store Information</CardTitle>
+                <CardDescription className="font-normal">Manage store branding and identity</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,116 +174,11 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payment">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Settings</CardTitle>
-                <CardDescription>Configure payment methods</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Credit Card</p>
-                        <p className="text-sm text-muted-foreground">Visa, MasterCard, Amex</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Store className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">PayPal</p>
-                        <p className="text-sm text-muted-foreground">Pay with PayPal</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Globe className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Stripe</p>
-                        <p className="text-sm text-muted-foreground">Stripe payments</p>
-                      </div>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="stripeKey">Stripe API Key</Label>
-                  <Input id="stripeKey" type="password" placeholder="Enter Stripe API key" />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="shipping">
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Settings</CardTitle>
-                <CardDescription>Configure shipping options</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="freeShipping">Free Shipping Threshold</Label>
-                  <Input id="freeShipping" type="number" defaultValue="100" />
-                  <p className="text-sm text-muted-foreground">Orders above this amount get free shipping</p>
-                </div>
-
-                <div className="space-y-4">
-                  <Label>Shipping Rates</Label>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-4">
-                      <Input placeholder="Region" defaultValue="Domestic" />
-                      <Input type="number" placeholder="Rate" defaultValue="9.99" />
-                      <Button variant="outline" size="icon">
-                        <Truck className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <Input placeholder="Region" defaultValue="International" />
-                      <Input type="number" placeholder="Rate" defaultValue="24.99" />
-                      <Button variant="outline" size="icon">
-                        <Truck className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="processingTime">Processing Time</Label>
-                  <Input id="processingTime" defaultValue="1-2 business days" />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="notification">
             <Card>
               <CardHeader>
-                <CardTitle>Notification Settings</CardTitle>
-                <CardDescription>Configure notification preferences</CardDescription>
+                <CardTitle className="font-semibold">Notification Settings</CardTitle>
+                <CardDescription className="font-normal">Configure notification preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -293,8 +186,8 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <Bell className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">New Order Notifications</p>
-                        <p className="text-sm text-muted-foreground">Get notified when new orders are placed</p>
+                        <p className="font-semibold">New Order Notifications</p>
+                        <p className="text-sm text-muted-foreground font-normal">Get notified when new orders are placed</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
@@ -304,8 +197,8 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <Bell className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">Low Stock Alerts</p>
-                        <p className="text-sm text-muted-foreground">Get notified when products are low on stock</p>
+                        <p className="font-semibold">Low Stock Alerts</p>
+                        <p className="text-sm text-muted-foreground font-normal">Get notified when products are low on stock</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
@@ -315,8 +208,8 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <Bell className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">Customer Reviews</p>
-                        <p className="text-sm text-muted-foreground">Get notified when new reviews are submitted</p>
+                        <p className="font-semibold">Customer Reviews</p>
+                        <p className="text-sm text-muted-foreground font-normal">Get notified when new reviews are submitted</p>
                       </div>
                     </div>
                     <Switch />
@@ -336,8 +229,8 @@ export default function SettingsPage() {
           <TabsContent value="theme">
             <Card>
               <CardHeader>
-                <CardTitle>Theme Settings</CardTitle>
-                <CardDescription>Customize the appearance</CardDescription>
+                <CardTitle className="font-semibold">Theme Settings</CardTitle>
+                <CardDescription className="font-normal">Customize the appearance</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">

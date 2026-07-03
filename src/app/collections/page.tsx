@@ -53,6 +53,15 @@ import {
   Package,
   Layers,
   CheckCircle2,
+  Sparkles,
+  Tag,
+  Hash,
+  AlignLeft,
+  Type,
+  Calendar as CalendarIcon,
+  Image as ImageIcon,
+  Globe,
+  Info,
 } from 'lucide-react';
 
 const collections = [
@@ -175,74 +184,205 @@ export default function CollectionsPage() {
                 Add Collection
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add New Collection</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
-                  Create a curated collection of products.
+            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
+              <SheetHeader className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <SheetTitle className="text-2xl font-bold">Add New Collection</SheetTitle>
+                </div>
+                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
+                  Create a curated collection to showcase products
                 </SheetDescription>
               </SheetHeader>
-              <Separator className="my-2" />
-              <div className="space-y-4 py-4 px-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-xs font-semibold">Collection Name *</Label>
-                    <Input id="name" placeholder="Summer Collection" className="h-9 rounded-lg" />
+
+              <div className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="slug" className="text-xs font-semibold">Slug</Label>
-                    <Input id="slug" placeholder="summer-collection" className="h-9 rounded-lg" />
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                          Collection Name <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="name"
+                            placeholder="e.g., Summer Collection"
+                            className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
+                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                          Slug
+                        </Label>
+                        <Input
+                          id="slug"
+                          placeholder="summer-collection"
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="type" className="text-sm font-medium flex items-center gap-2">
+                        <Type className="h-3.5 w-3.5 text-muted-foreground" />
+                        Collection Type <span className="text-destructive">*</span>
+                      </Label>
+                      <Select>
+                        <SelectTrigger className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                          <SelectValue placeholder="Select a type..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-lg">
+                          {collectionTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value} className="rounded-lg">
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
+                        <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                        Description
+                      </Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Brief description of this collection and its theme..."
+                        rows={4}
+                        className="rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Help customers understand what makes this collection special
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="type" className="text-xs font-semibold">Collection Type *</Label>
-                  <Select>
-                    <SelectTrigger className="h-9 rounded-lg">
-                      <SelectValue placeholder="Select a type..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-md">
-                      {collectionTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value} className="rounded-lg">
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="description" className="text-xs font-semibold">Description</Label>
-                  <Textarea id="description" placeholder="Brief description..." rows={2} className="rounded-lg resize-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="startDate" className="text-xs font-semibold">Start Date</Label>
-                    <Input id="startDate" type="date" className="h-9 rounded-lg" />
+
+                <Separator className="bg-border/60" />
+
+                {/* Schedule Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarIcon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Schedule</h3>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="endDate" className="text-xs font-semibold">End Date</Label>
-                    <Input id="endDate" type="date" className="h-9 rounded-lg" />
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
+                          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          Start Date
+                        </Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="endDate" className="text-sm font-medium flex items-center gap-2">
+                          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          End Date
+                        </Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty for always-available collections
+                    </p>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Cover Image</Label>
-                  <div className="border-2 border-dashed border-border/60 rounded-md p-5 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1.5" />
-                    <p className="text-xs text-muted-foreground">Click to upload cover image</p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">PNG, JPG, WebP up to 5MB</p>
+
+                <Separator className="bg-border/60" />
+
+                {/* Visual Assets Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Visual Assets</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        Cover Image
+                      </Label>
+                      <div className="border-2 border-dashed border-border/60 rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
+                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                          <Upload className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">Click to upload cover image</p>
+                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP up to 5MB</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-muted/30 rounded-md px-3 py-2.5">
-                  <Checkbox id="active" defaultChecked className="rounded" />
-                  <Label htmlFor="active" className="text-sm text-foreground cursor-pointer select-none">
-                    Mark as Active
-                  </Label>
+
+                <Separator className="bg-border/60" />
+
+                {/* Visibility Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Visibility</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Checkbox
+                            id="active"
+                            defaultChecked
+                            className="rounded-md border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-5 w-5"
+                          />
+                          <div className="space-y-0.5">
+                            <Label htmlFor="active" className="text-sm font-semibold cursor-pointer">
+                              Active Collection
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Show this collection on your storefront
+                            </p>
+                          </div>
+                        </div>
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Globe className="h-4 w-4 text-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <SheetFooter className="gap-2 pt-2">
-                <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
+
+              <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="rounded-lg h-10 px-6 font-medium"
+                >
                   Cancel
                 </Button>
-                <Button className="rounded-lg">Save Collection</Button>
+                <Button className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20">
+                  Save Collection
+                </Button>
               </SheetFooter>
             </SheetContent>
           </Sheet>
@@ -351,11 +491,11 @@ export default function CollectionsPage() {
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                            <DropdownMenuTrigger render={
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                 <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                              </div>
+                            } />
                             <DropdownMenuContent align="end" className="w-36 p-1 rounded-md border-border/50">
                               <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
                                 <Eye className="h-3.5 w-3.5" /> View

@@ -61,28 +61,30 @@ export default function ShippingPartnersPage() {
                 <Plus className="h-4 w-4" /> Add Partner
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add Shipping Partner</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">Configure a new courier integration.</SheetDescription>
+            <SheetContent side="right" className="w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Add Shipping Partner</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">Configure a new courier integration.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-5 py-4 px-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Partner Name *</Label>
-                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Delhivery" className="h-10 rounded-md" />
+              <form onSubmit={handleAdd} className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Partner Name *</Label>
+                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Delhivery" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Estimated Delivery Days</Label>
-                  <Input value={form.days} onChange={e => setForm({ ...form, days: e.target.value })} placeholder="e.g. 2-4" className="h-10 rounded-md" />
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Estimated Delivery Days</Label>
+                  <Input value={form.days} onChange={e => setForm({ ...form, days: e.target.value })} placeholder="e.g. 2-4" className="h-11 rounded-lg" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Priority (1 = highest)</Label>
-                  <Input type="number" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} placeholder="e.g. 1" className="h-10 rounded-md" />
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Priority (1 = highest)</Label>
+                  <Input type="number" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} placeholder="e.g. 1" className="h-11 rounded-lg" />
                 </div>
-                <SheetFooter className="pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-md">Cancel</Button>
-                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95">Save Partner</Button>
-                </SheetFooter>
+                <div className="pt-4 border-t border-border/40">
+                  <SheetFooter className="pt-4 gap-3 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-lg">Cancel</Button>
+                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Partner</Button>
+                  </SheetFooter>
+                </div>
               </form>
             </SheetContent>
           </Sheet>

@@ -135,27 +135,27 @@ export default function BannersPage() {
                 Add Banner
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Add New Banner</SheetTitle>
-                <SheetDescription>
-                  Create a new promotional banner
+            <SheetContent side="right" className="w-full sm:max-w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-semibold">Add New Banner</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground font-normal">
+                  Create a new promotional banner for your store
                 </SheetDescription>
               </SheetHeader>
-              <div className="space-y-4 py-4 px-4">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Banner Title *</Label>
-                  <Input id="title" placeholder="Enter banner title" />
+                  <Label htmlFor="title" className="text-sm font-medium">Banner Title *</Label>
+                  <Input id="title" placeholder="e.g., Summer Sale 2024" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type">Banner Type *</Label>
+                  <Label htmlFor="type" className="text-sm font-medium">Banner Type *</Label>
                   <Select>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       {bannerTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
+                        <SelectItem key={type.value} value={type.value} className="rounded-md">
                           {type.label}
                         </SelectItem>
                       ))}
@@ -163,49 +163,54 @@ export default function BannersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="link">Link URL</Label>
-                  <Input id="link" placeholder="https://example.com/page" />
+                  <Label htmlFor="link" className="text-sm font-medium">Link URL</Label>
+                  <Input id="link" placeholder="https://example.com/page" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input id="startDate" type="date" />
+                    <Label htmlFor="startDate" className="text-sm font-medium">Start Date</Label>
+                    <Input id="startDate" type="date" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input id="endDate" type="date" />
+                    <Label htmlFor="endDate" className="text-sm font-medium">End Date</Label>
+                    <Input id="endDate" type="date" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
-                  <Input id="position" type="number" placeholder="1" />
+                  <Label htmlFor="position" className="text-sm font-medium">Position</Label>
+                  <Input id="position" type="number" placeholder="1" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image">Banner Image *</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <Label htmlFor="image" className="text-sm font-medium">Banner Image *</Label>
+                  <div className="border-2 border-dashed border-border/60 rounded-md p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
                     <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">Click to upload image</p>
-                    <p className="text-xs text-muted-foreground mt-1">Recommended: 1920x600px</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Recommended: 1920x600px</p>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="mobileImage">Mobile Image</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <Label htmlFor="mobileImage" className="text-sm font-medium">Mobile Image</Label>
+                  <div className="border-2 border-dashed border-border/60 rounded-md p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
                     <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">Click to upload mobile image</p>
-                    <p className="text-xs text-muted-foreground mt-1">Recommended: 600x400px</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Recommended: 600x400px</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="active" defaultChecked />
-                  <Label htmlFor="active">Active</Label>
+                <div className="pt-4 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="active" defaultChecked className="rounded border-border/60 accent-primary h-5 w-5" />
+                      <Label htmlFor="active" className="text-sm font-medium cursor-pointer">Active Banner</Label>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Show on site</span>
+                  </div>
                 </div>
               </div>
-              <SheetFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <SheetFooter className="pt-6 mt-6 border-t border-border/60 flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-md h-10 px-6">
                   Cancel
                 </Button>
-                <Button className="bg-primary hover:bg-primary-dark">
+                <Button className="rounded-md h-10 px-6 bg-primary hover:bg-primary-dark">
                   Save Banner
                 </Button>
               </SheetFooter>
@@ -351,11 +356,11 @@ export default function BannersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="icon">
+                          <DropdownMenuTrigger render={
+                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                            </div>
+                          } />
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Eye className="mr-2 h-4 w-4" />

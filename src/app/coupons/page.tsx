@@ -128,22 +128,22 @@ export default function CouponsPage() {
                 Create Coupon
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Create New Coupon</SheetTitle>
-                <SheetDescription>
-                  Create a new discount coupon
+            <SheetContent side="right" className="w-full sm:max-w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-semibold">Create New Coupon</SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground font-normal">
+                  Create a new discount coupon for your customers
                 </SheetDescription>
               </SheetHeader>
-              <div className="space-y-4 py-4 px-4">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Coupon Code *</Label>
-                  <Input id="code" placeholder="Enter coupon code" />
+                  <Label htmlFor="code" className="text-sm font-medium">Coupon Code *</Label>
+                  <Input id="code" placeholder="e.g., SUMMER20" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type">Discount Type *</Label>
+                  <Label htmlFor="type" className="text-sm font-medium">Discount Type *</Label>
                   <Select>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -153,39 +153,44 @@ export default function CouponsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="value">Discount Value *</Label>
-                  <Input id="value" type="number" placeholder="Enter value" />
+                  <Label htmlFor="value" className="text-sm font-medium">Discount Value *</Label>
+                  <Input id="value" type="number" placeholder="Enter value" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="minimumOrder">Minimum Order</Label>
-                    <Input id="minimumOrder" type="number" placeholder="0" />
+                    <Label htmlFor="minimumOrder" className="text-sm font-medium">Minimum Order</Label>
+                    <Input id="minimumOrder" type="number" placeholder="0" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="maximumDiscount">Maximum Discount</Label>
-                    <Input id="maximumDiscount" type="number" placeholder="No limit" />
+                    <Label htmlFor="maximumDiscount" className="text-sm font-medium">Maximum Discount</Label>
+                    <Input id="maximumDiscount" type="number" placeholder="No limit" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                    <Input id="expiryDate" type="date" />
+                    <Label htmlFor="expiryDate" className="text-sm font-medium">Expiry Date</Label>
+                    <Input id="expiryDate" type="date" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="usageLimit">Usage Limit</Label>
-                    <Input id="usageLimit" type="number" placeholder="Unlimited" />
+                    <Label htmlFor="usageLimit" className="text-sm font-medium">Usage Limit</Label>
+                    <Input id="usageLimit" type="number" placeholder="Unlimited" className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-11" />
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="active" defaultChecked />
-                  <Label htmlFor="active">Active</Label>
+                <div className="pt-4 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Checkbox id="active" defaultChecked className="rounded border-border/60 accent-primary h-5 w-5" />
+                      <Label htmlFor="active" className="text-sm font-medium cursor-pointer">Active Coupon</Label>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Available to use</span>
+                  </div>
                 </div>
               </div>
-              <SheetFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <SheetFooter className="pt-6 mt-6 border-t border-border/60 flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-md h-10 px-6">
                   Cancel
                 </Button>
-                <Button className="bg-primary hover:bg-primary-dark">
+                <Button className="rounded-md h-10 px-6 bg-primary hover:bg-primary-dark">
                   Create Coupon
                 </Button>
               </SheetFooter>
@@ -333,11 +338,11 @@ export default function CouponsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="icon">
+                          <DropdownMenuTrigger render={
+                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                            </div>
+                          } />
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Copy className="mr-2 h-4 w-4" />

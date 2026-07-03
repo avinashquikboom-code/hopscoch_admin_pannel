@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 {/* Micro glow effect */}
                 <div className={cn("absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br blur-xl opacity-20 transition-all group-hover:scale-150", stat.color)} />
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  <CardTitle className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
                     {stat.title}
                   </CardTitle>
                   <div className="p-2 rounded-md bg-muted/50 text-[#14b8a6]">
@@ -222,8 +222,8 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-1">
-                  <div className="text-3xl font-black text-foreground tracking-tight">{stat.value}</div>
-                  <div className="flex items-center mt-2.5 text-xs font-semibold">
+                  <div className="text-3xl font-bold text-foreground tracking-tight">{stat.value}</div>
+                  <div className="flex items-center mt-2.5 text-xs font-medium">
                     {stat.trend === 'up' ? (
                       <ArrowUpRight className="h-3.5 w-3.5 text-[#14b8a6] mr-1" />
                     ) : (
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                     <span className={stat.trend === 'up' ? 'text-[#14b8a6]' : 'text-rose-500'}>
                       {stat.change}
                     </span>
-                    <span className="text-muted-foreground ml-1.5 font-light">from last month</span>
+                    <span className="text-muted-foreground ml-1.5 font-normal">from last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -252,8 +252,8 @@ export default function DashboardPage() {
               <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md hover:border-border/50 transition-all">
                 <CardContent className="p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{stat.title}</p>
-                    <p className="text-2xl font-black text-foreground tracking-tight mt-1">{stat.value}</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">{stat.title}</p>
+                    <p className="text-2xl font-bold text-foreground tracking-tight mt-1">{stat.value}</p>
                   </div>
                   <div className={cn("p-2.5 rounded-md", stat.bgColor)}>
                     <stat.icon className={cn("h-5.5 w-5.5", stat.color)} />
@@ -276,10 +276,10 @@ export default function DashboardPage() {
             <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b border-border/20 pb-4">
                 <div>
-                  <CardTitle className="text-lg font-bold text-foreground">Revenue Analytics</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5 font-light">Historical monthly store statistics</p>
+                  <CardTitle className="text-lg font-semibold text-foreground">Revenue Analytics</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-normal">Historical monthly store statistics</p>
                 </div>
-                <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-3 text-xs font-medium">
                   <div className="flex items-center gap-1.5 font-medium text-foreground">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#14b8a6]" />
                     Revenue
@@ -349,8 +349,8 @@ export default function DashboardPage() {
           >
             <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md h-full flex flex-col justify-between">
               <CardHeader className="border-b border-border/20 pb-4">
-                <CardTitle className="text-lg font-bold text-foreground">Categories</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5 font-light">Product category distribution</p>
+                <CardTitle className="text-lg font-semibold text-foreground">Categories</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-normal">Product category distribution</p>
               </CardHeader>
               <CardContent className="pt-6 flex-1 flex flex-col justify-center">
                 <div className="w-full h-[200px] relative flex items-center justify-center">
@@ -380,8 +380,8 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                   {/* Center Text */}
                   <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-2xl font-black text-foreground">1,150</span>
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-[#14b8a6] shimmer-text">Total Sales</span>
+                    <span className="text-2xl font-bold text-foreground">1,150</span>
+                    <span className="text-[10px] uppercase font-semibold tracking-wider text-[#14b8a6] shimmer-text">Total Sales</span>
                   </div>
                 </div>
 
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-xs text-muted-foreground truncate font-medium">{item.name}</span>
+                      <span className="text-xs text-muted-foreground truncate font-normal">{item.name}</span>
                     </div>
                   ))}
                 </div>
@@ -411,8 +411,8 @@ export default function DashboardPage() {
           >
             <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md">
               <CardHeader className="border-b border-border/20 pb-4">
-                <CardTitle className="text-lg font-bold text-foreground">Top Performing Products</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5 font-light">Best seller items by sales count</p>
+                <CardTitle className="text-lg font-semibold text-foreground">Top Performing Products</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-normal">Best seller items by sales count</p>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="divide-y divide-border/20 space-y-1">
@@ -422,8 +422,8 @@ export default function DashboardPage() {
                         <Package className="h-5.5 w-5.5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-foreground truncate">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">{product.sales} sales units</p>
+                        <p className="font-semibold text-sm text-foreground truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground font-normal">{product.sales} sales units</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-sm text-[#14b8a6]">{product.revenue}</p>
@@ -443,23 +443,23 @@ export default function DashboardPage() {
           >
             <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md">
               <CardHeader className="border-b border-border/20 pb-4">
-                <CardTitle className="text-lg font-bold text-foreground">Recent Transactions</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5 font-light">Newly placed order logs</p>
+                <CardTitle className="text-lg font-semibold text-foreground">Recent Transactions</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5 font-normal">Newly placed order logs</p>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="divide-y divide-border/20 space-y-1">
                   {recentOrders.map((order) => (
                     <div key={order.id} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-foreground truncate">{order.customer}</p>
-                        <p className="text-xs text-muted-foreground">{order.id} • {order.date}</p>
+                        <p className="font-semibold text-sm text-foreground truncate">{order.customer}</p>
+                        <p className="text-xs text-muted-foreground font-normal">{order.id} • {order.date}</p>
                       </div>
                       <div className="text-right flex items-center gap-3">
                         <div>
                           <p className="font-bold text-sm text-[#14b8a6]">{order.amount}</p>
                         </div>
                         <div className={cn(
-                          "px-2.5 py-1 rounded-full text-xxs font-bold uppercase tracking-wider",
+                          "px-2.5 py-1 rounded-full text-xxs font-semibold uppercase tracking-wider",
                           order.status === 'Delivered' 
                             ? 'bg-[#14b8a6]/10 text-[#14b8a6] dark:text-[#14b8a6]'
                             : order.status === 'Processing'

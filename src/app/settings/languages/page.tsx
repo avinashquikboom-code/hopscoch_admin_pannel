@@ -166,66 +166,71 @@ export default function LanguagesAndCurrencyPage() {
                     <Plus className="h-4 w-4" /> Add Language
                   </Button>
                 } />
-                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="text-lg font-bold">Add Language</SheetTitle>
-                    <SheetDescription className="text-xs text-muted-foreground">
+                <SheetContent side="right" className="w-[500px] overflow-y-auto">
+                  <SheetHeader className="mb-6">
+                    <SheetTitle className="text-xl font-bold">Add Language</SheetTitle>
+                    <SheetDescription className="text-sm text-muted-foreground">
                       Configure a new language locale option for users.
                     </SheetDescription>
                   </SheetHeader>
-                  <form onSubmit={handleCreateLanguage} className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="langName" className="text-xs font-semibold">Language Name</Label>
+                  <form onSubmit={handleCreateLanguage} className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="langName" className="text-sm font-semibold">Language Name</Label>
                       <Input
                         id="langName"
                         required
                         value={langForm.name}
                         onChange={(e) => setLangForm({ ...langForm, name: e.target.value })}
                         placeholder="e.g. Italian"
-                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="langCode" className="text-xs font-semibold">Language Code (ISO)</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="langCode" className="text-sm font-semibold">Language Code (ISO)</Label>
                       <Input
                         id="langCode"
                         required
                         value={langForm.code}
                         onChange={(e) => setLangForm({ ...langForm, code: e.target.value })}
                         placeholder="e.g. it"
-                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="langFlag" className="text-xs font-semibold">Emoji Flag</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="langFlag" className="text-sm font-semibold">Emoji Flag</Label>
                       <Input
                         id="langFlag"
                         value={langForm.flag}
                         onChange={(e) => setLangForm({ ...langForm, flag: e.target.value })}
                         placeholder="e.g. 🇮🇹"
-                        className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
+                        className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40"
                       />
                     </div>
-                    <div className="flex items-center gap-2.5 pt-2">
-                      <input
-                        id="langDefault"
-                        type="checkbox"
-                        checked={langForm.isDefault}
-                        onChange={(e) => setLangForm({ ...langForm, isDefault: e.target.checked })}
-                        className="rounded border-border/60 accent-primary h-4 w-4"
-                      />
-                      <Label htmlFor="langDefault" className="text-sm text-muted-foreground select-none cursor-pointer">
-                        Set as default language
-                      </Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border/40">
+                        <input
+                          id="langDefault"
+                          type="checkbox"
+                          checked={langForm.isDefault}
+                          onChange={(e) => setLangForm({ ...langForm, isDefault: e.target.checked })}
+                          className="rounded border-border/60 accent-primary h-5 w-5"
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor="langDefault" className="text-sm font-semibold cursor-pointer">Set as default language</Label>
+                          <p className="text-xs text-muted-foreground mt-0.5">This will be the default language for new users</p>
+                        </div>
+                      </div>
                     </div>
-                    <SheetFooter className="pt-4 flex gap-2 justify-end">
-                      <Button type="button" variant="ghost" onClick={() => setIsLangDialogOpen(false)} className="rounded-md">
-                        Cancel
-                      </Button>
-                      <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
-                        Save Language
-                      </Button>
-                    </SheetFooter>
+                    <div className="pt-4 border-t border-border/40">
+                      <SheetFooter className="pt-4 gap-3 justify-end">
+                        <Button type="button" variant="ghost" onClick={() => setIsLangDialogOpen(false)} className="rounded-lg">
+                          Cancel
+                        </Button>
+                        <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">
+                          Save Language
+                        </Button>
+                      </SheetFooter>
+                    </div>
                   </form>
                 </SheetContent>
               </Sheet>
@@ -269,11 +274,11 @@ export default function LanguagesAndCurrencyPage() {
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
-                              <DropdownMenuTrigger>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                              <DropdownMenuTrigger render={
+                                <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                   <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
+                                </div>
+                              } />
                               <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit
@@ -425,11 +430,11 @@ export default function LanguagesAndCurrencyPage() {
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
-                              <DropdownMenuTrigger>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                              <DropdownMenuTrigger render={
+                                <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                   <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
+                                </div>
+                              } />
                               <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                                 <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                                   <Edit className="h-3.5 w-3.5" /> Edit

@@ -35,7 +35,7 @@ export default function NewProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [variants, setVariants] = useState([
-    { sku: '', price: '', stock: '', color: '', size: '' }
+    { sku: '', price: '', stock: '', color: '', size: '', material: '' }
   ]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +50,7 @@ export default function NewProductPage() {
   };
 
   const addVariant = () => {
-    setVariants([...variants, { sku: '', price: '', stock: '', color: '', size: '' }]);
+    setVariants([...variants, { sku: '', price: '', stock: '', color: '', size: '', material: '' }]);
   };
 
   const removeVariant = (index: number) => {
@@ -367,7 +367,7 @@ export default function NewProductPage() {
                           </Button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div className="space-y-2">
                           <Label>SKU</Label>
                           <Input
@@ -426,6 +426,18 @@ export default function NewProductPage() {
                             onChange={(e) => {
                               const newVariants = [...variants];
                               newVariants[index].size = e.target.value;
+                              setVariants(newVariants);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Material</Label>
+                          <Input
+                            placeholder="Material"
+                            value={variant.material}
+                            onChange={(e) => {
+                              const newVariants = [...variants];
+                              newVariants[index].material = e.target.value;
                               setVariants(newVariants);
                             }}
                           />

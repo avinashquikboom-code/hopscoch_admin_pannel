@@ -46,6 +46,12 @@ import {
   Package,
   TrendingUp,
   CheckCircle2,
+  Sparkles,
+  Tag,
+  Hash,
+  AlignLeft,
+  Crown,
+  Info,
 } from 'lucide-react';
 
 const brands = [
@@ -155,49 +161,145 @@ export default function BrandsPage() {
                 Add Brand
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add New Brand</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
-                  Create a new product brand for your catalog.
+            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
+              <SheetHeader className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <SheetTitle className="text-2xl font-bold">Add New Brand</SheetTitle>
+                </div>
+                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
+                  Create a new product brand to organize your catalog
                 </SheetDescription>
               </SheetHeader>
-              <Separator className="my-2" />
-              <div className="space-y-4 py-4 px-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-xs font-semibold">Brand Name *</Label>
-                    <Input id="name" placeholder="Aura Original" className="h-9 rounded-lg" />
+
+              <div className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="slug" className="text-xs font-semibold">Slug</Label>
-                    <Input id="slug" placeholder="aura-original" className="h-9 rounded-lg" />
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                          Brand Name <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="name"
+                            placeholder="e.g., Aura Original"
+                            className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
+                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                          Slug
+                        </Label>
+                        <Input
+                          id="slug"
+                          placeholder="aura-original"
+                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
+                        <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                        Description
+                      </Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Brief description of this brand and its products..."
+                        rows={4}
+                        className="rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        A good description helps customers understand your brand identity
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="description" className="text-xs font-semibold">Description</Label>
-                  <Textarea id="description" placeholder="Brief description of this brand..." rows={2} className="rounded-lg resize-none" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Logo</Label>
-                  <div className="border-2 border-dashed border-border/60 rounded-md p-5 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                    <Upload className="h-7 w-7 mx-auto text-muted-foreground mb-1.5" />
-                    <p className="text-xs text-muted-foreground">Click to upload or drag & drop</p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">PNG, JPG up to 2MB</p>
+
+                <Separator className="bg-border/60" />
+
+                {/* Brand Assets Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Upload className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Brand Assets</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                        Brand Logo
+                      </Label>
+                      <div className="border-2 border-dashed border-border/60 rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
+                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                          <Upload className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">Click to upload or drag & drop</p>
+                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2MB</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 pt-1">
-                  <Checkbox id="featured" className="rounded" />
-                  <Label htmlFor="featured" className="text-sm text-muted-foreground cursor-pointer select-none">
-                    Mark as Featured Brand
-                  </Label>
+
+                <Separator className="bg-border/60" />
+
+                {/* Display Settings Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Display Settings</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Checkbox
+                            id="featured"
+                            className="rounded-md border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-5 w-5"
+                          />
+                          <div className="space-y-0.5">
+                            <Label htmlFor="featured" className="text-sm font-semibold cursor-pointer">
+                              Featured Brand
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Display prominently on homepage and brand listings
+                            </p>
+                          </div>
+                        </div>
+                        <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                          <Star className="h-4 w-4 text-amber-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <SheetFooter className="gap-2 pt-2">
-                <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
+
+              <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="rounded-lg h-10 px-6 font-medium"
+                >
                   Cancel
                 </Button>
-                <Button className="rounded-lg">Save Brand</Button>
+                <Button className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20">
+                  Save Brand
+                </Button>
               </SheetFooter>
             </SheetContent>
           </Sheet>
@@ -305,11 +407,11 @@ export default function BrandsPage() {
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                          <DropdownMenuTrigger render={
+                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                            </div>
+                          } />
                           <DropdownMenuContent align="end" className="w-36 p-1 rounded-md border-border/50">
                             <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
                               <Eye className="h-3.5 w-3.5" /> View

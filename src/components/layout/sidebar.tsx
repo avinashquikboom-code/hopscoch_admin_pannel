@@ -29,6 +29,7 @@ import {
   Box,
   Radio,
   SlidersHorizontal,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,16 +105,6 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       ],
     },
     {
-      name: 'Settings',
-      icon: Settings,
-      items: [
-        { name: 'General', href: '/settings/general' },
-        { name: 'Languages & Currency', href: '/settings/languages', icon: Languages },
-        { name: 'Payments', href: '/settings/payments', icon: CreditCard },
-        { name: 'Shipping', href: '/settings/shipping', icon: Truck },
-      ],
-    },
-    {
       name: 'Shipping',
       icon: Truck,
       items: [
@@ -147,29 +138,36 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         { name: 'Settings', href: '/payments/settings', icon: SlidersHorizontal },
       ],
     },
+    {
+      name: 'Settings',
+      icon: Settings,
+      items: [
+        { name: 'Languages & Currency', href: '/settings/languages', icon: Languages },
+      ],
+    },
   ];
 
   return (
     <motion.aside
       initial={false}
-      animate={{ width: collapsed ? 76 : 260 }}
-      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-      className="fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border/40 backdrop-blur-md flex flex-col select-none"
+      animate={{ width: collapsed ? 70 : 250 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      className="fixed left-0 top-0 z-40 h-screen bg-background border-r border-border flex flex-col select-none"
     >
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-5 border-b border-sidebar-border/30 bg-sidebar/90">
+      <div className="flex h-16 items-center justify-between px-4 border-b border-border">
         <AnimatePresence mode="wait">
           {!collapsed ? (
             <motion.div
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              className="flex items-center gap-2.5"
+              className="flex items-center gap-2"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black">
-                <Sparkles className="h-3.5 w-3.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-xs font-black tracking-[0.2em] text-foreground uppercase shimmer-text">
+              <span className="text-sm font-bold text-foreground tracking-tight">
                 AURA COUTURE
               </span>
             </motion.div>
@@ -180,8 +178,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               exit={{ opacity: 0, scale: 0.8 }}
               className="mx-auto"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] to-[#0f766e] text-black">
-                <Sparkles className="h-3.5 w-3.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Sparkles className="h-4 w-4" />
               </div>
             </motion.div>
           )}
@@ -190,7 +188,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         {!collapsed && (
           <button
             onClick={onToggle}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-muted/65 hover:text-foreground transition-all cursor-pointer border border-transparent"
+            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -198,21 +196,18 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       </div>
 
       {/* Navigation List */}
-      <ScrollArea className="flex-1 px-3 py-5 space-y-3.5">
+      <ScrollArea className="flex-1 px-3 py-4 space-y-1">
         {/* Direct Link - Dashboard */}
-        <div className="space-y-1">
+        <div className="space-y-1 mb-4">
           <Link
             href="/dashboard"
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative',
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
               pathname === '/dashboard'
-                ? 'bg-[#14b8a6]/10 text-[#14b8a6] font-bold'
-                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
-            {pathname === '/dashboard' && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
-            )}
             <LayoutDashboard className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Dashboard</span>}
           </Link>
@@ -231,11 +226,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 <button
                   onClick={() => !collapsed && toggleGroup(group.name)}
                   className={cn(
-                    'w-full flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative text-left',
+                    'w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all text-left',
                     isGroupActive
-                      ? 'text-[#14b8a6] font-bold'
-                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                    collapsed && 'cursor-default'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    collapsed && 'cursor-default justify-center'
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -257,7 +252,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       className="overflow-hidden"
                     >
-                      <div className={cn("space-y-0.5 pl-3 border-l border-sidebar-border/30 mt-0.5", !collapsed ? "ml-5" : "ml-4")}>
+                      <div className={cn("space-y-0.5 pl-2 mt-0.5", !collapsed ? "ml-4" : "ml-2")}>
                         {group.items.map((item) => {
                           const isActive = pathname === item.href;
                           const ItemIcon = item.icon;
@@ -266,16 +261,13 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                               key={item.href}
                               href={item.href}
                               className={cn(
-                                'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all group relative',
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-all',
                                 isActive
-                                  ? 'text-[#14b8a6] bg-[#14b8a6]/5 font-semibold'
-                                  : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/30'
+                                  ? 'text-primary bg-primary/5'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                               )}
                             >
-                              {isActive && (
-                                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
-                              )}
-                              {ItemIcon && <ItemIcon className="h-3.5 w-3.5" />}
+                              {ItemIcon && <ItemIcon className="h-3.5 w-3.5 flex-shrink-0" />}
                               {!collapsed && <span>{item.name}</span>}
                             </Link>
                           );
@@ -290,26 +282,23 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </div>
 
         {/* Admin Profile & Logout direct sections */}
-        <div className="space-y-1 pt-3.5 border-t border-sidebar-border/30">
+        <div className="space-y-1 pt-4 mt-4 border-t border-border">
           <Link
             href="/profile"
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group relative',
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
               pathname === '/profile'
-                ? 'bg-[#14b8a6]/10 text-[#14b8a6] font-bold'
-                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
-            {pathname === '/profile' && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-[#14b8a6]" />
-            )}
             <User className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Admin Profile</span>}
           </Link>
 
           <Link
             href="/login"
-            className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all group text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all text-destructive hover:bg-destructive/10 cursor-pointer"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
@@ -319,26 +308,26 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       {/* Collapse Trigger when Collapsed */}
       {collapsed && (
-        <div className="flex justify-center p-3 border-t border-sidebar-border/30 bg-sidebar/90">
+        <div className="flex justify-center p-3 border-t border-border">
           <button
             onClick={onToggle}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/65 hover:text-foreground transition-all cursor-pointer"
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer"
           >
-            <ChevronRight className="h-4.5 w-4.5" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
 
       {/* User Info Footer */}
       {!collapsed && (
-        <div className="border-t border-sidebar-border/30 p-4 bg-sidebar/40">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs">
+        <div className="border-t border-border p-4 bg-muted/50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
               AD
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">Admin User</p>
-              <p className="text-[10px] text-muted-foreground truncate font-light">admin@aura.com</p>
+              <p className="text-sm font-semibold text-foreground truncate">Admin User</p>
+              <p className="text-xs text-muted-foreground truncate">admin@aura.com</p>
             </div>
           </div>
         </div>
@@ -349,7 +338,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
 function ScrollArea({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent', className)}>
+    <div className={cn('overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent hover:scrollbar-thumb-slate-600', className)}>
       {children}
     </div>
   );

@@ -276,11 +276,11 @@ export default function ReturnsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <Button variant="ghost" size="icon">
+                                <DropdownMenuTrigger render={
+                                  <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                     <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                  </div>
+                                } />
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem>
                                     <Eye className="mr-2 h-4 w-4" />

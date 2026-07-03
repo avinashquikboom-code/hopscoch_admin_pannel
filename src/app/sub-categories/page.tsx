@@ -30,7 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Plus, Search, MoreVertical, Edit, Trash2, Sparkles, Tag, Hash, FolderTree, Globe, Info } from 'lucide-react';
 
 const initialSubCategories = [
   { id: '1', name: 'Casual Dresses', parentName: 'Dresses', slug: 'casual-dresses', count: 20, isVisible: true },
@@ -90,67 +91,145 @@ export default function SubCategoriesPage() {
                 Add Sub Category
               </Button>
             } />
-            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="text-lg font-bold">Add Sub Category</SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground">
-                  Create a new sub-category linked to a parent category.
+            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
+              <SheetHeader className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <SheetTitle className="text-2xl font-bold">Add Sub Category</SheetTitle>
+                </div>
+                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
+                  Create a new sub-category linked to a parent category
                 </SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleCreate} className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-xs font-semibold">Sub Category Name</Label>
-                  <Input
-                    id="name"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Casual Jackets"
-                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
-                  />
+
+              <form onSubmit={handleCreate} className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                        Sub Category Name <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="name"
+                          required
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="e.g., Casual Jackets"
+                          className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
+                        <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                        Slug (Optional)
+                      </Label>
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="e.g., casual-jackets"
+                        className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="parent" className="text-xs font-semibold">Parent Category</Label>
-                  <select
-                    id="parent"
-                    value={formData.parentName}
-                    onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                    className="w-full h-10 rounded-md border border-border/60 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none"
+
+                <Separator className="bg-border/60" />
+
+                {/* Hierarchy Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FolderTree className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Hierarchy</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="parent" className="text-sm font-medium flex items-center gap-2">
+                        <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
+                        Parent Category
+                      </Label>
+                      <select
+                        id="parent"
+                        value={formData.parentName}
+                        onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                        className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      >
+                        <option value="Dresses">Dresses</option>
+                        <option value="Tops">Tops</option>
+                        <option value="Bottoms">Bottoms</option>
+                        <option value="Accessories">Accessories</option>
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        Select the parent category this sub-category belongs to
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="bg-border/60" />
+
+                {/* Visibility Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Visibility</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <input
+                            id="visible"
+                            type="checkbox"
+                            checked={formData.isVisible}
+                            onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                            className="rounded-md border-border/60 accent-primary h-5 w-5"
+                          />
+                          <div className="space-y-0.5">
+                            <Label htmlFor="visible" className="text-sm font-semibold cursor-pointer">
+                              Visible
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Make this sub-category visible on the storefront
+                            </p>
+                          </div>
+                        </div>
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Globe className="h-4 w-4 text-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                    className="rounded-lg h-10 px-6 font-medium"
                   >
-                    <option value="Dresses">Dresses</option>
-                    <option value="Tops">Tops</option>
-                    <option value="Bottoms">Bottoms</option>
-                    <option value="Accessories">Accessories</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug" className="text-xs font-semibold">Slug (Optional)</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="e.g. casual-jackets"
-                    className="rounded-md border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10"
-                  />
-                </div>
-                <div className="flex items-center gap-2.5 pt-2">
-                  <input
-                    id="visible"
-                    type="checkbox"
-                    checked={formData.isVisible}
-                    onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
-                    className="rounded border-border/60 accent-primary h-4 w-4"
-                  />
-                  <Label htmlFor="visible" className="text-sm text-muted-foreground select-none cursor-pointer">
-                    Visible on website catalog
-                  </Label>
-                </div>
-                <SheetFooter className="pt-4 flex gap-2 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="rounded-md">
                     Cancel
                   </Button>
-                  <Button type="submit" className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
-                    Save Sub Category
+                  <Button
+                    type="submit"
+                    className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20"
+                  >
+                    Add Sub Category
                   </Button>
                 </SheetFooter>
               </form>
@@ -199,11 +278,11 @@ export default function SubCategoriesPage() {
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted/60">
+                          <DropdownMenuTrigger render={
+                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                            </div>
+                          } />
                           <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
                             <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
                               <Edit className="h-3.5 w-3.5" /> Edit

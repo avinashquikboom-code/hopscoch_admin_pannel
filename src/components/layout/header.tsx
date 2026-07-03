@@ -69,21 +69,15 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Notifications Dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Bell className="h-5 w-5" />
-              </Button>
+          <DropdownMenuTrigger render={
+            <div className="relative rounded-md p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors cursor-pointer border-none bg-transparent">
+              <Bell className="h-5 w-5" />
               {/* Badge rendered outside Button so it's always visible */}
               <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#14b8a6] text-black text-[10px] font-black leading-none px-1 border-2 border-background">
                 3
               </span>
             </div>
-          </DropdownMenuTrigger>
+          } />
           <DropdownMenuContent align="end" className="w-80 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="font-bold text-sm text-foreground px-2 py-1.5">
               Notifications
@@ -124,20 +118,20 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* User Account Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-md hover:bg-muted/65 p-0 border border-border/30">
+          <DropdownMenuTrigger render={
+            <div className="relative h-10 w-10 rounded-md hover:bg-muted/65 p-0 border border-border/30 cursor-pointer bg-transparent">
               <Avatar className="h-9 w-9 rounded-lg">
                 <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-lg">
                   AD
                 </AvatarFallback>
               </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
+            </div>
+          } />
           <DropdownMenuContent align="end" className="w-56 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
             <DropdownMenuLabel className="px-2 py-2">
               <div className="flex flex-col space-y-0.5">
                 <p className="text-sm font-bold text-foreground">Admin User</p>
-                <p className="text-xs text-muted-foreground font-light">admin@aura.com</p>
+              <p className="text-xs text-muted-foreground font-light">admin@aura.com</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="my-1 border-border/20" />

@@ -128,8 +128,8 @@ export default function OrdersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-            <p className="text-muted-foreground mt-1">Manage customer orders and shipments</p>
+            <h1 className="text-3xl font-semibold text-foreground">Orders</h1>
+            <p className="text-muted-foreground mt-1 font-normal">Manage customer orders and shipments</p>
           </div>
         </div>
 
@@ -157,9 +157,17 @@ export default function OrdersPage() {
 
         {/* Orders Table */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>All Orders</CardTitle>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search orders by customer, email, or order ID..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
                   <Filter className="mr-2 h-4 w-4" />
@@ -169,19 +177,6 @@ export default function OrdersPage() {
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search orders by customer, email, or order ID..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
               </div>
             </div>
 
@@ -200,15 +195,15 @@ export default function OrdersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Items</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Payment</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Tracking</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="font-semibold">Order ID</TableHead>
+                        <TableHead className="font-semibold">Customer</TableHead>
+                        <TableHead className="font-semibold">Date</TableHead>
+                        <TableHead className="font-semibold">Items</TableHead>
+                        <TableHead className="font-semibold">Amount</TableHead>
+                        <TableHead className="font-semibold">Payment</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Tracking</TableHead>
+                        <TableHead className="text-right font-semibold">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -219,13 +214,13 @@ export default function OrdersPage() {
                             <TableCell className="font-mono font-medium">{order.id}</TableCell>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{order.customer}</p>
-                                <p className="text-sm text-muted-foreground">{order.email}</p>
+                                <p className="font-semibold">{order.customer}</p>
+                                <p className="text-sm text-muted-foreground font-normal">{order.email}</p>
                               </div>
                             </TableCell>
                             <TableCell>{order.date}</TableCell>
                             <TableCell>{order.items} items</TableCell>
-                            <TableCell className="font-semibold">${order.amount.toFixed(2)}</TableCell>
+                            <TableCell className="font-bold">${order.amount.toFixed(2)}</TableCell>
                             <TableCell>
                               <Badge 
                                 variant={order.paymentStatus === 'paid' ? 'default' : 'secondary'}
@@ -242,18 +237,18 @@ export default function OrdersPage() {
                             </TableCell>
                             <TableCell>
                               {order.trackingNumber ? (
-                                <span className="font-mono text-sm">{order.trackingNumber}</span>
+                                <span className="font-mono text-sm font-normal">{order.trackingNumber}</span>
                               ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
+                                <span className="text-muted-foreground text-sm font-normal">-</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <Button variant="ghost" size="icon">
+                                <DropdownMenuTrigger render={
+                                  <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
                                     <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                  </div>
+                                } />
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem>
                                     <Eye className="mr-2 h-4 w-4" />
