@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Filter, Download, Eye } from 'lucide-react';
+import { Search, Filter, Download, Eye, DollarSign, CheckCircle, TrendingUp, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 
 type TxnStatus = 'Success' | 'Pending' | 'Failed' | 'Refunded';
@@ -41,36 +41,93 @@ export default function TransactionsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 pb-12">
+      <div className="space-y-6 pb-12">
         <PageHeader
           titlePart1="Payment"
           titlePart2="Transactions"
           badgeText="Finance Command Center"
           subtitle="View and manage all payment transactions."
-
           actions={
-            <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60 cursor-pointer">
+            <Button variant="outline" className="rounded-lg gap-2 text-sm border-border/60 cursor-pointer h-9">
               <Download className="h-4 w-4" /> Export
             </Button>
           }
         />
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Total Transactions</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{transactions.length}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#14b8a6]/10 text-[#14b8a6]">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Success Rate</p>
+                  <p className="text-2xl font-bold text-[#14b8a6] mt-2">87.5%</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Total Volume</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">₹42.1K</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-violet-500/10 text-violet-500">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Pending</p>
+                  <p className="text-2xl font-bold text-amber-500 mt-2">1</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm group">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <Input placeholder="Search by ID, order, customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-11 h-10 rounded-md border-border/60" />
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search by ID, order, customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-9 rounded-lg border-border/60" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(['All', 'Success', 'Pending', 'Failed', 'Refunded'] as const).map(s => (
               <Button key={s} size="sm" variant={statusFilter === s ? 'default' : 'outline'}
                 onClick={() => setStatusFilter(s)}
-                className={`rounded-md text-xs ${statusFilter === s ? 'bg-primary text-white' : 'border-border/60'}`}>
+                className={`rounded-lg text-xs h-8 ${statusFilter === s ? 'bg-primary text-white' : 'border-border/60'}`}>
                 {s}
               </Button>
             ))}
           </div>
         </div>
 
+        {/* Transactions Table */}
         <Card className="border-border/40 rounded-lg bg-card">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -78,7 +135,7 @@ export default function TransactionsPage() {
                 <TableHeader className="bg-muted/30">
                   <TableRow>
                     {['Transaction ID', 'Order', 'Customer', 'Amount', 'Method', 'Gateway', 'Status', 'Date', ''].map(h => (
-                      <TableHead key={h} className="text-xs font-bold uppercase tracking-wider">{h}</TableHead>
+                      <TableHead key={h} className="text-xs font-bold uppercase tracking-wider py-3">{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -92,7 +149,7 @@ export default function TransactionsPage() {
                       <TableCell className="text-xs text-muted-foreground">{t.method}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{t.gateway}</TableCell>
                       <TableCell>
-                        <Badge className={`text-[10px] font-semibold rounded-full px-2.5 border-transparent ${statusStyle[t.status]}`}>{t.status}</Badge>
+                        <Badge className={`text-[10px] font-semibold rounded-full px-2.5 py-1 border-transparent ${statusStyle[t.status]}`}>{t.status}</Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{t.date}</TableCell>
                       <TableCell>
@@ -106,8 +163,8 @@ export default function TransactionsPage() {
             <div className="flex items-center justify-between px-4 py-3 border-t border-border/30">
               <p className="text-xs text-muted-foreground">{filtered.length} transactions found</p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="text-xs rounded-md border-border/60">Previous</Button>
-                <Button variant="outline" size="sm" className="text-xs rounded-md border-border/60">Next</Button>
+                <Button variant="outline" size="sm" className="text-xs rounded-lg border-border/60 h-8">Previous</Button>
+                <Button variant="outline" size="sm" className="text-xs rounded-lg border-border/60 h-8">Next</Button>
               </div>
             </div>
           </CardContent>

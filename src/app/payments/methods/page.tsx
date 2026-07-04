@@ -40,17 +40,17 @@ export default function PaymentMethodsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((m) => (
-            <Card key={m.id} className={`border-border/40 bg-card rounded-lg transition-all ${!m.active ? 'opacity-60' : 'hover:border-primary/30'}`}>
+            <Card key={m.id} className={`border-border/30 rounded-lg bg-card transition-all ${!m.active ? 'opacity-60' : 'hover:border-border/50'}`}>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-md flex items-center justify-center text-lg ${m.color}`}>
+                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center text-lg ${m.color}`}>
                       {m.icon}
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="font-bold text-sm text-foreground">{m.name}</p>
-                        {m.popular && <Badge className="text-[9px] rounded-full px-1.5 border-transparent bg-[#14b8a6]/10 text-[#14b8a6] font-bold">Popular</Badge>}
+                        <p className="font-semibold text-sm text-foreground">{m.name}</p>
+                        {m.popular && <Badge className="text-[9px] rounded-full px-1.5 border-transparent bg-[#14b8a6]/10 text-[#14b8a6] font-semibold">Popular</Badge>}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</p>
                     </div>
@@ -58,10 +58,10 @@ export default function PaymentMethodsPage() {
                   <Switch checked={m.active} onCheckedChange={() => toggle(m.id)} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Badge className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold ${m.active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+                  <Badge className={`text-[10px] rounded-full px-2.5 py-1 border-transparent font-semibold ${m.active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
                     {m.active ? 'Enabled' : 'Disabled'}
                   </Badge>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs rounded-md text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs rounded-lg text-muted-foreground hover:text-foreground">
                     <Settings className="h-3 w-3" /> Configure
                   </Button>
                 </div>

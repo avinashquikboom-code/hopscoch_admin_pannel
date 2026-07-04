@@ -18,7 +18,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
@@ -31,7 +30,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Plus,
   Search,
@@ -39,7 +37,6 @@ import {
   Edit,
   Trash2,
   Eye,
-  Copy,
   Filter,
   Download,
   Package,
@@ -49,8 +46,11 @@ import {
   DollarSign,
   Layers,
   Sparkles,
-  RefreshCw,
-  ShoppingBag
+  Grid3X3,
+  List,
+  TrendingUp,
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -133,7 +133,10 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
-
+  
+  // View mode: 'grid' or 'list'
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
   // Advanced Filters
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -143,7 +146,7 @@ export default function ProductsPage() {
 
   // Selected product for preview drawer
   const [selectedProduct, setSelectedProduct] = useState<typeof initialProducts[0] | null>(null);
-
+  
   // State for inventory adjustment in drawer
   const [adjustQtyInput, setAdjustQtyInput] = useState('');
 
@@ -285,67 +288,63 @@ export default function ProductsPage() {
         />
 
         {/* Premium KPI Summary Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Products</span>
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Total Products</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.totalCount} SKUs</p>
+                  <p className="text-xs text-muted-foreground mt-1">Active items in catalog</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
                   <Package className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.totalCount} SKUs</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Active items in catalog</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active & Published</span>
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Active & Published</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.activeCount} Live</p>
+                  <p className="text-xs text-muted-foreground mt-1">Visible to customers online</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.activeCount} Live</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Visible to customers online</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/5 to-orange-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Low Stock Items</span>
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Low Stock Items</p>
+                  <p className="text-2xl font-bold text-amber-500 mt-2">{stats.lowStockCount} Alert</p>
+                  <p className="text-xs text-muted-foreground mt-1">With less than 20 units remaining</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500">
                   <AlertTriangle className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight text-amber-500">{stats.lowStockCount} Alert</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">With less than 20 units remaining</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/5 to-indigo-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Featured Products</span>
-                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
-                  <Star className="h-5 w-5 fill-purple-500/20" />
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Featured Products</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.featuredCount} Showcased</p>
+                  <p className="text-xs text-muted-foreground mt-1">Highlighted on storefront banners</p>
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.featuredCount} Showcased</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Highlighted on storefront banners</p>
+                <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-500">
+                  <Star className="h-5 w-5" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -422,7 +421,7 @@ export default function ProductsPage() {
                       {/* Filter by Brand */}
                       <div className="space-y-1.5">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                          <ShoppingBag className="h-3 w-3" /> Brand
+                          Brand
                         </span>
                         <select
                           value={brandFilter}
@@ -487,7 +486,7 @@ export default function ProductsPage() {
               </AnimatePresence>
             </div>
 
-            <Separator className="my-6 border-border/20" />
+            <div className="my-6 border-b border-border/20" />
 
             {/* Products Table */}
             <div className="rounded-xl border border-border/30 overflow-hidden bg-card/40">
@@ -659,7 +658,7 @@ export default function ProductsPage() {
                                   <Star className="mr-2 h-4 w-4 text-amber-500" />
                                   {product.isFeatured ? 'Unfeature' : 'Feature Product'}
                                 </DropdownMenuItem>
-                                <Separator className="my-1 border-border/10" />
+                                <div className="my-1 border-t border-border/10 mx-2" />
                                 <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
                                   <Trash2 className="mr-2 h-4 w-4 text-rose-500" />
                                   Delete
@@ -805,14 +804,14 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+              <div className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
                 <Button type="button" variant="ghost" onClick={() => setAddSheetOpen(false)} className="rounded-lg h-11 px-6">
                   Cancel
                 </Button>
                 <Button type="submit" className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95">
                   Publish SKU
                 </Button>
-              </SheetFooter>
+              </div>
             </form>
           </SheetContent>
         </Sheet>

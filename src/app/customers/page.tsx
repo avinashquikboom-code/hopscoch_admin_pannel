@@ -229,67 +229,63 @@ export default function CustomersPage() {
         />
 
         {/* Premium KPI Summary Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Accounts</span>
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Total Accounts</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.totalCount} Clients</p>
+                  <p className="text-xs text-muted-foreground mt-1">{stats.activeCount} currently active buyers</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
                   <User className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.totalCount} Clients</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">{stats.activeCount} currently active buyers</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Buyers</span>
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Active Buyers</p>
+                  <p className="text-2xl font-bold text-emerald-500 mt-2">{stats.activeCount} Active</p>
+                  <p className="text-xs text-muted-foreground mt-1">Verified profiles mapping order history</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight text-emerald-500">{stats.activeCount} Active</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Verified profiles mapping order history</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/5 to-purple-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Lifetime Volume</span>
-                <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Lifetime Volume</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">${stats.totalVolume.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Aggregated customer lifetime spend</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-violet-500/10 text-violet-500">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">${stats.totalVolume.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Aggregated customer lifetime spend</p>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/5 to-orange-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Average Order Value</span>
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Average Order Value</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">${stats.avgAOV.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Average ticket spend per order</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500">
                   <TrendingUp className="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">${stats.avgAOV.toFixed(2)}</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Average ticket spend per order</p>
               </div>
             </CardContent>
           </Card>

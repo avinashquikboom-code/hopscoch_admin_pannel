@@ -324,71 +324,67 @@ export default function OrdersPage() {
         />
 
         {/* Premium KPI Summary Dashboard */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Total Volume */}
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Sales Volume</span>
-                <div className="p-2 rounded-lg bg-[#14b8a6]/10 text-[#14b8a6]">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Total Sales Volume</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-muted-foreground mt-1">From {stats.totalCount} overall orders placed</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#14b8a6]/10 text-[#14b8a6]">
                   <DollarSign className="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">From {stats.totalCount} overall orders placed</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Card 2: Active Processing */}
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/5 to-orange-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Backlog</span>
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-                  <Clock className="h-5 w-5 animate-pulse" />
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Active Backlog</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.activeCount} Orders</p>
+                  <p className="text-xs text-muted-foreground mt-1">Awaiting review or item picking</p>
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.activeCount} Orders</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Awaiting review or item picking</p>
+                <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Clock className="h-5 w-5" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Card 3: Shipped / Dispatched */}
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/5 to-blue-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">In Transit</span>
-                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">In Transit</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.shippedCount} Shipments</p>
+                  <p className="text-xs text-muted-foreground mt-1">Dispatched and tracked by carrier</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-500">
                   <Truck className="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.shippedCount} Shipments</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Dispatched and tracked by carrier</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Card 4: Delivered */}
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Delivered Orders</span>
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+          <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Delivered Orders</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stats.deliveredCount} Completed</p>
+                  <p className="text-xs text-muted-foreground mt-1">Handed over to happy customers</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                   <CheckCircle className="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.deliveredCount} Completed</h3>
-                <p className="text-xs text-muted-foreground mt-1.5 font-light">Handed over to happy customers</p>
               </div>
             </CardContent>
           </Card>

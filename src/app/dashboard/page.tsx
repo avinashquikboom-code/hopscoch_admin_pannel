@@ -37,8 +37,8 @@ const stats = [
     change: '+12.5%',
     trend: 'up',
     icon: DollarSign,
-    color: 'from-[#14b8a6]/5 to-[#0d9488]/5',
-    borderColor: 'group-hover:border-[#14b8a6]/20',
+    color: 'text-[#14b8a6]',
+    bgColor: 'bg-[#14b8a6]/10',
   },
   {
     title: 'Total Orders',
@@ -46,8 +46,8 @@ const stats = [
     change: '+8.2%',
     trend: 'up',
     icon: ShoppingBag,
-    color: 'from-[#14b8a6]/5 to-[#0d9488]/5',
-    borderColor: 'group-hover:border-[#14b8a6]/20',
+    color: 'text-[#14b8a6]',
+    bgColor: 'bg-[#14b8a6]/10',
   },
   {
     title: 'Total Customers',
@@ -55,8 +55,8 @@ const stats = [
     change: '+15.3%',
     trend: 'up',
     icon: Users,
-    color: 'from-[#14b8a6]/5 to-[#0d9488]/5',
-    borderColor: 'group-hover:border-[#14b8a6]/20',
+    color: 'text-[#14b8a6]',
+    bgColor: 'bg-[#14b8a6]/10',
   },
   {
     title: 'Total Products',
@@ -64,8 +64,8 @@ const stats = [
     change: '+2.1%',
     trend: 'up',
     icon: Package,
-    color: 'from-[#14b8a6]/5 to-[#0d9488]/5',
-    borderColor: 'group-hover:border-[#14b8a6]/20',
+    color: 'text-[#14b8a6]',
+    bgColor: 'bg-[#14b8a6]/10',
   },
 ];
 
@@ -191,6 +191,7 @@ export default function DashboardPage() {
         <PageHeader
           showClock={true}
           badgeText="Active Platform Command Center"
+          titlePart1="Dashboard Overview"
           subtitle="Monitor real-time corporate workspace parameters, track check-ins, and broadcast ecosystem-wide updates."
           actions={
             <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/40 border border-border/20 px-3.5 py-1.5 rounded-full w-fit h-10 select-none">
@@ -201,38 +202,35 @@ export default function DashboardPage() {
         />
 
         {/* Primary KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.title}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
-              className="group"
             >
-              <Card className={cn("relative overflow-hidden border-border/30 hover:shadow-md hover:shadow-[#14b8a6]/2 hover:border-[#14b8a6]/20 transition-all duration-300 rounded-lg bg-card/60 backdrop-blur-md", stat.borderColor)}>
-                {/* Micro glow effect */}
-                <div className={cn("absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br blur-xl opacity-20 transition-all group-hover:scale-150", stat.color)} />
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                    {stat.title}
-                  </CardTitle>
-                  <div className="p-2 rounded-md bg-muted/50 text-[#14b8a6]">
-                    <stat.icon className="h-4.5 w-4.5" />
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-1">
-                  <div className="text-3xl font-bold text-foreground tracking-tight">{stat.value}</div>
-                  <div className="flex items-center mt-2.5 text-xs font-medium">
-                    {stat.trend === 'up' ? (
-                      <ArrowUpRight className="h-3.5 w-3.5 text-[#14b8a6] mr-1" />
-                    ) : (
-                      <ArrowDownRight className="h-3.5 w-3.5 text-rose-500 mr-1" />
-                    )}
-                    <span className={stat.trend === 'up' ? 'text-[#14b8a6]' : 'text-rose-500'}>
-                      {stat.change}
-                    </span>
-                    <span className="text-muted-foreground ml-1.5 font-normal">from last month</span>
+              <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">{stat.title}</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                      <div className="flex items-center mt-2 text-xs font-medium">
+                        {stat.trend === 'up' ? (
+                          <ArrowUpRight className="h-3.5 w-3.5 text-[#14b8a6] mr-1" />
+                        ) : (
+                          <ArrowDownRight className="h-3.5 w-3.5 text-rose-500 mr-1" />
+                        )}
+                        <span className={stat.trend === 'up' ? 'text-[#14b8a6]' : 'text-rose-500'}>
+                          {stat.change}
+                        </span>
+                        <span className="text-muted-foreground ml-1.5 font-normal">from last month</span>
+                      </div>
+                    </div>
+                    <div className={`p-2.5 rounded-lg ${stat.bgColor} ${stat.color}`}>
+                      <stat.icon className="h-5 w-5" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -241,7 +239,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Secondary Order Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {orderStats.map((stat, index) => (
             <motion.div
               key={stat.title}
@@ -249,14 +247,16 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.32 + index * 0.08 }}
             >
-              <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md hover:border-border/50 transition-all">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase">{stat.title}</p>
-                    <p className="text-2xl font-bold text-foreground tracking-tight mt-1">{stat.value}</p>
-                  </div>
-                  <div className={cn("p-2.5 rounded-md", stat.bgColor)}>
-                    <stat.icon className={cn("h-5.5 w-5.5", stat.color)} />
+              <Card className="border-border/30 rounded-lg bg-card hover:border-border/50 transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">{stat.title}</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                    </div>
+                    <div className={`p-2.5 rounded-lg ${stat.bgColor} ${stat.color}`}>
+                      <stat.icon className="h-5 w-5" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
             <Card className="border-border/30 rounded-lg bg-card/60 backdrop-blur-md overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b border-border/20 pb-4">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-foreground">Revenue Analytics</CardTitle>
+                  <CardTitle className="text-lg font-semibold text-foreground">Sales Performance</CardTitle>
                   <p className="text-xs text-muted-foreground mt-0.5 font-normal">Historical monthly store statistics</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-medium">
