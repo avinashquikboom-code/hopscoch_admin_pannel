@@ -9,6 +9,7 @@ import {
   Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 type Period = 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
 
@@ -41,20 +42,25 @@ export default function PaymentAnalyticsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Payment Analytics</h1>
-            <p className="text-muted-foreground mt-1 font-light">Deep-dive into revenue trends and payment patterns.</p>
-          </div>
-          <div className="flex gap-2 p-1 bg-muted/40 rounded-md">
-            {(['Daily', 'Weekly', 'Monthly', 'Yearly'] as Period[]).map(p => (
-              <button key={p} onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${period === p ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Analytics"
+          badgeText="Finance Command Center"
+          subtitle="Deep-dive into revenue trends and payment patterns."
+          showClock={true}
+          actions={
+            <div className="flex gap-2 p-1 bg-muted/40 rounded-md">
+              {(['Daily', 'Weekly', 'Monthly', 'Yearly'] as Period[]).map(p => (
+                <button key={p} onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    period === p ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

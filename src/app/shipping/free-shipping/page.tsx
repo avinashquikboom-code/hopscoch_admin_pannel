@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetTrigger } from '@/components/ui/sheet';
+import { AppDrawer } from '@/components/ui/app-drawer';
+import { PageHeader } from '@/components/layout/page-header';
 import { Plus, Edit, Trash2, Zap, Gift, Tag, Star } from 'lucide-react';
 
 type RuleType = 'min_order' | 'max_order' | 'coupon' | 'festival' | 'member';
@@ -41,56 +42,52 @@ export default function FreeShippingPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Free Shipping Rules</h1>
-            <p className="text-muted-foreground mt-1 font-light">Configure conditions for free shipping eligibility.</p>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Free Rules"
+          badgeText="Logistics Command Center"
+          subtitle="Configure conditions for free shipping eligibility."
+          showClock={true}
+          actions={
+            <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Plus className="h-4 w-4" /> Add Rule
+            </Button>
+          }
+        />
+
+        <AppDrawer
+          title="Add Free Shipping Rule"
+          subtitle="Define when free shipping is applied."
+          open={open}
+          onClose={setOpen}
+          onSubmit={handleAdd}
+        >
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Rule Name *</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Free on ₹999+" className="h-11 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Rule Type</Label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleType })}
+                className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary outline-none">
+                {Object.entries(ruleConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            </div>
+            {(form.type === 'min_order' || form.type === 'max_order' || form.type === 'festival') && (
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Minimum Order Value (₹)</Label>
+                <Input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. 999" className="h-11 rounded-lg" />
+              </div>
+            )}
+            {form.type === 'coupon' && (
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Coupon Code</Label>
+                <Input value={form.coupon} onChange={e => setForm({ ...form, coupon: e.target.value })} placeholder="e.g. FREESHIP" className="h-11 rounded-lg uppercase" />
+              </div>
+            )}
           </div>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger render={
-              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-                <Plus className="h-4 w-4" /> Add Rule
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
-              <SheetHeader className="p-6 border-b border-border/20">
-                <SheetTitle className="text-xl font-bold">Add Free Shipping Rule</SheetTitle>
-                <SheetDescription className="text-sm text-muted-foreground">Define when free shipping is applied.</SheetDescription>
-              </SheetHeader>
-              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Rule Name *</Label>
-                    <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Free on ₹999+" className="h-11 rounded-lg" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Rule Type</Label>
-                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleType })}
-                      className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary outline-none">
-                      {Object.entries(ruleConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                  </div>
-                  {(form.type === 'min_order' || form.type === 'max_order' || form.type === 'festival') && (
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Minimum Order Value (₹)</Label>
-                      <Input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. 999" className="h-11 rounded-lg" />
-                    </div>
-                  )}
-                  {form.type === 'coupon' && (
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Coupon Code</Label>
-                      <Input value={form.coupon} onChange={e => setForm({ ...form, coupon: e.target.value })} placeholder="e.g. FREESHIP" className="h-11 rounded-lg uppercase" />
-                    </div>
-                  )}
-                </div>
-                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
-                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                </SheetFooter>
-              </form>
-            </SheetContent>
-          </Sheet>
-        </div>
+        </AppDrawer>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {rules.map((r) => {

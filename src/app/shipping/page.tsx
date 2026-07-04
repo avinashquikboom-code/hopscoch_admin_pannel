@@ -102,6 +102,7 @@ export default function ShippingDashboardPage() {
           titlePart2="Dashboard"
           badgeText="Logistics Command Center"
           subtitle="Monitor all outgoing shipments, evaluate carrier performances, and audit courier deliveries."
+          showClock={true}
         />
 
         {/* Premium KPI Summary Grid */}

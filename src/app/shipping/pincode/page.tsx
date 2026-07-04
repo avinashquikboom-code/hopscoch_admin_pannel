@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Upload, MapPin, CheckCircle2, XCircle, Filter } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const pincodes = [
   { pin: '400001', city: 'Mumbai', state: 'MH', cod: true, express: true, active: true },
@@ -38,20 +39,23 @@ export default function PincodePage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Pincode Serviceability</h1>
-            <p className="text-muted-foreground mt-1 font-light">Manage serviceable pincodes, COD, and express availability.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60">
-              <Upload className="h-4 w-4" /> Upload CSV
-            </Button>
-            <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-              <MapPin className="h-4 w-4" /> Add Pincode
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Pincode Serviceability"
+          badgeText="Logistics Command Center"
+          subtitle="Manage serviceable pincodes, COD, and express availability."
+          showClock={true}
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60 cursor-pointer">
+                <Upload className="h-4 w-4" /> Upload CSV
+              </Button>
+              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+                <MapPin className="h-4 w-4" /> Add Pincode
+              </Button>
+            </div>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

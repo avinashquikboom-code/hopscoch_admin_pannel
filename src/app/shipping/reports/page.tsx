@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart2, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   LineChart, Line, Legend,
@@ -31,17 +32,20 @@ export default function ShippingReportsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Reports</h1>
-            <p className="text-muted-foreground mt-1 font-light">Analyze delivery performance, courier efficiency, and return rates.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60"><FileText className="h-3.5 w-3.5" /> CSV</Button>
-            <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60"><FileSpreadsheet className="h-3.5 w-3.5" /> Excel</Button>
-            <Button className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10"><Download className="h-3.5 w-3.5" /> PDF</Button>
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Reports"
+          badgeText="Logistics Command Center"
+          subtitle="Analyze delivery performance, courier efficiency, and return rates."
+          showClock={true}
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileText className="h-3.5 w-3.5" /> CSV</Button>
+              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileSpreadsheet className="h-3.5 w-3.5" /> Excel</Button>
+              <Button className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer"><Download className="h-3.5 w-3.5" /> PDF</Button>
+            </div>
+          }
+        />
 
         {/* Monthly Chart */}
         <Card className="border-border/40 bg-card rounded-lg">

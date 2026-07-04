@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/page-header';
 import { Banknote, MapPin, ShoppingCart, AlertTriangle } from 'lucide-react';
 
 export default function CODSettingsPage() {
@@ -27,10 +28,13 @@ export default function CODSettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">COD Settings</h1>
-          <p className="text-muted-foreground mt-1 font-light">Configure Cash on Delivery rules, charges, and restrictions.</p>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="COD Settings"
+          badgeText="Logistics Command Center"
+          subtitle="Configure Cash on Delivery rules, charges, and restrictions."
+          showClock={true}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Main Toggle */}

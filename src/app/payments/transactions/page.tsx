@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Filter, Download, Eye } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 type TxnStatus = 'Success' | 'Pending' | 'Failed' | 'Refunded';
 const statusStyle: Record<TxnStatus, string> = {
@@ -41,15 +42,18 @@ export default function TransactionsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Transactions</h1>
-            <p className="text-muted-foreground mt-1 font-light">View and manage all payment transactions.</p>
-          </div>
-          <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60">
-            <Download className="h-4 w-4" /> Export
-          </Button>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Transactions"
+          badgeText="Finance Command Center"
+          subtitle="View and manage all payment transactions."
+          showClock={true}
+          actions={
+            <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60 cursor-pointer">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          }
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-sm group">

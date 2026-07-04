@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Package, Truck, CheckCircle2, Clock, ArrowRight, MapPin } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const timelines: Record<string, { status: string; time: string; desc: string; done: boolean }[]> = {
   'SHP-8821': [
@@ -48,10 +49,13 @@ export default function TrackingPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipment Tracking</h1>
-          <p className="text-muted-foreground mt-1 font-light">Track shipments and view live delivery timelines.</p>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Tracking"
+          badgeText="Logistics Command Center"
+          subtitle="Track shipments and view live delivery timelines."
+          showClock={true}
+        />
 
         {/* Search Bar */}
         <div className="relative max-w-md group">

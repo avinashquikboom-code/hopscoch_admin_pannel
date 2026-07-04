@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Truck, Zap, Clock, Sun, Store, Edit } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const methods = [
   {
@@ -44,10 +45,13 @@ export default function DeliveryMethodsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Delivery Methods</h1>
-          <p className="text-muted-foreground mt-1 font-light">Enable or disable delivery options for your store.</p>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Delivery Methods"
+          badgeText="Logistics Command Center"
+          subtitle="Enable or disable delivery options for your store."
+          showClock={true}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {items.map((m) => {

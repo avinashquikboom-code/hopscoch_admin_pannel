@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetTrigger } from '@/components/ui/sheet';
+import { AppDrawer } from '@/components/ui/app-drawer';
+import { PageHeader } from '@/components/layout/page-header';
 import { Plus, Search, Edit, Trash2, DollarSign, Weight, ShoppingCart, Zap } from 'lucide-react';
 
 type ChargeType = 'flat' | 'weight' | 'value' | 'free' | 'express';
@@ -51,60 +52,56 @@ export default function ShippingChargesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Charges</h1>
-            <p className="text-muted-foreground mt-1 font-light">Configure flat, weight-based, and value-based shipping rates.</p>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Charges"
+          badgeText="Logistics Command Center"
+          subtitle="Configure flat, weight-based, and value-based shipping rates."
+          showClock={true}
+          actions={
+            <Button onClick={() => setSheetOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Plus className="h-4 w-4" /> Add Charge Rule
+            </Button>
+          }
+        />
+
+        <AppDrawer
+          title="Add Shipping Charge"
+          subtitle="Create a new shipping rate rule."
+          open={sheetOpen}
+          onClose={setSheetOpen}
+          onSubmit={handleAdd}
+        >
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Rule Name *</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Standard Delivery" className="h-11 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Charge Type *</Label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as ChargeType })}
+                className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none">
+                {Object.entries(typeConfig).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Amount (₹)</Label>
+              <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 49" className="h-11 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Min Value / Weight</Label>
+                <Input type="number" value={form.min} onChange={e => setForm({ ...form, min: e.target.value })} placeholder="0" className="h-11 rounded-lg" />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Max Value / Weight</Label>
+                <Input type="number" value={form.max} onChange={e => setForm({ ...form, max: e.target.value })} placeholder="Unlimited" className="h-11 rounded-lg" />
+              </div>
+            </div>
           </div>
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger render={
-              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-                <Plus className="h-4 w-4" /> Add Charge Rule
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
-              <SheetHeader className="p-6 border-b border-border/20">
-                <SheetTitle className="text-xl font-bold">Add Shipping Charge</SheetTitle>
-                <SheetDescription className="text-sm text-muted-foreground">Create a new shipping rate rule.</SheetDescription>
-              </SheetHeader>
-              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Rule Name *</Label>
-                    <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Standard Delivery" className="h-11 rounded-lg" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Charge Type *</Label>
-                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as ChargeType })}
-                      className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none">
-                      {Object.entries(typeConfig).map(([k, v]) => (
-                        <option key={k} value={k}>{v.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Amount (₹)</Label>
-                    <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 49" className="h-11 rounded-lg" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Min Value / Weight</Label>
-                      <Input type="number" value={form.min} onChange={e => setForm({ ...form, min: e.target.value })} placeholder="0" className="h-11 rounded-lg" />
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Max Value / Weight</Label>
-                      <Input type="number" value={form.max} onChange={e => setForm({ ...form, max: e.target.value })} placeholder="Unlimited" className="h-11 rounded-lg" />
-                    </div>
-                  </div>
-                </div>
-                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-lg">Cancel</Button>
-                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                </SheetFooter>
-              </form>
-            </SheetContent>
-          </Sheet>
-        </div>
+        </AppDrawer>
 
         <div className="relative max-w-sm group">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />

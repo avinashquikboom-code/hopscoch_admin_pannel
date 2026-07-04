@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetTrigger } from '@/components/ui/sheet';
+import { AppDrawer } from '@/components/ui/app-drawer';
+import { PageHeader } from '@/components/layout/page-header';
 import { Plus, Search, Edit, Trash2, Globe } from 'lucide-react';
 
 const initialZones = [
@@ -39,47 +40,43 @@ export default function ShippingZonesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Zones</h1>
-            <p className="text-muted-foreground mt-1 font-light">Define geographic zones for shipping rate assignments.</p>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Zones"
+          badgeText="Logistics Command Center"
+          subtitle="Define geographic zones for shipping rate assignments."
+          showClock={true}
+          actions={
+            <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Plus className="h-4 w-4" /> Add Zone
+            </Button>
+          }
+        />
+
+        <AppDrawer
+          title="Add Shipping Zone"
+          subtitle="Define a new geographic delivery zone."
+          open={open}
+          onClose={setOpen}
+          onSubmit={handleAdd}
+        >
+          <div className="space-y-6">
+            {[
+              { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
+              { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
+              { key: 'states', label: 'States / Regions', placeholder: 'e.g. MH, DL, KA', required: false },
+              { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
+              { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
+            ].map(f => (
+              <div key={f.key} className="space-y-3">
+                <Label className="text-sm font-semibold">{f.label}</Label>
+                <Input required={f.required} value={(form as Record<string, string>)[f.key]}
+                  onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                  placeholder={f.placeholder} className="h-11 rounded-lg" />
+              </div>
+            ))}
           </div>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger render={
-              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-                <Plus className="h-4 w-4" /> Add Zone
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
-              <SheetHeader className="p-6 border-b border-border/20">
-                <SheetTitle className="text-xl font-bold">Add Shipping Zone</SheetTitle>
-                <SheetDescription className="text-sm text-muted-foreground">Define a new geographic delivery zone.</SheetDescription>
-              </SheetHeader>
-              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  {[
-                    { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
-                    { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
-                    { key: 'states', label: 'States / Regions', placeholder: 'e.g. MH, DL, KA', required: false },
-                    { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
-                    { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
-                  ].map(f => (
-                    <div key={f.key} className="space-y-3">
-                      <Label className="text-sm font-semibold">{f.label}</Label>
-                      <Input required={f.required} value={(form as Record<string, string>)[f.key]}
-                        onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        placeholder={f.placeholder} className="h-11 rounded-lg" />
-                    </div>
-                  ))}
-                </div>
-                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
-                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Zone</Button>
-                </SheetFooter>
-              </form>
-            </SheetContent>
-          </Sheet>
-        </div>
+        </AppDrawer>
 
         <div className="relative max-w-sm group">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />

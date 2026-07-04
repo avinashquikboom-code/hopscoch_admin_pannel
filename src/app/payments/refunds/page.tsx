@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Info
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 type RefundStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 type RefundType = 'full' | 'partial';
@@ -153,12 +154,13 @@ export default function RefundsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Refund Management</h1>
-            <p className="text-muted-foreground mt-1">Approve, reject, and process customer refund requests</p>
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Refunds"
+          badgeText="Finance Command Center"
+          subtitle="Approve, reject, and process customer refund requests."
+          showClock={true}
+        />
 
         {/* Refund Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

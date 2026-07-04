@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { SlidersHorizontal, Truck, Clock, Zap } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 export default function ShippingSettingsPage() {
   const [saved, setSaved] = useState(false);
@@ -32,15 +33,18 @@ export default function ShippingSettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Shipping Settings</h1>
-            <p className="text-muted-foreground mt-1 font-light">Configure default courier, tracking, and dispatch preferences.</p>
-          </div>
-          <Button onClick={handleSave} className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-            {saved ? '✓ Saved!' : 'Save Settings'}
-          </Button>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Global Settings"
+          badgeText="Logistics Command Center"
+          subtitle="Configure default courier, tracking, and dispatch preferences."
+          showClock={true}
+          actions={
+            <Button onClick={handleSave} className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              {saved ? '✓ Saved!' : 'Save Settings'}
+            </Button>
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Courier Settings */}

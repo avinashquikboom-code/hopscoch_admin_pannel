@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Box, Package, Weight, Ruler, Edit } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const packagingTypes = [
   { id: '1', name: 'Standard Poly Bag', size: '30×40 cm', weight: '≤0.5 kg', maxWeight: 1, icon: Package, color: 'text-blue-500', bg: 'bg-blue-500/10', isDefault: true },
@@ -26,15 +27,18 @@ export default function PackagingPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Packaging</h1>
-            <p className="text-muted-foreground mt-1 font-light">Define packaging types and auto-assignment rules.</p>
-          </div>
-          <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-            <Box className="h-4 w-4" /> Add Package Type
-          </Button>
-        </div>
+        <PageHeader
+          titlePart1="Shipping"
+          titlePart2="Packaging Sizes"
+          badgeText="Logistics Command Center"
+          subtitle="Define packaging types and auto-assignment rules."
+          showClock={true}
+          actions={
+            <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Box className="h-4 w-4" /> Add Package Type
+            </Button>
+          }
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {packagingTypes.map((p) => {
