@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,14 +62,14 @@ export default function ReportsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-            <p className="text-muted-foreground mt-1">View and export business reports</p>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          titlePart1="Business"
+          titlePart2="Analytics"
+          badgeText="Reports Command Center"
+          subtitle="View, export, and analyze business performance reports."
+          actions={
             <select 
-              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm select-none outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
             >
@@ -77,8 +78,8 @@ export default function ReportsPage() {
               <option value="90days">Last 90 Days</option>
               <option value="1year">Last Year</option>
             </select>
-          </div>
-        </div>
+          }
+        />
 
         <Tabs defaultValue="sales" className="space-y-6">
           <TabsList className="grid grid-cols-3 lg:grid-cols-7 w-full">

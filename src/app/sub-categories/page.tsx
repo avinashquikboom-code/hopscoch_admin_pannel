@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -31,285 +31,567 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Search, MoreVertical, Edit, Trash2, Sparkles, Tag, Hash, FolderTree, Globe, Info } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Plus, 
+  Search, 
+  MoreVertical, 
+  Edit, 
+  Trash2, 
+  Sparkles, 
+  Tag, 
+  Hash, 
+  FolderTree, 
+  Globe, 
+  Info, 
+  Layers, 
+  Eye, 
+  EyeOff, 
+  AlertTriangle,
+  Filter,
+  Download
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const initialSubCategories = [
-  { id: '1', name: 'Casual Dresses', parentName: 'Dresses', slug: 'casual-dresses', count: 20, isVisible: true },
-  { id: '2', name: 'Formal Dresses', parentName: 'Dresses', slug: 'formal-dresses', count: 15, isVisible: true },
-  { id: '3', name: 'T-Shirts', parentName: 'Tops', slug: 't-shirts', count: 18, isVisible: true },
-  { id: '4', name: 'Blouses', parentName: 'Tops', slug: 'blouses', count: 12, isVisible: true },
-  { id: '5', name: 'Sweaters', parentName: 'Tops', slug: 'sweaters', count: 8, isVisible: false },
-  { id: '6', name: 'Jeans', parentName: 'Bottoms', slug: 'jeans', count: 22, isVisible: true },
-  { id: '7', name: 'Skirts', parentName: 'Bottoms', slug: 'skirts', count: 10, isVisible: true },
+  { id: '1', name: 'Casual Dresses', parentName: 'Dresses', slug: 'casual-dresses', count: 20, isVisible: true, description: 'Comfortable day-to-day dresses, sundresses, and knit dresses.' },
+  { id: '2', name: 'Formal Dresses', parentName: 'Dresses', slug: 'formal-dresses', count: 15, isVisible: true, description: 'Evening gowns, prom dresses, cocktail wear, and official event attire.' },
+  { id: '3', name: 'T-Shirts', parentName: 'Tops', slug: 't-shirts', count: 18, isVisible: true, description: 'Cotton tees, crop tops, oversized t-shirts, and graphic tees.' },
+  { id: '4', name: 'Blouses', parentName: 'Tops', slug: 'blouses', count: 12, isVisible: true, description: 'Elegant silk shirts, linen blouses, and button-up shirts for work.' },
+  { id: '5', name: 'Sweaters', parentName: 'Tops', slug: 'sweaters', count: 8, isVisible: false, description: 'Knit cardigans, oversized pullovers, turtlenecks, and hoodies.' },
+  { id: '6', name: 'Jeans', parentName: 'Bottoms', slug: 'jeans', count: 22, isVisible: true, description: 'Slim fit, high rise, skinny, mom-jeans, and bootcut denims.' },
+  { id: '7', name: 'Skirts', parentName: 'Bottoms', slug: 'skirts', count: 10, isVisible: true, description: 'Mini skirts, midi pleated skirts, leather skirts, and denim skirts.' },
 ];
 
 export default function SubCategoriesPage() {
-  const [subCategories, setSubCategories] = useState(initialSubCategories);
-  const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', parentName: 'Dresses', slug: '', isVisible: true });
+  const [subCategoriesList, setSubCategoriesList] = useState(initialSubCategories);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
 
-  const filtered = subCategories.filter(
-    (sc) =>
-      sc.name.toLowerCase().includes(search.toLowerCase()) ||
-      sc.parentName.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filters State
+  const [showFilters, setShowFilters] = useState(false);
+  const [parentFilter, setParentFilter] = useState('all');
+  const [visibilityFilter, setVisibilityFilter] = useState('all');
+
+  // Preview Drawer
+  const [selectedSubCategory, setSelectedSubCategory] = useState<typeof initialSubCategories[0] | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const newSc = {
-      id: String(subCategories.length + 1),
+      id: String(subCategoriesList.length + 1),
       name: formData.name,
       parentName: formData.parentName,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       count: 0,
       isVisible: formData.isVisible,
+      description: formData.description || `A premium selection of ${formData.name}.`,
     };
-    setSubCategories([...subCategories, newSc]);
-    setFormData({ name: '', parentName: 'Dresses', slug: '', isVisible: true });
-    setDialogOpen(false);
+    setSubCategoriesList([...subCategoriesList, newSc]);
+    setFormData({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
+    setIsAddOpen(false);
+  };
+
+  const handleToggleVisibility = (id: string) => {
+    setSubCategoriesList(prev =>
+      prev.map(sc => sc.id === id ? { ...sc, isVisible: !sc.isVisible } : sc)
+    );
+    setSelectedSubCategory(prev => {
+      if (prev && prev.id === id) {
+        return { ...prev, isVisible: !prev.isVisible };
+      }
+      return prev;
+    });
   };
 
   const handleDelete = (id: string) => {
-    setSubCategories(subCategories.filter((sc) => sc.id !== id));
+    setSubCategoriesList(prev => prev.filter(sc => sc.id !== id));
+    setSelectedSubCategory(null);
+  };
+
+  const filteredSubCategories = useMemo(() => {
+    return subCategoriesList.filter(sc => {
+      const matchesSearch =
+        sc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sc.parentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sc.slug.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesParent = parentFilter === 'all' || sc.parentName === parentFilter;
+      
+      let matchesVisibility = true;
+      if (visibilityFilter !== 'all') {
+        matchesVisibility = visibilityFilter === 'visible' ? sc.isVisible : !sc.isVisible;
+      }
+
+      return matchesSearch && matchesParent && matchesVisibility;
+    });
+  }, [subCategoriesList, searchQuery, parentFilter, visibilityFilter]);
+
+  const stats = useMemo(() => {
+    const totalCount = subCategoriesList.length;
+    const activeCount = subCategoriesList.filter(s => s.isVisible).length;
+    const inactiveCount = totalCount - activeCount;
+    return {
+      totalCount,
+      activeCount,
+      inactiveCount
+    };
+  }, [subCategoriesList]);
+
+  const isFiltersApplied = parentFilter !== 'all' || visibilityFilter !== 'all';
+
+  const handleResetFilters = () => {
+    setParentFilter('all');
+    setVisibilityFilter('all');
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Sub Categories</h1>
-            <p className="text-muted-foreground mt-1 font-light">
-              Manage product sub-categories and their mappings to parent categories.
-            </p>
-          </div>
-          <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-            <SheetTrigger render={
-              <Button className="rounded-md flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/10">
-                <Plus className="h-4 w-4" />
-                Add Sub Category
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <SheetTitle className="text-2xl font-bold">Add Sub Category</SheetTitle>
-                </div>
-                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
-                  Create a new sub-category linked to a parent category
-                </SheetDescription>
-              </SheetHeader>
+      <div className="space-y-6 pb-12">
+        <PageHeader
+          titlePart1="Sub-Category"
+          titlePart2="Management"
+          badgeText="Sub-Categories Command Center"
+          subtitle="Manage product sub-categories and their mappings to parent categories."
+          actions={
+            <Button onClick={() => setIsAddOpen(true)} className="rounded-lg flex items-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/95 shadow-sm h-10">
+              <Plus className="h-4 w-4" /> Add Sub Category
+            </Button>
+          }
+        />
 
-              <form onSubmit={handleCreate} className="space-y-6">
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
-                  </div>
+        {/* Premium KPI Summary Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Subcategories</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2">{stats.totalCount} Sub-types</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <FolderTree className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
 
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                        Sub Category Name <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="name"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g., Casual Jackets"
-                          className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                        />
-                      </div>
-                    </div>
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active & Visible</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-emerald-500">{stats.activeCount} Online</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <Globe className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
-                        <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                        Slug (Optional)
-                      </Label>
-                      <Input
-                        id="slug"
-                        value={formData.slug}
-                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                        placeholder="e.g., casual-jackets"
-                        className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Hierarchy Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FolderTree className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Hierarchy</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="parent" className="text-sm font-medium flex items-center gap-2">
-                        <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
-                        Parent Category
-                      </Label>
-                      <select
-                        id="parent"
-                        value={formData.parentName}
-                        onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                        className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      >
-                        <option value="Dresses">Dresses</option>
-                        <option value="Tops">Tops</option>
-                        <option value="Bottoms">Bottoms</option>
-                        <option value="Accessories">Accessories</option>
-                      </select>
-                      <p className="text-xs text-muted-foreground">
-                        Select the parent category this sub-category belongs to
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Visibility Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Visibility</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <input
-                            id="visible"
-                            type="checkbox"
-                            checked={formData.isVisible}
-                            onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
-                            className="rounded-md border-border/60 accent-primary h-5 w-5"
-                          />
-                          <div className="space-y-0.5">
-                            <Label htmlFor="visible" className="text-sm font-semibold cursor-pointer">
-                              Visible
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              Make this sub-category visible on the storefront
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Globe className="h-4 w-4 text-primary" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                    className="rounded-lg h-10 px-6 font-medium"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20"
-                  >
-                    Add Sub Category
-                  </Button>
-                </SheetFooter>
-              </form>
-            </SheetContent>
-          </Sheet>
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-gray-500/5 to-slate-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Hidden Status</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-muted-foreground">{stats.inactiveCount} Draft</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-muted/30 flex items-center justify-center text-muted-foreground">
+                <EyeOff className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Card className="border-border/40 rounded-lg bg-card">
+        {/* Dashboard panel */}
+        <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
           <CardContent className="p-6 space-y-6">
-            <div className="relative max-w-sm group">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input
-                placeholder="Search sub categories..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary/40 h-10 rounded-md"
-              />
+            
+            {/* Toolbar */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Search */}
+                <div className="relative max-w-sm flex-1 group">
+                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    placeholder="Search sub-categories by name, slug or parent..."
+                    className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Filter and Export buttons */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant={showFilters ? 'default' : 'outline'} 
+                    size="sm"
+                    className="rounded-lg h-10 px-4 flex items-center gap-2"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    Filters
+                    {isFiltersApplied && (
+                      <span className="ml-1 w-2 h-2 rounded-full bg-[#14b8a6]" />
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-lg h-10 px-4 flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+
+              {/* Advanced Expandable Filter Panel */}
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 bg-muted/30 border border-border/40 rounded-xl grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                      {/* Filter by Parent Category */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Layers className="h-3 w-3" /> Parent Category
+                        </span>
+                        <select
+                          value={parentFilter}
+                          onChange={(e) => setParentFilter(e.target.value)}
+                          className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
+                        >
+                          <option value="all">All Parents</option>
+                          <option value="Dresses">Dresses</option>
+                          <option value="Tops">Tops</option>
+                          <option value="Bottoms">Bottoms</option>
+                          <option value="Accessories">Accessories</option>
+                        </select>
+                      </div>
+
+                      {/* Filter by Visibility */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          Visibility Status
+                        </span>
+                        <select
+                          value={visibilityFilter}
+                          onChange={(e) => setVisibilityFilter(e.target.value)}
+                          className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
+                        >
+                          <option value="all">All Mappings</option>
+                          <option value="visible">Visible Only</option>
+                          <option value="hidden">Hidden Only</option>
+                        </select>
+                      </div>
+
+                      {/* Reset filter buttons */}
+                      <div className="flex items-end justify-end">
+                        {isFiltersApplied && (
+                          <Button 
+                            onClick={handleResetFilters} 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs font-semibold text-[#14b8a6] hover:text-[#0d9488]"
+                          >
+                            Reset Active Filters
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="border border-border/40 rounded-md overflow-hidden">
+            {/* Table */}
+            <div className="border border-border/30 rounded-xl overflow-hidden bg-card/40">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead>Sub Category Name</TableHead>
-                    <TableHead>Parent Category</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead className="text-center">Products</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="w-16"></TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/20">
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Sub Category Name</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Parent Category</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Slug</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Mapped Products</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Status</TableHead>
+                    <TableHead className="w-16 py-4"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((sc) => (
-                    <TableRow key={sc.id} className="hover:bg-muted/10">
-                      <TableCell className="font-semibold text-sm text-foreground">{sc.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{sc.parentName}</TableCell>
-                      <TableCell className="text-sm font-mono text-muted-foreground/80">{sc.slug}</TableCell>
-                      <TableCell className="text-center text-sm font-semibold">{sc.count}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={sc.isVisible ? 'default' : 'outline'}
-                          className={sc.isVisible ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold border-transparent rounded-full px-2.5 py-0.5' : 'text-muted-foreground rounded-full px-2.5 py-0.5'}
-                        >
-                          {sc.isVisible ? 'Visible' : 'Hidden'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger render={
-                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
-                              <MoreVertical className="h-4 w-4" />
-                            </div>
-                          } />
-                          <DropdownMenuContent align="end" className="w-36 p-1 rounded-md bg-card border border-border/60 shadow-lg">
-                            <DropdownMenuItem className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer text-xs font-semibold flex items-center gap-2">
-                              <Edit className="h-3.5 w-3.5" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(sc.id)}
-                              className="p-2 rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer text-xs font-semibold flex items-center gap-2"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filtered.length === 0 && (
+                  {filteredSubCategories.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-sm font-light">
-                        No sub categories found.
+                      <TableCell colSpan={6} className="text-center py-12">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <AlertTriangle className="h-8 w-8 text-muted-foreground/60" />
+                          <p className="text-sm font-semibold text-muted-foreground">No matching subcategories found</p>
+                          <p className="text-xs text-muted-foreground font-light">Try adjusting filters or search keywords</p>
+                        </div>
                       </TableCell>
                     </TableRow>
+                  ) : (
+                    filteredSubCategories.map((sc) => (
+                      <TableRow 
+                        key={sc.id}
+                        onClick={() => setSelectedSubCategory(sc)}
+                        className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer group/row"
+                      >
+                        {/* Sub Category name */}
+                        <TableCell className="py-4 font-semibold text-sm text-foreground flex items-center gap-2">
+                          <FolderTree className="h-4 w-4 text-[#14b8a6]" />
+                          {sc.name}
+                        </TableCell>
+
+                        {/* Parent Name */}
+                        <TableCell className="py-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Layers className="h-3.5 w-3.5 text-muted-foreground/60" />
+                            <span>{sc.parentName}</span>
+                          </div>
+                        </TableCell>
+
+                        {/* Slug */}
+                        <TableCell className="py-4">
+                          <span className="font-mono font-bold text-xs bg-muted/60 border border-border/40 text-foreground px-2.5 py-1 rounded-md select-all group-hover/row:border-[#14b8a6]/25 transition-all">
+                            {sc.slug}
+                          </span>
+                        </TableCell>
+
+                        {/* Mapped products count */}
+                        <TableCell className="py-4 text-center text-sm font-semibold text-foreground">
+                          {sc.count} products
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="py-4 text-center">
+                          <Badge 
+                            className={`rounded-md px-2.5 py-1 text-xs font-semibold border select-none ${
+                              sc.isVisible 
+                                ? 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20' 
+                                : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                            }`}
+                          >
+                            {sc.isVisible ? 'Visible' : 'Hidden'}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger render={
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors border-none bg-transparent">
+                                <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            } />
+                            <DropdownMenuContent align="end" className="p-2 rounded-lg bg-card border border-border/40 w-36">
+                              <DropdownMenuItem onClick={() => setSelectedSubCategory(sc)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                <Eye className="mr-2 h-4 w-4 text-[#14b8a6]" /> View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleVisibility(sc.id)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                {sc.isVisible ? (
+                                  <>
+                                    <EyeOff className="mr-2 h-4 w-4 text-amber-500" /> Hide Online
+                                  </>
+                                ) : (
+                                  <>
+                                    <Globe className="mr-2 h-4 w-4 text-emerald-500" /> Make Visible
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <Separator className="my-1 border-border/10" />
+                              <DropdownMenuItem onClick={() => handleDelete(sc.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                                <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Sub Category Slide Drawer */}
+        <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            <SheetHeader className="p-6 border-b border-border/20">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Add Sub Category
+              </SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                Define the name, url parameters, and connect it to a parent department.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub Category Name</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="name" 
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Casual Jackets" 
+                      className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="slug" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL Slug</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="slug" 
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="casual-jackets" 
+                        className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="parent" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Parent Department</Label>
+                    <select
+                      id="parent"
+                      value={formData.parentName}
+                      onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="Dresses">Dresses</option>
+                      <option value="Tops">Tops</option>
+                      <option value="Bottoms">Bottoms</option>
+                      <option value="Accessories">Accessories</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Scope Description</Label>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe this subcategory department details..."
+                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <input 
+                    type="checkbox" 
+                    id="isVisible" 
+                    checked={formData.isVisible} 
+                    onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                    className="rounded border-border/60 text-primary accent-primary h-4 w-4"
+                  />
+                  <Label htmlFor="isVisible" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                    Make this sub-category visible on the website immediately
+                  </Label>
+                </div>
+              </div>
+
+              <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-lg h-11 px-6">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95">
+                  Save Mappings
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Quick View Details Drawer */}
+        <Sheet open={selectedSubCategory !== null} onOpenChange={(open) => { if (!open) setSelectedSubCategory(null); }}>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            {selectedSubCategory && (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b border-border/20 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
+                        {selectedSubCategory.slug}
+                      </span>
+                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                        selectedSubCategory.isVisible
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                      }`}>
+                        {selectedSubCategory.isVisible ? 'Visible' : 'Hidden'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={`h-9 w-9 rounded-lg`} 
+                        onClick={() => handleToggleVisibility(selectedSubCategory.id)}
+                        title="Toggle Visibility"
+                      >
+                        {selectedSubCategory.isVisible ? <EyeOff className="h-4.5 w-4.5" /> : <Globe className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
+                        onClick={() => handleDelete(selectedSubCategory.id)}
+                        title="Delete Subcategory"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">{selectedSubCategory.name}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Parent Department: {selectedSubCategory.parentName}</p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Layers className="h-3.5 w-3.5 text-primary" /> Total Products
+                        </span>
+                        <h4 className="text-2xl font-black text-foreground mt-1.5">{selectedSubCategory.count} SKUs</h4>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <FolderTree className="h-3.5 w-3.5 text-primary" /> Parent Category
+                        </span>
+                        <h4 className="text-lg font-bold text-foreground mt-2">{selectedSubCategory.parentName}</h4>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Subcategory Scope</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                      {selectedSubCategory.description || "No customized description set for this subcategory."}
+                    </p>
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AdminLayout>
   );

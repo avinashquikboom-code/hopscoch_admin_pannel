@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { 
@@ -187,18 +188,17 @@ export default function DashboardPage() {
     <AdminLayout>
       <div className="space-y-8 pb-12">
         {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-1.5 font-light">
-              Welcome back! Here&apos;s an overview of the Aura Couture fashion store today.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/40 border border-border/20 px-3.5 py-1.5 rounded-full w-fit">
-            <span className="w-2 h-2 rounded-full bg-[#14b8a6] animate-ping" />
-            Live Store Status
-          </div>
-        </div>
+        <PageHeader
+          showClock={true}
+          badgeText="Active Platform Command Center"
+          subtitle="Monitor real-time corporate workspace parameters, track check-ins, and broadcast ecosystem-wide updates."
+          actions={
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/40 border border-border/20 px-3.5 py-1.5 rounded-full w-fit h-10 select-none">
+              <span className="w-2 h-2 rounded-full bg-[#14b8a6] animate-ping" />
+              Live Store Status
+            </div>
+          }
+        />
 
         {/* Primary KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

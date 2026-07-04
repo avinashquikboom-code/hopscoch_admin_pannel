@@ -62,45 +62,45 @@ export default function ShippingChargesPage() {
                 <Plus className="h-4 w-4" /> Add Charge Rule
               </Button>
             } />
-            <SheetContent side="right" className="w-[500px] overflow-y-auto">
-              <SheetHeader className="mb-6">
+            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+              <SheetHeader className="p-6 border-b border-border/20">
                 <SheetTitle className="text-xl font-bold">Add Shipping Charge</SheetTitle>
                 <SheetDescription className="text-sm text-muted-foreground">Create a new shipping rate rule.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Rule Name *</Label>
-                  <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Standard Delivery" className="h-11 rounded-lg" />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Charge Type *</Label>
-                  <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as ChargeType })}
-                    className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none">
-                    {Object.entries(typeConfig).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Amount (₹)</Label>
-                  <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 49" className="h-11 rounded-lg" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Min Value / Weight</Label>
-                    <Input type="number" value={form.min} onChange={e => setForm({ ...form, min: e.target.value })} placeholder="0" className="h-11 rounded-lg" />
+                    <Label className="text-sm font-semibold">Rule Name *</Label>
+                    <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Standard Delivery" className="h-11 rounded-lg" />
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Max Value / Weight</Label>
-                    <Input type="number" value={form.max} onChange={e => setForm({ ...form, max: e.target.value })} placeholder="Unlimited" className="h-11 rounded-lg" />
+                    <Label className="text-sm font-semibold">Charge Type *</Label>
+                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as ChargeType })}
+                      className="w-full h-11 rounded-lg border border-border/60 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/40 outline-none">
+                      {Object.entries(typeConfig).map(([k, v]) => (
+                        <option key={k} value={k}>{v.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Amount (₹)</Label>
+                    <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 49" className="h-11 rounded-lg" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Min Value / Weight</Label>
+                      <Input type="number" value={form.min} onChange={e => setForm({ ...form, min: e.target.value })} placeholder="0" className="h-11 rounded-lg" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Max Value / Weight</Label>
+                      <Input type="number" value={form.max} onChange={e => setForm({ ...form, max: e.target.value })} placeholder="Unlimited" className="h-11 rounded-lg" />
+                    </div>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-border/40">
-                  <SheetFooter className="pt-4 gap-3 justify-end">
-                    <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-lg">Cancel</Button>
-                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                  </SheetFooter>
-                </div>
+                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                  <Button type="button" variant="ghost" onClick={() => setSheetOpen(false)} className="rounded-lg">Cancel</Button>
+                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
+                </SheetFooter>
               </form>
             </SheetContent>
           </Sheet>

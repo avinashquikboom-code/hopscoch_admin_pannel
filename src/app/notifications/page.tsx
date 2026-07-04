@@ -1,19 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -29,18 +23,17 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus,
   Search,
@@ -57,9 +50,17 @@ import {
   Clock,
   Radio,
   Target,
+  Sparkles,
+  Info,
+  Smartphone,
+  Eye,
+  AlertTriangle,
+  Globe,
+  EyeOff
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
-const notifications = [
+const initialNotifications = [
   {
     id: '1',
     title: 'Summer Sale is Live!',
@@ -68,7 +69,7 @@ const notifications = [
     sendToAll: true,
     targetUsers: [],
     isSent: true,
-    sentAt: 'Jun 1, 2024 10:00 AM',
+    sentAt: '2026-06-01 10:00 AM',
   },
   {
     id: '2',
@@ -76,307 +77,309 @@ const notifications = [
     message: 'Use code WELCOME20 to get 20% off your first order.',
     type: 'coupon',
     sendToAll: false,
-    targetUsers: ['user1', 'user2', 'user3'],
+    targetUsers: ['sarah@email.com', 'michael@email.com', 'lisa@email.com'],
     isSent: true,
-    sentAt: 'Jun 2, 2024 2:00 PM',
+    sentAt: '2026-06-02 02:00 PM',
   },
   {
     id: '3',
     title: 'Order Shipped',
-    message: 'Your order #12345 has been shipped and will arrive in 2-3 business days.',
+    message: 'Your order #ORD-1234 has been shipped and will arrive in 2-3 business days.',
     type: 'order',
     sendToAll: false,
-    targetUsers: ['user4'],
+    targetUsers: ['james@email.com'],
     isSent: true,
-    sentAt: 'Jun 3, 2024 9:00 AM',
+    sentAt: '2026-06-03 09:00 AM',
   },
   {
     id: '4',
-    title: 'New Collection Alert',
+    title: 'Winter Collection Alert',
     message: 'Check out our new winter collection now available in store.',
     type: 'general',
     sendToAll: true,
     targetUsers: [],
     isSent: false,
-    sentAt: null,
+    sentAt: '',
   },
 ];
 
-const notificationTypes = [
-  { value: 'offer', label: 'Offer', icon: Tag, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  { value: 'coupon', label: 'Coupon', icon: Tag, color: 'text-violet-500', bg: 'bg-violet-500/10' },
-  { value: 'order', label: 'Order Update', icon: ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  { value: 'general', label: 'General', icon: Bell, color: 'text-primary', bg: 'bg-primary/10' },
-];
+const notificationTypes = {
+  offer: { label: 'Offer', icon: Tag, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  coupon: { label: 'Coupon', icon: Tag, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
+  order: { label: 'Order Update', icon: ShoppingBag, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  general: { label: 'General', icon: Bell, color: 'bg-[#14b8a6]/10 text-[#14b8a6] border-[#14b8a6]/20' },
+};
 
 export default function NotificationsPage() {
+  const [notificationsList, setNotificationsList] = useState(initialNotifications);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [sendToAll, setSendToAll] = useState(true);
 
-  const filteredNotifications = notifications.filter(
-    (n) =>
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Form State
+  const [formData, setFormData] = useState({ title: '', type: 'general', message: '', link: '', targetUsers: '' });
 
-  const stats = [
-    {
-      label: 'Total Sent',
-      value: notifications.filter((n) => n.isSent).length,
-      icon: CheckCircle2,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
-    },
-    {
-      label: 'Pending',
-      value: notifications.filter((n) => !n.isSent).length,
-      icon: Clock,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-    },
-    {
-      label: 'Broadcast',
-      value: notifications.filter((n) => n.sendToAll).length,
-      icon: Radio,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Targeted',
-      value: notifications.filter((n) => !n.sendToAll).length,
-      icon: Target,
-      color: 'text-violet-500',
-      bg: 'bg-violet-500/10',
-    },
-  ];
+  // Selected Notification for Quick View
+  const [selectedNotification, setSelectedNotification] = useState<typeof initialNotifications[0] | null>(null);
+
+  const handleCreateNotification = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newNotif = {
+      id: String(notificationsList.length + 1),
+      title: formData.title,
+      type: formData.type,
+      message: formData.message,
+      sendToAll: sendToAll,
+      targetUsers: sendToAll ? [] : formData.targetUsers.split(',').map(u => u.trim()).filter(Boolean),
+      isSent: false,
+      sentAt: '',
+    };
+    setNotificationsList([newNotif, ...notificationsList]);
+    setFormData({ title: '', type: 'general', message: '', link: '', targetUsers: '' });
+    setSendToAll(true);
+    setIsAddOpen(false);
+  };
+
+  const handleSendNotification = (id: string) => {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    
+    setNotificationsList(prev =>
+      prev.map(n => n.id === id ? { ...n, isSent: true, sentAt: formattedDate } : n)
+    );
+    setSelectedNotification(prev => {
+      if (prev && prev.id === id) {
+        return { ...prev, isSent: true, sentAt: formattedDate };
+      }
+      return prev;
+    });
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotificationsList(prev => prev.filter(n => n.id !== id));
+    setSelectedNotification(null);
+  };
+
+  const filteredNotifications = useMemo(() => {
+    return notificationsList.filter(
+      (n) =>
+        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.message.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [notificationsList, searchQuery]);
+
+  const stats = useMemo(() => {
+    const totalCount = notificationsList.length;
+    const sentCount = notificationsList.filter((n) => n.isSent).length;
+    const pendingCount = totalCount - sentCount;
+    const broadcastCount = notificationsList.filter((n) => n.sendToAll).length;
+    return {
+      totalCount,
+      sentCount,
+      pendingCount,
+      broadcastCount
+    };
+  }, [notificationsList]);
 
   return (
     <AdminLayout>
-      <div className="space-y-8 pb-12">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Notifications</h1>
-            <p className="text-muted-foreground mt-1 text-sm font-light">
-              Send and manage push notifications to your customers.
-            </p>
-          </div>
-          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <SheetTrigger render={
-              <Button className="gap-2 rounded-md">
-                <Plus className="h-4 w-4" />
-                Send Notification
-              </Button>
-            } />
-            <SheetContent side="right" className="w-[550px] overflow-y-auto">
-              <SheetHeader className="mb-6">
-                <SheetTitle className="text-xl font-bold">Send New Notification</SheetTitle>
-                <SheetDescription className="text-sm text-muted-foreground">
-                  Compose and send a push notification to users.
-                </SheetDescription>
-              </SheetHeader>
-              <Separator className="mb-6" />
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label htmlFor="title" className="text-sm font-semibold">Title *</Label>
-                  <Input id="title" placeholder="Summer Sale is Live!" className="h-11 rounded-lg" />
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="type" className="text-sm font-semibold">Notification Type *</Label>
-                  <Select>
-                    <SelectTrigger className="h-11 rounded-lg">
-                      <SelectValue placeholder="Select a type..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg">
-                      {notificationTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value} className="rounded-lg">
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="message" className="text-sm font-semibold">Message *</Label>
-                  <Textarea id="message" placeholder="Write your notification message..." rows={3} className="rounded-lg resize-none" />
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="link" className="text-sm font-semibold">Link URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Input id="link" placeholder="https://example.com/page" className="h-11 rounded-lg" />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Image <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <div className="border-2 border-dashed border-border/60 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Click to upload notification image</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border/40">
-                    <Checkbox
-                      id="sendToAll"
-                      checked={sendToAll}
-                      onCheckedChange={(checked) => setSendToAll(checked as boolean)}
-                      className="h-5 w-5"
-                    />
-                    <div className="flex-1">
-                      <Label htmlFor="sendToAll" className="text-sm font-semibold cursor-pointer">Send to All Users</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Broadcast this notification to all registered users</p>
-                    </div>
-                  </div>
-                </div>
-                {!sendToAll && (
-                  <div className="space-y-3">
-                    <Label htmlFor="targetUsers" className="text-sm font-semibold">Target Users</Label>
-                    <Input id="targetUsers" placeholder="Enter user IDs separated by comma..." className="h-11 rounded-lg" />
-                  </div>
-                )}
-                <div className="pt-4 border-t border-border/40">
-                  <SheetFooter className="gap-3 justify-end pt-4">
-                    <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
-                      Cancel
-                    </Button>
-                    <Button className="rounded-lg gap-2 bg-primary text-white hover:bg-primary/95">
-                      <Send className="h-4 w-4" />
-                      Send Notification
-                    </Button>
-                  </SheetFooter>
+      <div className="space-y-6 pb-12">
+        <PageHeader
+          titlePart1="Notification"
+          titlePart2="Broadcasting"
+          badgeText="Notifications Command Center"
+          subtitle="Send push announcements, trigger user-segment alerts, and track system broadcasts."
+          actions={
+            <Button onClick={() => setIsAddOpen(true)} className="rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-2 cursor-pointer h-10 shadow-sm">
+              <Plus className="h-4 w-4" /> Send Notification
+            </Button>
+          }
+        />
+
+        {/* Premium KPI Summary Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Broadcasts</span>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Bell className="h-5 w-5" />
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label} className="border-border/40 rounded-lg">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </p>
-                    <h3 className={`text-3xl font-bold mt-1.5 ${stat.color}`}>{stat.value}</h3>
-                  </div>
-                  <div className={`h-11 w-11 rounded-md ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Notifications Table */}
-        <Card className="border-border/40 rounded-lg">
-          <CardHeader className="pb-4 px-6 pt-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-base font-bold">All Notifications</CardTitle>
-                <CardDescription className="text-xs mt-0.5">{notifications.length} notifications total</CardDescription>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.totalCount} Drafts</h3>
+                <p className="text-xs text-muted-foreground mt-1.5 font-light">{stats.sentCount} sent alerts successfully</p>
               </div>
-              <div className="relative max-w-xs w-full group">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sent Alerts</span>
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight text-emerald-500">{stats.sentCount} Completed</h3>
+                <p className="text-xs text-muted-foreground mt-1.5 font-light">Dispatched to target endpoints</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/5 to-orange-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Pending Dispatch</span>
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight text-amber-500">{stats.pendingCount} Drafts</h3>
+                <p className="text-xs text-muted-foreground mt-1.5 font-light">Awaiting click send trigger</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/5 to-indigo-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Global Broadcasts</span>
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                  <Radio className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.broadcastCount} Broadcasts</h3>
+                <p className="text-xs text-muted-foreground mt-1.5 font-light">Alerts mapping all active users</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Notifications Table Panel */}
+        <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
+          <CardContent className="p-6 space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <span className="text-sm font-bold text-foreground">Dispatched Alerts Ledger</span>
+              <div className="relative max-w-sm flex-1 group">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder="Search notifications..."
-                  className="pl-10 h-9 rounded-md border-border/50"
+                  placeholder="Search alerts by title or body..."
+                  className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <div className="border border-border/40 rounded-md overflow-hidden">
+
+            {/* Table */}
+            <div className="border border-border/30 rounded-xl overflow-hidden bg-card/40">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow className="hover:bg-transparent border-border/40">
-                    <TableHead className="text-xs font-semibold text-muted-foreground py-3">Type</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Title</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Message</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Target</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Sent At</TableHead>
-                    <TableHead className="w-12" />
+                  <TableRow className="hover:bg-transparent border-b border-border/20">
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Alert Type</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Title</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Message Snippet</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Target Coverage</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Status</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Sent Timestamp</TableHead>
+                    <TableHead className="w-16 py-4" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNotifications.map((notification) => {
-                    const typeConfig = notificationTypes.find((t) => t.value === notification.type);
-                    const Icon = typeConfig?.icon || Bell;
+                    const typeConfig = notificationTypes[notification.type as keyof typeof notificationTypes] || { label: 'General', icon: Bell, color: 'bg-muted text-foreground' };
+                    const Icon = typeConfig.icon;
                     return (
-                      <TableRow key={notification.id} className="hover:bg-muted/10 border-border/30">
-                        <TableCell>
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${typeConfig?.bg} ${typeConfig?.color}`}>
-                            <Icon className="h-3 w-3" />
-                            {typeConfig?.label || notification.type}
+                      <TableRow 
+                        key={notification.id}
+                        onClick={() => setSelectedNotification(notification)}
+                        className="hover:bg-muted/20 border-b border-border/20 transition-colors cursor-pointer group/row"
+                      >
+                        {/* Type */}
+                        <TableCell className="py-4">
+                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${typeConfig.color}`}>
+                            <Icon className="h-3.5 w-3.5" />
+                            <span>{typeConfig.label}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-semibold text-sm text-foreground">
+
+                        {/* Title */}
+                        <TableCell className="py-4 font-semibold text-sm text-foreground">
                           {notification.title}
                         </TableCell>
-                        <TableCell>
-                          <p className="max-w-[200px] truncate text-xs text-muted-foreground">
-                            {notification.message}
-                          </p>
+
+                        {/* Message snippet */}
+                        <TableCell className="py-4 text-xs text-muted-foreground font-normal max-w-[240px] truncate">
+                          {notification.message}
                         </TableCell>
-                        <TableCell className="text-center">
+
+                        {/* Coverage target */}
+                        <TableCell className="py-4 text-center">
                           {notification.sendToAll ? (
-                            <Badge className="bg-primary/10 text-primary border-transparent rounded-full text-xs gap-1">
-                              <Users className="h-3 w-3" /> All
+                            <Badge className="bg-primary/15 text-primary border-transparent rounded-full text-xs gap-1 py-0.5">
+                              <Users className="h-3 w-3" /> All Customers
                             </Badge>
                           ) : (
-                            <Badge className="bg-muted text-muted-foreground border-transparent rounded-full text-xs">
-                              {notification.targetUsers.length} users
+                            <Badge className="bg-muted text-muted-foreground border-transparent rounded-full text-xs py-0.5">
+                              {notification.targetUsers.length} Segmented
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">
+
+                        {/* Status */}
+                        <TableCell className="py-4 text-center">
                           {notification.isSent ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-transparent rounded-full text-xs gap-1">
+                            <Badge className="bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20 rounded-md px-2.5 py-0.5 text-xs gap-1">
                               <CheckCircle2 className="h-3 w-3" /> Sent
                             </Badge>
                           ) : (
-                            <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-transparent rounded-full text-xs gap-1">
-                              <Clock className="h-3 w-3" /> Pending
+                            <Badge className="bg-amber-500/10 text-amber-500 dark:bg-amber-500/5 dark:text-amber-400 border-amber-500/20 rounded-md px-2.5 py-0.5 text-xs gap-1">
+                              <Clock className="h-3 w-3" /> Pending Draft
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell>
+
+                        {/* Timestamp */}
+                        <TableCell className="py-4 text-sm text-muted-foreground font-normal">
                           {notification.sentAt ? (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3 flex-shrink-0" />
-                              {notification.sentAt}
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
+                              <span>{notification.sentAt}</span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground/40 text-xs">—</span>
+                            <span className="text-muted-foreground/30 italic text-xs">Not sent</span>
                           )}
                         </TableCell>
-                        <TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger render={
-                              <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
-                                <MoreVertical className="h-4 w-4" />
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors border-none bg-transparent">
+                                <MoreVertical className="h-4 w-4 text-muted-foreground" />
                               </div>
                             } />
-                            <DropdownMenuContent align="end" className="w-40 p-1 rounded-md border-border/50">
-                              {!notification.isSent && (
-                                <>
-                                  <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                                    <Send className="h-3.5 w-3.5" /> Send Now
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator className="my-1 border-border/30" />
-                                </>
-                              )}
-                              <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                                View Details
+                            <DropdownMenuContent align="end" className="p-2 rounded-lg bg-card border border-border/40 w-36">
+                              <DropdownMenuItem onClick={() => setSelectedNotification(notification)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                <Eye className="mr-2 h-4 w-4 text-[#14b8a6]" /> Preview UI
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="my-1 border-border/30" />
-                              <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
-                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              {!notification.isSent && (
+                                <DropdownMenuItem onClick={() => handleSendNotification(notification.id)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                  <Send className="mr-2 h-4 w-4 text-emerald-500" /> Broadcast Now
+                                </DropdownMenuItem>
+                              )}
+                              <Separator className="my-1 border-border/10" />
+                              <DropdownMenuItem onClick={() => handleDeleteNotification(notification.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                                <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -387,7 +390,10 @@ export default function NotificationsPage() {
                   {filteredNotifications.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
-                        No notifications found.
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <AlertTriangle className="h-8 w-8 text-muted-foreground/60" />
+                          <p className="text-sm font-semibold text-muted-foreground">No matching alerts found</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -396,6 +402,227 @@ export default function NotificationsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Send Notification Drawer */}
+        <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            <SheetHeader className="p-6 border-b border-border/20">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Compose Notification
+              </SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                Set promotion message alerts and configure targeted user segments.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleCreateNotification} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alert Title</Label>
+                  <Input 
+                    id="title" 
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. Summer discounts are here!" 
+                    className="h-11 rounded-lg border-border/50 focus:border-primary transition-all" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label htmlFor="link" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Routing Link (Optional)</Label>
+                    <Input 
+                      id="link" 
+                      value={formData.link}
+                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                      placeholder="/shop/summer" 
+                      className="h-11 rounded-lg border-border/50 focus:border-primary" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alert Type</Label>
+                    <select
+                      id="type"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="general">General Alert</option>
+                      <option value="offer">Special Offer</option>
+                      <option value="coupon">Coupon Discount</option>
+                      <option value="order">Order Update</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="message" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Broadcast Message</Label>
+                  <textarea
+                    id="message"
+                    required
+                    rows={3}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    placeholder="Compose notification text alert body..."
+                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                  />
+                </div>
+
+                {/* Segment Selection checkbox */}
+                <div className="p-4 bg-muted/20 border border-border/30 rounded-xl space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <input 
+                      type="checkbox" 
+                      id="sendToAll" 
+                      checked={sendToAll} 
+                      onChange={(e) => setSendToAll(e.target.checked)}
+                      className="rounded border-border/60 text-primary accent-primary h-4.5 w-4.5 cursor-pointer"
+                    />
+                    <Label htmlFor="sendToAll" className="text-sm font-semibold text-foreground cursor-pointer select-none">
+                      Broadcast to all registered users
+                    </Label>
+                  </div>
+                  {!sendToAll && (
+                    <div className="space-y-1.5 pt-2 border-t border-border/20">
+                      <Label htmlFor="targetUsers" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Segment Email Handles</Label>
+                      <Input 
+                        id="targetUsers"
+                        value={formData.targetUsers}
+                        onChange={(e) => setFormData({ ...formData, targetUsers: e.target.value })}
+                        placeholder="e.g. sarah@email.com, james@email.com"
+                        className="h-10 rounded-lg"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Comma-separated email handles targeting specific customers</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-lg h-11 px-6">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95 flex items-center gap-1.5">
+                  <Send className="h-4 w-4" /> Save Draft
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Quick View Details & Mock Smartphone Preview Drawer */}
+        <Sheet open={selectedNotification !== null} onOpenChange={(open) => { if (!open) setSelectedNotification(null); }}>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-l-border/30 backdrop-blur-xl">
+            {selectedNotification && (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b border-border/20 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono font-black text-xs bg-muted/60 border border-border/40 px-3 py-1 rounded-lg">
+                        ID: {selectedNotification.id}
+                      </span>
+                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                        selectedNotification.isSent
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                      }`}>
+                        {selectedNotification.isSent ? 'Sent' : 'Draft'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!selectedNotification.isSent && (
+                        <Button 
+                          variant="outline" 
+                          className="h-9 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1" 
+                          onClick={() => handleSendNotification(selectedNotification.id)}
+                        >
+                          <Send className="h-3.5 w-3.5" /> Send Alert
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
+                        onClick={() => handleDeleteNotification(selectedNotification.id)}
+                        title="Delete Alert"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">{selectedNotification.title}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-light">
+                      {selectedNotification.isSent ? `Broadcast complete at ${selectedNotification.sentAt}` : 'Draft Campaign pending dispatch'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  {/* Mock Smartphone Push Notification render box */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 justify-center">
+                      <Smartphone className="h-4 w-4" /> Live Mobile Display Simulation
+                    </span>
+                    {/* Mock phone container */}
+                    <div className="w-full max-w-[340px] mx-auto rounded-3xl border-4 border-slate-700 bg-slate-900 p-3 shadow-xl relative aspect-[9/16] flex flex-col justify-start pt-12 overflow-hidden select-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+                      {/* Phone notch */}
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4.5 bg-black rounded-full z-20 flex items-center justify-between px-3">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+                        <span className="w-12 h-1 bg-slate-800 rounded-full" />
+                      </div>
+                      
+                      {/* Notification Lockscreen Alert Block */}
+                      <div className="w-full bg-white/10 hover:bg-white/15 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 shadow-lg text-white space-y-1.5 transition-colors cursor-pointer select-none">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 rounded bg-primary flex items-center justify-center">
+                              <Bell className="h-3 w-3 text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide">Aura Store</span>
+                          </div>
+                          <span className="text-[9px] text-white/50">now</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold leading-tight">{selectedNotification.title}</p>
+                          <p className="text-[10px] text-white/70 leading-normal line-clamp-2 font-light">{selectedNotification.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="my-6 border-border/10" />
+
+                  {/* Targeted Segment information */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recipient Targeting</h3>
+                    <Card className="border-border/30 bg-muted/10 rounded-lg">
+                      <CardContent className="p-4 space-y-2 text-sm font-semibold">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground font-normal">Target Type</span>
+                          <span>{selectedNotification.sendToAll ? 'All Registered Users' : 'Segmented Groups'}</span>
+                        </div>
+                        {!selectedNotification.sendToAll && (
+                          <div className="pt-2 border-t border-border/10 space-y-1.5">
+                            <span className="text-[10px] text-muted-foreground block font-bold uppercase tracking-wider">Recipients List</span>
+                            <div className="flex flex-wrap gap-1.5 mt-1">
+                              {selectedNotification.targetUsers.map((email, idx) => (
+                                <Badge key={idx} variant="outline" className="font-mono text-xs">{email}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AdminLayout>
   );

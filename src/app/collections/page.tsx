@@ -1,19 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -29,7 +23,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -39,8 +32,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus,
   Search,
@@ -58,454 +52,317 @@ import {
   Hash,
   AlignLeft,
   Type,
-  Calendar as CalendarIcon,
-  Image as ImageIcon,
   Globe,
   Info,
+  EyeOff,
+  AlertTriangle
 } from 'lucide-react';
 
-const collections = [
+const initialCollections = [
   {
     id: '1',
-    name: 'Summer Collection 2024',
-    slug: 'summer-collection-2024',
+    name: 'Summer Collection 2026',
+    slug: 'summer-collection-2026',
     type: 'summer',
-    description: 'Fresh styles for the summer season',
+    description: 'Fresh lightweight styles, linens, and sun dresses perfect for summer.',
     isActive: true,
     order: 1,
     productCount: 25,
-    startDate: 'Jun 1, 2024',
-    endDate: 'Aug 31, 2024',
+    startDate: '2026-06-01',
+    endDate: '2026-08-31',
   },
   {
     id: '2',
-    name: 'Winter Collection 2024',
-    slug: 'winter-collection-2024',
+    name: 'Winter Collection 2026',
+    slug: 'winter-collection-2026',
     type: 'winter',
-    description: 'Cozy winter fashion essentials',
+    description: 'Heavy knits, coats, sweaters, and thermals for winter weather.',
     isActive: false,
     order: 2,
     productCount: 30,
-    startDate: 'Dec 1, 2024',
-    endDate: 'Feb 28, 2025',
+    startDate: '2026-12-01',
+    endDate: '2027-02-28',
   },
   {
     id: '3',
     name: 'Festival Special',
     slug: 'festival-special',
     type: 'festival',
-    description: 'Special edition festival wear',
+    description: 'Curated traditional patterns, embroidery, and celebratory drops.',
     isActive: true,
     order: 3,
     productCount: 18,
-    startDate: 'Oct 1, 2024',
-    endDate: 'Nov 30, 2024',
+    startDate: '2026-10-01',
+    endDate: '2026-11-30',
   },
   {
     id: '4',
     name: 'Luxury Line',
     slug: 'luxury-line',
     type: 'luxury',
-    description: 'Premium luxury fashion pieces',
+    description: 'Crafted premium apparel from the finest pure silks and high-grade wools.',
     isActive: true,
     order: 4,
     productCount: 15,
-    startDate: null,
-    endDate: null,
+    startDate: '',
+    endDate: '',
   },
 ];
 
-const collectionTypes = [
-  { value: 'summer', label: 'Summer', color: 'text-amber-600', bg: 'bg-amber-500/10' },
-  { value: 'winter', label: 'Winter', color: 'text-blue-600', bg: 'bg-blue-500/10' },
-  { value: 'festival', label: 'Festival', color: 'text-violet-600', bg: 'bg-violet-500/10' },
-  { value: 'luxury', label: 'Luxury', color: 'text-rose-600', bg: 'bg-rose-500/10' },
-  { value: 'featured', label: 'Featured', color: 'text-primary', bg: 'bg-primary/10' },
-  { value: 'custom', label: 'Custom', color: 'text-muted-foreground', bg: 'bg-muted' },
-];
+const collectionTypes = {
+  summer: { label: 'Summer', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  winter: { label: 'Winter', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  festival: { label: 'Festival', color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
+  luxury: { label: 'Luxury', color: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
+  featured: { label: 'Featured', color: 'bg-[#14b8a6]/10 text-[#14b8a6] border-[#14b8a6]/20' },
+  custom: { label: 'Custom', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20' },
+};
 
-// Gradient map for collection image placeholders
 const collectionGradients = [
-  'from-amber-400 to-orange-500',
-  'from-blue-400 to-cyan-500',
-  'from-violet-400 to-purple-500',
-  'from-rose-400 to-pink-500',
+  'from-amber-400 to-orange-500 text-white',
+  'from-blue-400 to-cyan-500 text-white',
+  'from-violet-400 to-purple-500 text-white',
+  'from-rose-400 to-pink-500 text-white',
 ];
 
 export default function CollectionsPage() {
+  const [collectionsList, setCollectionsList] = useState(initialCollections);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  
+  // Add Form State
+  const [formData, setFormData] = useState({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
 
-  const filteredCollections = collections.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Selected Collection for details drawer
+  const [selectedCollection, setSelectedCollection] = useState<typeof initialCollections[0] | null>(null);
 
-  const stats = [
-    {
-      label: 'Total Collections',
-      value: collections.length,
-      icon: Layers,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Active',
-      value: collections.filter((c) => c.isActive).length,
-      icon: CheckCircle2,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
-    },
-    {
-      label: 'Total Products',
-      value: collections.reduce((acc, c) => acc + c.productCount, 0),
-      icon: Package,
-      color: 'text-violet-500',
-      bg: 'bg-violet-500/10',
-    },
-  ];
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newColl = {
+      id: String(collectionsList.length + 1),
+      name: formData.name,
+      slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
+      type: formData.type,
+      description: formData.description,
+      isActive: formData.isActive,
+      order: parseInt(formData.order) || 1,
+      productCount: 0,
+      startDate: formData.startDate || '',
+      endDate: formData.endDate || '',
+    };
+    setCollectionsList([...collectionsList, newColl]);
+    setFormData({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
+    setIsAddOpen(false);
+  };
+
+  const handleToggleActive = (id: string) => {
+    setCollectionsList(prev =>
+      prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c)
+    );
+    setSelectedCollection(prev => {
+      if (prev && prev.id === id) {
+        return { ...prev, isActive: !prev.isActive };
+      }
+      return prev;
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    setCollectionsList(prev => prev.filter(c => c.id !== id));
+    setSelectedCollection(null);
+  };
+
+  const filteredCollections = useMemo(() => {
+    return collectionsList.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [collectionsList, searchQuery]);
+
+  const stats = useMemo(() => {
+    const totalCount = collectionsList.length;
+    const activeCount = collectionsList.filter((c) => c.isActive).length;
+    const totalProductsMapped = collectionsList.reduce((acc, c) => acc + c.productCount, 0);
+    return {
+      totalCount,
+      activeCount,
+      totalProductsMapped
+    };
+  }, [collectionsList]);
 
   return (
     <AdminLayout>
-      <div className="space-y-8 pb-12">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Collections</h1>
-            <p className="text-muted-foreground mt-1 text-sm font-light">
-              Create and manage curated product collections for your storefront.
-            </p>
-          </div>
-          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <SheetTrigger render={
-              <Button className="gap-2 rounded-md">
-                <Plus className="h-4 w-4" />
-                Add Collection
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <SheetTitle className="text-2xl font-bold">Add New Collection</SheetTitle>
-                </div>
-                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
-                  Create a curated collection to showcase products
-                </SheetDescription>
-              </SheetHeader>
+      <div className="space-y-6 pb-12">
+        <PageHeader
+          titlePart1="Collection"
+          titlePart2="Management"
+          badgeText="Collections Command Center"
+          subtitle="Create and manage curated product collections for your storefront drops."
+          actions={
+            <Button onClick={() => setIsAddOpen(true)} className="rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-2 cursor-pointer h-10 shadow-sm">
+              <Plus className="h-4 w-4" /> Add Collection
+            </Button>
+          }
+        />
 
-              <div className="space-y-6">
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                          Collection Name <span className="text-destructive">*</span>
-                        </Label>
-                        <div className="relative">
-                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="name"
-                            placeholder="e.g., Summer Collection"
-                            className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
-                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                          Slug
-                        </Label>
-                        <Input
-                          id="slug"
-                          placeholder="summer-collection"
-                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="type" className="text-sm font-medium flex items-center gap-2">
-                        <Type className="h-3.5 w-3.5 text-muted-foreground" />
-                        Collection Type <span className="text-destructive">*</span>
-                      </Label>
-                      <Select>
-                        <SelectTrigger className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                          <SelectValue placeholder="Select a type..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg">
-                          {collectionTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value} className="rounded-lg">
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
-                        <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Brief description of this collection and its theme..."
-                        rows={4}
-                        className="rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Help customers understand what makes this collection special
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Schedule Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CalendarIcon className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Schedule</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
-                          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                          Start Date
-                        </Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="endDate" className="text-sm font-medium flex items-center gap-2">
-                          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                          End Date
-                        </Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Leave empty for always-available collections
-                    </p>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Visual Assets Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ImageIcon className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Visual Assets</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                        Cover Image
-                      </Label>
-                      <div className="border-2 border-dashed border-border/60 rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
-                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                          <Upload className="h-6 w-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-medium text-foreground">Click to upload cover image</p>
-                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP up to 5MB</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Visibility Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Visibility</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <Checkbox
-                            id="active"
-                            defaultChecked
-                            className="rounded-md border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-5 w-5"
-                          />
-                          <div className="space-y-0.5">
-                            <Label htmlFor="active" className="text-sm font-semibold cursor-pointer">
-                              Active Collection
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              Show this collection on your storefront
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Globe className="h-4 w-4 text-primary" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="rounded-lg h-10 px-6 font-medium"
-                >
-                  Cancel
-                </Button>
-                <Button className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20">
-                  Save Collection
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label} className="border-border/40 rounded-lg">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </p>
-                    <h3 className={`text-3xl font-bold mt-1.5 ${stat.color}`}>{stat.value}</h3>
-                  </div>
-                  <div className={`h-11 w-11 rounded-md ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Collections Table */}
-        <Card className="border-border/40 rounded-lg">
-          <CardHeader className="pb-4 px-6 pt-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Premium KPI Summary Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-bold">All Collections</CardTitle>
-                <CardDescription className="text-xs mt-0.5">{collections.length} collections total</CardDescription>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Collections</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2">{stats.totalCount} Drops</h3>
               </div>
-              <div className="relative max-w-xs w-full group">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Layers className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Collections</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-emerald-500">{stats.activeCount} Online</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <CheckCircle2 className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/5 to-purple-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Products Curated</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-violet-500">{stats.totalProductsMapped} SKUs</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-500">
+                <Package className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Collections Table Panel */}
+        <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
+          <CardContent className="p-6 space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <span className="text-sm font-bold text-foreground">Active Catalog Showcase</span>
+              <div className="relative max-w-sm flex-1 group">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder="Search collections..."
-                  className="pl-10 h-9 rounded-md border-border/50"
+                  placeholder="Search collections by drop name..."
+                  className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <div className="border border-border/40 rounded-md overflow-hidden">
+
+            {/* Table */}
+            <div className="border border-border/30 rounded-xl overflow-hidden bg-card/40">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow className="hover:bg-transparent border-border/40">
-                    <TableHead className="text-xs font-semibold text-muted-foreground py-3">Collection</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Type</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Products</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Date Range</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Status</TableHead>
-                    <TableHead className="w-12" />
+                  <TableRow className="hover:bg-transparent border-b border-border/20">
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Collection</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Type</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Products</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Date Range</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Status</TableHead>
+                    <TableHead className="w-16 py-4" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCollections.map((collection, idx) => {
-                    const typeConfig = collectionTypes.find((t) => t.value === collection.type);
+                    const typeConfig = collectionTypes[collection.type as keyof typeof collectionTypes] || collectionTypes.custom;
                     return (
-                      <TableRow key={collection.id} className="hover:bg-muted/10 border-border/30">
-                        <TableCell>
+                      <TableRow 
+                        key={collection.id}
+                        onClick={() => setSelectedCollection(collection)}
+                        className="hover:bg-muted/20 border-b border-border/20 transition-colors cursor-pointer group/row"
+                      >
+                        {/* Name and thumbnail */}
+                        <TableCell className="py-4">
                           <div className="flex items-center gap-3">
-                            <div
-                              className={`w-14 h-10 rounded-lg bg-gradient-to-br ${collectionGradients[idx % collectionGradients.length]} flex items-center justify-center flex-shrink-0`}
-                            >
-                              <Layers className="h-4 w-4 text-white" />
+                            <div className={`w-14 h-10 rounded-lg bg-gradient-to-br ${collectionGradients[idx % collectionGradients.length]} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                              <Layers className="h-4.5 w-4.5 text-white" />
                             </div>
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">{collection.name}</p>
-                              <p className="font-mono text-xs text-muted-foreground">{collection.slug}</p>
+                            <div className="flex flex-col min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{collection.name}</p>
+                              <p className="text-xs text-muted-foreground truncate font-normal">{collection.slug}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${typeConfig?.bg} ${typeConfig?.color}`}>
-                            {typeConfig?.label || collection.type}
-                          </span>
+
+                        {/* Type badge */}
+                        <TableCell className="py-4">
+                          <Badge className={`rounded-md px-2 py-0.5 text-xs font-semibold border ${typeConfig.color}`}>
+                            {typeConfig.label}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-sm font-semibold text-foreground">{collection.productCount}</span>
+
+                        {/* Mapped Products Count */}
+                        <TableCell className="py-4 text-center font-semibold text-foreground">
+                          {collection.productCount} products
                         </TableCell>
-                        <TableCell>
+
+                        {/* Date Range */}
+                        <TableCell className="py-4 text-sm text-muted-foreground font-normal">
                           {collection.startDate && collection.endDate ? (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3 flex-shrink-0" />
-                              {collection.startDate} – {collection.endDate}
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-4 w-4 text-muted-foreground/60" />
+                              <span>{collection.startDate} – {collection.endDate}</span>
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground/60 italic">Always available</span>
+                            <span className="italic text-xs text-muted-foreground/50">Always available</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">
+
+                        {/* Status */}
+                        <TableCell className="py-4 text-center">
                           <Badge
-                            className={
+                            className={`rounded-md px-2.5 py-1 text-xs font-semibold border select-none ${
                               collection.isActive
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-transparent rounded-full'
-                                : 'bg-muted text-muted-foreground border-transparent rounded-full'
-                            }
+                                ? 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                            }`}
                           >
                             {collection.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+
+                        {/* Actions dropdown */}
+                        <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger render={
-                              <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
-                                <MoreVertical className="h-4 w-4" />
+                              <div className="h-8 w-8 rounded-lg hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors border-none bg-transparent">
+                                <MoreVertical className="h-4 w-4 text-muted-foreground" />
                               </div>
                             } />
-                            <DropdownMenuContent align="end" className="w-36 p-1 rounded-md border-border/50">
-                              <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                                <Eye className="h-3.5 w-3.5" /> View
+                            <DropdownMenuContent align="end" className="p-2 rounded-lg bg-card border border-border/40 w-36">
+                              <DropdownMenuItem onClick={() => setSelectedCollection(collection)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                <Eye className="mr-2 h-4 w-4 text-[#14b8a6]" /> View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                                <Edit className="h-3.5 w-3.5" /> Edit
+                              <DropdownMenuItem onClick={() => handleToggleActive(collection.id)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                {collection.isActive ? (
+                                  <>
+                                    <EyeOff className="mr-2 h-4 w-4 text-amber-500" /> Hide Online
+                                  </>
+                                ) : (
+                                  <>
+                                    <Globe className="mr-2 h-4 w-4 text-emerald-500" /> Make Visible
+                                  </>
+                                )}
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="my-1 border-border/30" />
-                              <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
-                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              <Separator className="my-1 border-border/10" />
+                              <DropdownMenuItem onClick={() => handleDelete(collection.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                                <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -516,7 +373,10 @@ export default function CollectionsPage() {
                   {filteredCollections.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
-                        No collections found.
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <AlertTriangle className="h-8 w-8 text-muted-foreground/60" />
+                          <p className="text-sm font-semibold text-muted-foreground">No matching collections found</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -525,6 +385,216 @@ export default function CollectionsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Collection Slide Drawer */}
+        <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            <SheetHeader className="p-6 border-b border-border/20">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Add Curated Collection
+              </SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                Set showcase parameters, dates, and promotional type tags.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Collection Name</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="name" 
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Summer Collection" 
+                      className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label htmlFor="slug" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL Slug</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="slug" 
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="summer-collection" 
+                        className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Drop Type</Label>
+                    <select
+                      id="type"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="summer">Summer</option>
+                      <option value="winter">Winter</option>
+                      <option value="festival">Festival</option>
+                      <option value="luxury">Luxury</option>
+                      <option value="featured">Featured</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="startDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" /> Start Date
+                    </Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="endDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" /> End Date
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description</Label>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe what items are included in this drop showcase..."
+                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <input 
+                    type="checkbox" 
+                    id="isActive" 
+                    checked={formData.isActive} 
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="rounded border-border/60 text-primary accent-primary h-4 w-4"
+                  />
+                  <Label htmlFor="isActive" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                    Make this collection active on storefront immediately
+                  </Label>
+                </div>
+              </div>
+
+              <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-lg h-11 px-6">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95">
+                  Save Drop
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Quick View Details Drawer */}
+        <Sheet open={selectedCollection !== null} onOpenChange={(open) => { if (!open) setSelectedCollection(null); }}>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            {selectedCollection && (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b border-border/20 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
+                        {selectedCollection.slug}
+                      </span>
+                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                        selectedCollection.isActive
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                      }`}>
+                        {selectedCollection.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={`h-9 w-9 rounded-lg`} 
+                        onClick={() => handleToggleActive(selectedCollection.id)}
+                        title="Toggle Status"
+                      >
+                        {selectedCollection.isActive ? <EyeOff className="h-4.5 w-4.5" /> : <Globe className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
+                        onClick={() => handleDelete(selectedCollection.id)}
+                        title="Delete Collection"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">{selectedCollection.name}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Type Category: {selectedCollection.type.toUpperCase()}</p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  {/* Grid cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Package className="h-3.5 w-3.5 text-primary" /> Curated Products
+                        </span>
+                        <h4 className="text-2xl font-black text-foreground mt-1.5">{selectedCollection.productCount} SKUs</h4>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-primary" /> Campaign Timeline
+                        </span>
+                        <h4 className="text-xs font-semibold text-foreground mt-2 select-none truncate">
+                          {selectedCollection.startDate ? `${selectedCollection.startDate} to ${selectedCollection.endDate}` : 'Always Active'}
+                        </h4>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Collection Description</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                      {selectedCollection.description || "No narrative set for this seasonal collection drop."}
+                    </p>
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AdminLayout>
   );

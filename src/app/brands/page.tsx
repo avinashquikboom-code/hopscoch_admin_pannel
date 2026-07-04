@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +23,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -32,8 +32,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus,
   Search,
@@ -52,15 +53,17 @@ import {
   AlignLeft,
   Crown,
   Info,
+  Globe,
+  EyeOff,
+  AlertTriangle
 } from 'lucide-react';
 
-const brands = [
+const initialBrands = [
   {
     id: '1',
     name: 'Aura Original',
     slug: 'aura-original',
-    description: 'Our in-house premium collection',
-    logo: null,
+    description: 'Our core in-house premium collection designed for modern everyday silhouettes.',
     status: 'active',
     isFeatured: true,
     order: 1,
@@ -70,8 +73,7 @@ const brands = [
     id: '2',
     name: 'Aura Denim',
     slug: 'aura-denim',
-    description: 'Premium denim collection',
-    logo: null,
+    description: 'Crafted premium denim jeans, jackets, skirts and wash utilities.',
     status: 'active',
     isFeatured: true,
     order: 2,
@@ -81,8 +83,7 @@ const brands = [
     id: '3',
     name: 'Aura Luxury',
     slug: 'aura-luxury',
-    description: 'High-end luxury fashion',
-    logo: null,
+    description: 'Exclusive, high-end seasonal wear with fine fabrics and limited drops.',
     status: 'active',
     isFeatured: true,
     order: 3,
@@ -92,8 +93,7 @@ const brands = [
     id: '4',
     name: 'Aura Accessories',
     slug: 'aura-accessories',
-    description: 'Fashion accessories collection',
-    logo: null,
+    description: 'Complementary catalog styling pieces like bags, hats, and scarves.',
     status: 'inactive',
     isFeatured: false,
     order: 4,
@@ -101,327 +101,266 @@ const brands = [
   },
 ];
 
-// Palette for brand avatars
 const brandColors = [
-  'from-teal-500 to-cyan-400',
-  'from-violet-500 to-purple-400',
-  'from-rose-500 to-pink-400',
-  'from-amber-500 to-orange-400',
+  'from-teal-500 to-cyan-400 text-white shadow-teal-500/10',
+  'from-violet-500 to-purple-400 text-white shadow-violet-500/10',
+  'from-rose-500 to-pink-400 text-white shadow-rose-500/10',
+  'from-amber-500 to-orange-400 text-white shadow-amber-500/10',
 ];
 
 export default function BrandsPage() {
+  const [brandsList, setBrandsList] = useState(initialBrands);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
 
-  const filteredBrands = brands.filter(
-    (brand) =>
-      brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      brand.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Selected Brand for Preview
+  const [selectedBrand, setSelectedBrand] = useState<typeof initialBrands[0] | null>(null);
 
-  const stats = [
-    {
-      label: 'Total Brands',
-      value: brands.length,
-      icon: Package,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Featured',
-      value: brands.filter((b) => b.isFeatured).length,
-      icon: Star,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-    },
-    {
-      label: 'Active',
-      value: brands.filter((b) => b.status === 'active').length,
-      icon: TrendingUp,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
-    },
-  ];
+  const handleCreateBrand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newBrand = {
+      id: String(brandsList.length + 1),
+      name: formData.name,
+      slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
+      description: formData.description,
+      status: 'active',
+      isFeatured: formData.isFeatured,
+      order: parseInt(formData.order) || 1,
+      productCount: 0,
+    };
+    setBrandsList([...brandsList, newBrand]);
+    setFormData({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
+    setIsAddOpen(false);
+  };
+
+  const handleToggleStatus = (id: string) => {
+    setBrandsList(prev => 
+      prev.map(b => b.id === id ? { ...b, status: b.status === 'active' ? 'inactive' : 'active' } : b)
+    );
+    setSelectedBrand(prev => {
+      if (prev && prev.id === id) {
+        return { ...prev, status: prev.status === 'active' ? 'inactive' : 'active' };
+      }
+      return prev;
+    });
+  };
+
+  const handleToggleFeatured = (id: string) => {
+    setBrandsList(prev => 
+      prev.map(b => b.id === id ? { ...b, isFeatured: !b.isFeatured } : b)
+    );
+    setSelectedBrand(prev => {
+      if (prev && prev.id === id) {
+        return { ...prev, isFeatured: !prev.isFeatured };
+      }
+      return prev;
+    });
+  };
+
+  const handleDeleteBrand = (id: string) => {
+    setBrandsList(prev => prev.filter(b => b.id !== id));
+    setSelectedBrand(null);
+  };
+
+  const filteredBrands = useMemo(() => {
+    return brandsList.filter(
+      (brand) =>
+        brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        brand.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [brandsList, searchQuery]);
+
+  const stats = useMemo(() => {
+    const totalCount = brandsList.length;
+    const featuredCount = brandsList.filter((b) => b.isFeatured).length;
+    const activeCount = brandsList.filter((b) => b.status === 'active').length;
+    return {
+      totalCount,
+      featuredCount,
+      activeCount
+    };
+  }, [brandsList]);
 
   return (
     <AdminLayout>
-      <div className="space-y-8 pb-12">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Brands</h1>
-            <p className="text-muted-foreground mt-1 text-sm font-light">
-              Manage and organize your product brands and labels.
-            </p>
-          </div>
-          <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <SheetTrigger render={
-              <Button className="gap-2 rounded-md">
-                <Plus className="h-4 w-4" />
-                Add Brand
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <SheetTitle className="text-2xl font-bold">Add New Brand</SheetTitle>
-                </div>
-                <SheetDescription className="text-sm text-muted-foreground font-normal pl-13">
-                  Create a new product brand to organize your catalog
-                </SheetDescription>
-              </SheetHeader>
+      <div className="space-y-6 pb-12">
+        <PageHeader
+          titlePart1="Brand"
+          titlePart2="Management"
+          badgeText="Brands Command Center"
+          subtitle="Manage and organize your product brands and label catalog classifications."
+          actions={
+            <Button onClick={() => setIsAddOpen(true)} className="rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-2 cursor-pointer h-10 shadow-sm">
+              <Plus className="h-4 w-4" /> Add Brand
+            </Button>
+          }
+        />
 
-              <div className="space-y-6">
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                          Brand Name <span className="text-destructive">*</span>
-                        </Label>
-                        <div className="relative">
-                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="name"
-                            placeholder="e.g., Aura Original"
-                            className="pl-10 h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="slug" className="text-sm font-medium flex items-center gap-2">
-                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                          Slug
-                        </Label>
-                        <Input
-                          id="slug"
-                          placeholder="aura-original"
-                          className="h-11 rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
-                        <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Brief description of this brand and its products..."
-                        rows={4}
-                        className="rounded-lg border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        A good description helps customers understand your brand identity
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Brand Assets Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Upload className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Brand Assets</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium flex items-center gap-2">
-                        <Upload className="h-3.5 w-3.5 text-muted-foreground" />
-                        Brand Logo
-                      </Label>
-                      <div className="border-2 border-dashed border-border/60 rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
-                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                          <Upload className="h-6 w-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-medium text-foreground">Click to upload or drag & drop</p>
-                        <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2MB</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/60" />
-
-                {/* Display Settings Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">Display Settings</h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <Checkbox
-                            id="featured"
-                            className="rounded-md border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-5 w-5"
-                          />
-                          <div className="space-y-0.5">
-                            <Label htmlFor="featured" className="text-sm font-semibold cursor-pointer">
-                              Featured Brand
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              Display prominently on homepage and brand listings
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                          <Star className="h-4 w-4 text-amber-500" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <SheetFooter className="pt-6 mt-8 border-t border-border/60 flex gap-3 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="rounded-lg h-10 px-6 font-medium"
-                >
-                  Cancel
-                </Button>
-                <Button className="rounded-lg h-10 px-6 bg-primary hover:bg-primary/90 font-medium shadow-sm shadow-primary/20">
-                  Save Brand
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label} className="border-border/40 rounded-lg">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </p>
-                    <h3 className={`text-3xl font-bold mt-1.5 ${stat.color}`}>{stat.value}</h3>
-                  </div>
-                  <div className={`h-11 w-11 rounded-md ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Brands Table */}
-        <Card className="border-border/40 rounded-lg">
-          <CardHeader className="pb-4 px-6 pt-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Premium KPI Summary Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-bold">All Brands</CardTitle>
-                <CardDescription className="text-xs mt-0.5">{brands.length} brands total</CardDescription>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Brands</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2">{stats.totalCount} Labels</h3>
               </div>
-              <div className="relative max-w-xs w-full group">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <Package className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/5 to-orange-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Featured Brands</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-amber-500">{stats.featuredCount} Highlighting</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <Star className="h-5.5 w-5.5 fill-amber-500/20" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/5 to-teal-500/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Status</span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight mt-2 text-emerald-500">{stats.activeCount} Live</h3>
+              </div>
+              <div className="h-12 w-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <TrendingUp className="h-5.5 w-5.5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Brands Table Panel */}
+        <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
+          <CardContent className="p-6 space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <span className="text-sm font-bold text-foreground">Catalog Labels</span>
+              <div className="relative max-w-sm flex-1 group">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder="Search brands..."
-                  className="pl-10 h-9 rounded-md border-border/50"
+                  placeholder="Search brands by label or slug..."
+                  className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <div className="border border-border/40 rounded-md overflow-hidden">
+
+            {/* Table */}
+            <div className="border border-border/30 rounded-xl overflow-hidden bg-card/40">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow className="hover:bg-transparent border-border/40">
-                    <TableHead className="text-xs font-semibold text-muted-foreground py-3">Brand</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Slug</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Products</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Order</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-center">Featured</TableHead>
-                    <TableHead className="w-12" />
+                  <TableRow className="hover:bg-transparent border-b border-border/20">
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Brand</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Slug</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Products</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Sort Order</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Status</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-4">Featured</TableHead>
+                    <TableHead className="w-16 py-4" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredBrands.map((brand, idx) => (
-                    <TableRow key={brand.id} className="hover:bg-muted/10 border-border/30">
-                      <TableCell>
+                    <TableRow 
+                      key={brand.id}
+                      onClick={() => setSelectedBrand(brand)}
+                      className="hover:bg-muted/20 border-b border-border/20 transition-colors cursor-pointer group/row"
+                    >
+                      {/* Name & Avatar */}
+                      <TableCell className="py-4">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`h-10 w-10 rounded-md bg-gradient-to-tr ${brandColors[idx % brandColors.length]} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}
-                          >
+                          <div className={`h-10 w-10 rounded-lg bg-gradient-to-tr ${brandColors[idx % brandColors.length]} flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm`}>
                             {brand.name.substring(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{brand.name}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{brand.description}</p>
+                          <div className="flex flex-col min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{brand.name}</p>
+                            <p className="text-xs text-muted-foreground truncate font-normal">{brand.description}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-xs text-muted-foreground">{brand.slug}</span>
+
+                      {/* Slug */}
+                      <TableCell className="py-4">
+                        <span className="font-mono font-bold text-xs bg-muted/60 border border-border/40 text-foreground px-2.5 py-1 rounded-md select-all group-hover/row:border-[#14b8a6]/25 transition-all">
+                          {brand.slug}
+                        </span>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-sm font-semibold text-foreground">{brand.productCount}</span>
+
+                      {/* Product Count */}
+                      <TableCell className="py-4 text-center font-semibold text-foreground">
+                        {brand.productCount} SKUs
                       </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-sm text-muted-foreground">{brand.order}</span>
+
+                      {/* Order */}
+                      <TableCell className="py-4 text-center text-sm text-muted-foreground font-normal">
+                        {brand.order}
                       </TableCell>
-                      <TableCell className="text-center">
+
+                      {/* Status */}
+                      <TableCell className="py-4 text-center">
                         <Badge
-                          className={
+                          className={`rounded-md px-2.5 py-1 text-xs font-semibold border select-none ${
                             brand.status === 'active'
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-transparent rounded-full'
-                              : 'bg-muted text-muted-foreground border-transparent rounded-full'
-                          }
+                              ? 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                          }`}
                         >
                           {brand.status === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
-                        {brand.isFeatured ? (
-                          <div className="flex justify-center">
-                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 text-xs">—</span>
-                        )}
+
+                      {/* Featured Star */}
+                      <TableCell className="py-4">
+                        <div className="flex justify-center">
+                          {brand.isFeatured ? (
+                            <Star className="h-4.5 w-4.5 text-amber-500 fill-amber-500" />
+                          ) : (
+                            <span className="text-muted-foreground/30 text-xs">—</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell>
+
+                      {/* Actions dropdown */}
+                      <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger render={
-                            <div className="h-8 w-8 rounded-lg hover:bg-muted/60 flex items-center justify-center cursor-pointer">
-                              <MoreVertical className="h-4 w-4" />
+                            <div className="h-8 w-8 rounded-lg hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors border-none bg-transparent">
+                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
                             </div>
                           } />
-                          <DropdownMenuContent align="end" className="w-36 p-1 rounded-md border-border/50">
-                            <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                              <Eye className="h-3.5 w-3.5" /> View
+                          <DropdownMenuContent align="end" className="p-2 rounded-lg bg-card border border-border/40 w-36">
+                            <DropdownMenuItem onClick={() => setSelectedBrand(brand)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                              <Eye className="mr-2 h-4 w-4 text-[#14b8a6]" /> View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2">
-                              <Edit className="h-3.5 w-3.5" /> Edit
+                            <DropdownMenuItem onClick={() => handleToggleFeatured(brand.id)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                              <Star className="mr-2 h-4 w-4 text-amber-500" />
+                              {brand.isFeatured ? 'Unfeature' : 'Featured Brand'}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1 border-border/30" />
-                            <DropdownMenuItem className="text-xs font-medium rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
-                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            <DropdownMenuItem onClick={() => handleToggleStatus(brand.id)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                              {brand.status === 'active' ? (
+                                <>
+                                  <EyeOff className="mr-2 h-4 w-4 text-amber-500" /> Mark Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <Globe className="mr-2 h-4 w-4 text-emerald-500" /> Activate Brand
+                                  </>
+                              )}
+                            </DropdownMenuItem>
+                            <Separator className="my-1 border-border/10" />
+                            <DropdownMenuItem onClick={() => handleDeleteBrand(brand.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                              <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -431,7 +370,10 @@ export default function BrandsPage() {
                   {filteredBrands.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
-                        No brands found.
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <AlertTriangle className="h-8 w-8 text-muted-foreground/60" />
+                          <p className="text-sm font-semibold text-muted-foreground">No matching brands found</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -440,6 +382,180 @@ export default function BrandsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Brand Slide Drawer */}
+        <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            <SheetHeader className="p-6 border-b border-border/20">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Add Brand Label
+              </SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                Set brand name, slug details, order priorities and home highlighting visibility.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleCreateBrand} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brand Name</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="name" 
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Aura Original" 
+                      className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="slug" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL Slug</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="slug" 
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="aura-original" 
+                        className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="order" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sort Order</Label>
+                    <Input 
+                      id="order" 
+                      type="number" 
+                      value={formData.order}
+                      onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                      className="h-11 rounded-lg border-border/50 focus:border-primary" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brand Bio / Description</Label>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe this brand catalog focus..."
+                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <input 
+                    type="checkbox" 
+                    id="isFeatured" 
+                    checked={formData.isFeatured} 
+                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                    className="rounded border-border/60 text-primary accent-primary h-4 w-4"
+                  />
+                  <Label htmlFor="isFeatured" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                    Highlight this brand as Featured on the homepage
+                  </Label>
+                </div>
+              </div>
+
+              <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="rounded-lg h-11 px-6">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95">
+                  Save Brand
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Quick View Details Drawer */}
+        <Sheet open={selectedBrand !== null} onOpenChange={(open) => { if (!open) setSelectedBrand(null); }}>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            {selectedBrand && (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b border-border/20 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
+                        {selectedBrand.slug}
+                      </span>
+                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                        selectedBrand.status === 'active'
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                      }`}>
+                        {selectedBrand.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={`h-9 w-9 rounded-lg ${selectedBrand.isFeatured ? 'text-amber-500 bg-amber-500/5 border-amber-500/20' : ''}`} 
+                        onClick={() => handleToggleFeatured(selectedBrand.id)}
+                        title="Toggle Featured"
+                      >
+                        <Star className="h-4.5 w-4.5 fill-current" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
+                        onClick={() => handleDeleteBrand(selectedBrand.id)}
+                        title="Delete Brand"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">{selectedBrand.name}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Hierarchy Position Order: {selectedBrand.order}</p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Package className="h-3.5 w-3.5 text-primary" /> Active Catalog Products
+                        </span>
+                        <h4 className="text-2xl font-black text-foreground mt-1.5">{selectedBrand.productCount} SKUs</h4>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
+                      <CardContent className="p-4">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Crown className="h-3.5 w-3.5 text-primary" /> Label Status
+                        </span>
+                        <h4 className="text-lg font-bold text-foreground mt-2 capitalize">{selectedBrand.status}</h4>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Brand Narrative</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                      {selectedBrand.description || "No narrative set for this label brand."}
+                    </p>
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AdminLayout>
   );

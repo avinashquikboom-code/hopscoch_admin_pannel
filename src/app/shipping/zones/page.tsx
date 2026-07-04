@@ -50,32 +50,32 @@ export default function ShippingZonesPage() {
                 <Plus className="h-4 w-4" /> Add Zone
               </Button>
             } />
-            <SheetContent side="right" className="w-[500px] overflow-y-auto">
-              <SheetHeader className="mb-6">
+            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+              <SheetHeader className="p-6 border-b border-border/20">
                 <SheetTitle className="text-xl font-bold">Add Shipping Zone</SheetTitle>
                 <SheetDescription className="text-sm text-muted-foreground">Define a new geographic delivery zone.</SheetDescription>
               </SheetHeader>
-              <form onSubmit={handleAdd} className="space-y-6">
-                {[
-                  { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
-                  { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
-                  { key: 'states', label: 'States / Regions', placeholder: 'e.g. MH, DL, KA', required: false },
-                  { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
-                  { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
-                ].map(f => (
-                  <div key={f.key} className="space-y-3">
-                    <Label className="text-sm font-semibold">{f.label}</Label>
-                    <Input required={f.required} value={(form as Record<string, string>)[f.key]}
-                      onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                      placeholder={f.placeholder} className="h-11 rounded-lg" />
-                  </div>
-                ))}
-                <div className="pt-4 border-t border-border/40">
-                  <SheetFooter className="pt-4 gap-3 justify-end">
-                    <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
-                    <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Zone</Button>
-                  </SheetFooter>
+              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {[
+                    { key: 'name', label: 'Zone Name *', placeholder: 'e.g. Zone A — Metro', required: true },
+                    { key: 'country', label: 'Country', placeholder: 'e.g. India', required: false },
+                    { key: 'states', label: 'States / Regions', placeholder: 'e.g. MH, DL, KA', required: false },
+                    { key: 'cities', label: 'Cities', placeholder: 'e.g. Mumbai, Delhi', required: false },
+                    { key: 'pincodes', label: 'Pin Codes', placeholder: 'e.g. 400001-400099', required: false },
+                  ].map(f => (
+                    <div key={f.key} className="space-y-3">
+                      <Label className="text-sm font-semibold">{f.label}</Label>
+                      <Input required={f.required} value={(form as Record<string, string>)[f.key]}
+                        onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                        placeholder={f.placeholder} className="h-11 rounded-lg" />
+                    </div>
+                  ))}
                 </div>
+                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
+                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Zone</Button>
+                </SheetFooter>
               </form>
             </SheetContent>
           </Sheet>

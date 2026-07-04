@@ -297,12 +297,12 @@ export default function RefundsPage() {
         {/* Refund Details Sheet */}
         <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
           <SheetTrigger render={<span />} />
-          <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-            <SheetHeader>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
+            <SheetHeader className="p-6 border-b border-border/20">
               <SheetTitle>Refund Details — {selected?.id}</SheetTitle>
               <SheetDescription>Full details for this refund request</SheetDescription>
             </SheetHeader>
-            <div className="space-y-6 py-4 px-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Refund Information */}
               <Card>
                 <CardHeader>
@@ -430,15 +430,15 @@ export default function RefundsPage() {
                 <CardContent className="space-y-3">
                   {selected?.status === 'pending' && (
                     <>
-                      <Button className="w-full" variant="default">
+                      <Button className="w-full shadow-sm" variant="default">
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Approve Refund
                       </Button>
-                      <Button className="w-full" variant="destructive">
+                      <Button className="w-full shadow-sm" variant="destructive">
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject Refund
                       </Button>
-                      <Button className="w-full" variant="outline">
+                      <Button className="w-full shadow-sm" variant="outline">
                         <AlertCircle className="mr-2 h-4 w-4" />
                         Request More Info
                       </Button>
@@ -446,17 +446,17 @@ export default function RefundsPage() {
                   )}
                   {selected?.status === 'approved' && (
                     <>
-                      <Button className="w-full" variant="default">
+                      <Button className="w-full shadow-sm" variant="default">
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Process Full Refund
                       </Button>
-                      <Button className="w-full" variant="outline">
+                      <Button className="w-full shadow-sm" variant="outline">
                         <DollarSign className="mr-2 h-4 w-4" />
                         Process Partial Refund
                       </Button>
                     </>
                   )}
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full shadow-sm" variant="outline">
                     <FileText className="mr-2 h-4 w-4" />
                     Generate Refund Receipt
                   </Button>
@@ -473,9 +473,9 @@ export default function RefundsPage() {
                     placeholder="Add internal notes about this refund..."
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
-                    className="min-h-24"
+                    className="min-h-24 rounded-lg"
                   />
-                  <Button className="w-full mt-3" variant="outline">
+                  <Button className="w-full mt-3 shadow-sm" variant="outline">
                     <Info className="mr-2 h-4 w-4" />
                     Save Notes
                   </Button>

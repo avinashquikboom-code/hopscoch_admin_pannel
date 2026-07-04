@@ -1,21 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
   Save,
   Upload,
@@ -24,264 +21,325 @@ import {
   Truck,
   Bell,
   Palette,
-  Globe
+  Globe,
+  Settings,
+  CheckCircle2,
+  Volume2,
+  Sliders,
+  Sparkles
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSave = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2500);
+    }, 1000);
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-semibold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-1 font-normal">Manage your store settings</p>
-        </div>
+      <div className="space-y-6 pb-12">
+        <PageHeader
+          titlePart1="System"
+          titlePart2="Settings"
+          badgeText="System Configuration"
+          subtitle="Configure core store metadata, language preferences, notification alerts, and theme configurations."
+        />
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="store">Store</TabsTrigger>
-            <TabsTrigger value="notification">Notifications</TabsTrigger>
-            <TabsTrigger value="theme">Theme</TabsTrigger>
+          <TabsList className="bg-muted/40 p-1 border border-border/20 rounded-xl flex overflow-x-auto w-full md:w-fit justify-start h-auto">
+            <TabsTrigger value="general" className="rounded-lg py-2 px-4 text-xs font-semibold">General Settings</TabsTrigger>
+            <TabsTrigger value="store" className="rounded-lg py-2 px-4 text-xs font-semibold">Store Branding</TabsTrigger>
+            <TabsTrigger value="notification" className="rounded-lg py-2 px-4 text-xs font-semibold">Notifications</TabsTrigger>
+            <TabsTrigger value="theme" className="rounded-lg py-2 px-4 text-xs font-semibold">Theme Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-semibold">General Settings</CardTitle>
-                <CardDescription className="font-normal">Configure general store settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="storeName">Store Name</Label>
-                    <Input id="storeName" defaultValue="AURA COUTURE" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="storeEmail">Store Email</Label>
-                    <Input id="storeEmail" type="email" defaultValue="admin@aura.com" />
-                  </div>
+          <TabsContent value="general" className="mt-0">
+            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">General Configuration</h3>
+                  <p className="text-xs text-muted-foreground font-light">Set key contact details and system localized coordinates.</p>
                 </div>
+                <Separator className="border-border/10" />
 
-                <div className="space-y-2">
-                  <Label htmlFor="storePhone">Store Phone</Label>
-                  <Input id="storePhone" type="tel" defaultValue="+1 234 567 8900" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="storeAddress">Store Address</Label>
-                  <Textarea id="storeAddress" rows={3} defaultValue="123 Fashion Street, New York, NY 10001" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select defaultValue="USD">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                        <SelectItem value="GBP">GBP (£)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="storeName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Name</Label>
+                    <Input id="storeName" defaultValue="AURA COUTURE" className="h-10 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Language</Label>
-                    <Select defaultValue="en">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Spanish</SelectItem>
-                        <SelectItem value="fr">French</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <Select defaultValue="UTC">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="UTC">UTC</SelectItem>
-                        <SelectItem value="EST">EST</SelectItem>
-                        <SelectItem value="PST">PST</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="storeEmail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Email</Label>
+                    <Input id="storeEmail" type="email" defaultValue="admin@auracouture.com" className="h-10 rounded-lg border-border/50" />
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="store">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-semibold">Store Information</CardTitle>
-                <CardDescription className="font-normal">Manage store branding and identity</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="logo">Store Logo</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Click to upload logo</p>
-                      <p className="text-xs text-muted-foreground mt-1">Recommended: 200x200px</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="favicon">Favicon</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Click to upload favicon</p>
-                      <p className="text-xs text-muted-foreground mt-1">Recommended: 32x32px</p>
-                    </div>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="storePhone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Hotline Phone</Label>
+                  <Input id="storePhone" type="tel" defaultValue="+1 234 567 8900" className="h-10 rounded-lg border-border/50" />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="metaTitle">Meta Title</Label>
-                  <Input id="metaTitle" defaultValue="AURA COUTURE - Luxury Fashion" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="metaDescription">Meta Description</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="storeAddress" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">HQ Store Address</Label>
                   <Textarea 
-                    id="metaDescription" 
-                    rows={3}
-                    defaultValue="Discover luxury fashion at AURA COUTURE. Premium quality clothing and accessories for the modern individual."
+                    id="storeAddress" 
+                    rows={3} 
+                    defaultValue="123 Fashion Street, New York, NY 10001" 
+                    className="rounded-lg border-border/50 bg-background resize-none text-sm p-3 focus:border-primary focus:ring-1 focus:ring-primary/20" 
                   />
                 </div>
 
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="currency" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default Currency</Label>
+                    <select
+                      id="currency"
+                      defaultValue="USD"
+                      className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="language" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Language</Label>
+                    <select
+                      id="language"
+                      defaultValue="en"
+                      className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="en">English</option>
+                      <option value="es">Spanish</option>
+                      <option value="fr">French</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="timezone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Timezone Coordinates</Label>
+                    <select
+                      id="timezone"
+                      defaultValue="UTC"
+                      className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="UTC">UTC</option>
+                      <option value="EST">EST</option>
+                      <option value="PST">PST</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="rounded-lg bg-primary text-white hover:bg-primary/95 shadow-sm h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                  >
+                    {isLoading ? (
+                      'Saving Changes...'
+                    ) : isSaved ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" /> Config Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" /> Save Configuration
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="notification">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-semibold">Notification Settings</CardTitle>
-                <CardDescription className="font-normal">Configure notification preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          <TabsContent value="store" className="mt-0">
+            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">Branding & SEO Settings</h3>
+                  <p className="text-xs text-muted-foreground font-light">Customize client-facing storefront meta assets.</p>
+                </div>
+                <Separator className="border-border/10" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Logo Asset</Label>
+                    <div className="border-2 border-dashed border-border/40 hover:border-primary/50 hover:bg-primary/5 transition-all rounded-xl p-6 text-center cursor-pointer">
+                      <Upload className="h-7 w-7 mx-auto text-muted-foreground/80 mb-2" />
+                      <p className="text-xs font-semibold text-foreground">Click to upload logo PNG</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">Recommended 200x200px</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Favicon Icon Asset</Label>
+                    <div className="border-2 border-dashed border-border/40 hover:border-primary/50 hover:bg-primary/5 transition-all rounded-xl p-6 text-center cursor-pointer">
+                      <Upload className="h-7 w-7 mx-auto text-muted-foreground/80 mb-2" />
+                      <p className="text-xs font-semibold text-foreground">Click to upload favicon ICO</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">Recommended 32x32px</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="metaTitle" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default SEO Meta Title</Label>
+                  <Input id="metaTitle" defaultValue="AURA COUTURE - Luxury Premium Fashion Store" className="h-10 rounded-lg border-border/50" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="metaDescription" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default SEO Meta Description</Label>
+                  <Textarea 
+                    id="metaDescription" 
+                    rows={3}
+                    defaultValue="Discover premium couture fashion and high-end accessories at AURA COUTURE. Exquisite quality for the modern wardrobe."
+                    className="rounded-lg border-border/50 bg-background resize-none text-sm p-3 focus:border-primary"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                  >
+                    {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Brand Asset Saved</> : <><Save className="h-4 w-4" /> Save Brand Details</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notification" className="mt-0">
+            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">Notification Preferences</h3>
+                  <p className="text-xs text-muted-foreground font-light">Configure triggers for automated system communication broadcasts.</p>
+                </div>
+                <Separator className="border-border/10" />
+
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
+                      <div className="p-2 bg-[#14b8a6]/10 text-[#14b8a6] rounded-lg shrink-0">
+                        <Store className="h-4.5 w-4.5" />
+                      </div>
                       <div>
-                        <p className="font-semibold">New Order Notifications</p>
-                        <p className="text-sm text-muted-foreground font-normal">Get notified when new orders are placed</p>
+                        <p className="text-sm font-bold text-foreground">New Order Alerts</p>
+                        <p className="text-xs text-muted-foreground font-light mt-0.5">Receive immediate dashboard triggers on new sales.</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
+                      <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg shrink-0">
+                        <Sliders className="h-4.5 w-4.5" />
+                      </div>
                       <div>
-                        <p className="font-semibold">Low Stock Alerts</p>
-                        <p className="text-sm text-muted-foreground font-normal">Get notified when products are low on stock</p>
+                        <p className="text-sm font-bold text-foreground">Low Stock Threshold Warnings</p>
+                        <p className="text-xs text-muted-foreground font-light mt-0.5">Get email briefs when mapped items fall below target counts.</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
+                      <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg shrink-0">
+                        <Volume2 className="h-4.5 w-4.5" />
+                      </div>
                       <div>
-                        <p className="font-semibold">Customer Reviews</p>
-                        <p className="text-sm text-muted-foreground font-normal">Get notified when new reviews are submitted</p>
+                        <p className="text-sm font-bold text-foreground">Buyer Review Submissions</p>
+                        <p className="text-xs text-muted-foreground font-light mt-0.5">Notify moderator queues on new star reviews.</p>
                       </div>
                     </div>
                     <Switch />
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                  >
+                    {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Preferences Saved</> : <><Save className="h-4 w-4" /> Save Preferences</>}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="theme">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-semibold">Theme Settings</CardTitle>
-                <CardDescription className="font-normal">Customize the appearance</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="primaryColor">Primary Color</Label>
-                  <div className="flex items-center gap-3">
-                    <Input 
-                      id="primaryColor" 
-                      type="color" 
-                      defaultValue="#0d9488"
-                      className="w-20 h-10 p-1"
-                    />
-                    <Input defaultValue="#0d9488" className="flex-1" />
+          <TabsContent value="theme" className="mt-0">
+            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">Aesthetics & Palette Customizer</h3>
+                  <p className="text-xs text-muted-foreground font-light">Define UI parameters, branding color values, and fonts.</p>
+                </div>
+                <Separator className="border-border/10" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="primaryColor" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Primary Brand HEX Color</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        id="primaryColor" 
+                        type="color" 
+                        defaultValue="#0d9488"
+                        className="w-12 h-10 p-1 rounded-lg border-border/50 shrink-0 cursor-pointer bg-background"
+                      />
+                      <Input defaultValue="#0d9488" className="h-10 rounded-lg border-border/50 font-mono font-semibold" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="accentColor" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Accent Brand HEX Color</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        id="accentColor" 
+                        type="color" 
+                        defaultValue="#14b8a6"
+                        className="w-12 h-10 p-1 rounded-lg border-border/50 shrink-0 cursor-pointer bg-background"
+                      />
+                      <Input defaultValue="#14b8a6" className="h-10 rounded-lg border-border/50 font-mono font-semibold" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="accentColor">Accent Color</Label>
-                  <div className="flex items-center gap-3">
-                    <Input 
-                      id="accentColor" 
-                      type="color" 
-                      defaultValue="#14b8a6"
-                      className="w-20 h-10 p-1"
-                    />
-                    <Input defaultValue="#14b8a6" className="flex-1" />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fontFamily" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default Typography Font Family</Label>
+                  <select
+                    id="fontFamily"
+                    defaultValue="inter"
+                    className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                  >
+                    <option value="inter">Inter (Default Sans)</option>
+                    <option value="roboto">Roboto</option>
+                    <option value="outfit">Outfit (Modern Rounded)</option>
+                  </select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="fontFamily">Font Family</Label>
-                  <Select defaultValue="inter">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="inter">Inter</SelectItem>
-                      <SelectItem value="roboto">Roboto</SelectItem>
-                      <SelectItem value="open-sans">Open Sans</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center space-x-2.5 pt-2">
+                  <Checkbox id="darkMode" defaultChecked className="rounded border-border/60 text-primary accent-primary h-4.5 w-4.5" />
+                  <Label htmlFor="darkMode" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                    Force system dark-mode appearance override
+                  </Label>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="darkMode" />
-                  <Label htmlFor="darkMode">Enable Dark Mode</Label>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button className="bg-primary hover:bg-primary-dark">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                  >
+                    {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Theme Saved</> : <><Save className="h-4 w-4" /> Save Theme Settings</>}
                   </Button>
                 </div>
               </CardContent>
