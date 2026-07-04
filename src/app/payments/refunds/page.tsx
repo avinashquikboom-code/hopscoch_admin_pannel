@@ -159,7 +159,7 @@ export default function RefundsPage() {
           titlePart2="Refunds"
           badgeText="Finance Command Center"
           subtitle="Approve, reject, and process customer refund requests."
-          showClock={true}
+
         />
 
         {/* Refund Stats */}

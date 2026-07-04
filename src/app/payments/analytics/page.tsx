@@ -47,7 +47,7 @@ export default function PaymentAnalyticsPage() {
           titlePart2="Analytics"
           badgeText="Finance Command Center"
           subtitle="Deep-dive into revenue trends and payment patterns."
-          showClock={true}
+
           actions={
             <div className="flex gap-2 p-1 bg-muted/40 rounded-md">
               {(['Daily', 'Weekly', 'Monthly', 'Yearly'] as Period[]).map(p => (

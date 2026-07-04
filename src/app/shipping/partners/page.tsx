@@ -54,7 +54,7 @@ export default function ShippingPartnersPage() {
           titlePart2="Partners"
           badgeText="Logistics Command Center"
           subtitle="Manage courier integrations and delivery partners."
-          showClock={true}
+
           actions={
             <Button onClick={() => setSheetOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Plus className="h-4 w-4" /> Add Partner

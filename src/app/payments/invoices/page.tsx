@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText, Download, Printer, Mail, Eye } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const invoices = [
   { id: 'INV-2024-0421', order: '#ORD-4421', customer: 'Priya Sharma', gst: 'GST-29XXXX8C1Z1', amount: '₹4,820', tax: '₹724', date: '03 Jul 2024', status: 'Paid' },
@@ -26,15 +27,18 @@ export default function InvoicesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Invoices</h1>
-            <p className="text-muted-foreground mt-1 font-light">Generate, download, and manage GST invoices.</p>
-          </div>
-          <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-            <FileText className="h-4 w-4" /> Generate Invoice
-          </Button>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Invoices"
+          badgeText="Finance Command Center"
+          subtitle="Generate, download, and manage GST invoices."
+
+          actions={
+            <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <FileText className="h-4 w-4" /> Generate Invoice
+            </Button>
+          }
+        />
 
         <Card className="border-border/40 rounded-lg bg-card">
           <CardContent className="p-0">

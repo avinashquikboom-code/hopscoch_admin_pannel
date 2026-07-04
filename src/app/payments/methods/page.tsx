@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 const methods = [
   { id: 'upi', name: 'UPI', icon: '🔁', desc: 'PhonePe, Google Pay, Paytm UPI, BHIM', color: 'text-[#14b8a6] bg-[#14b8a6]/10', popular: true, active: true },
@@ -29,10 +30,13 @@ export default function PaymentMethodsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Payment Methods</h1>
-          <p className="text-muted-foreground mt-1 font-light">Enable or disable payment options for your customers.</p>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Methods"
+          badgeText="Finance Command Center"
+          subtitle="Enable or disable payment options for your customers."
+
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((m) => (

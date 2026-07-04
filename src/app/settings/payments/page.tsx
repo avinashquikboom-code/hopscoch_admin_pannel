@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Smartphone, Truck, ShieldCheck, Check, Save } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 interface GatewayToggleProps {
   checked: boolean;
@@ -51,18 +52,19 @@ export default function SettingsPaymentsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12 max-w-4xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Payment Gateways</h1>
-            <p className="text-muted-foreground mt-1.5 font-light">
-              Manage checkout payment processing systems and API credentials.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-[#14b8a6] bg-teal-500/10 border border-teal-500/15 px-3.5 py-1.5 rounded-full w-fit">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            PCI-DSS Compliant Connection
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Settings"
+          titlePart2="Payment Gateways"
+          badgeText="Store Configuration"
+          subtitle="Manage checkout payment processing systems and API credentials."
+
+          actions={
+            <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-[#14b8a6] bg-teal-500/10 border border-teal-500/15 px-3.5 py-1.5 rounded-full">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              PCI-DSS Compliant Connection
+            </div>
+          }
+        />
 
         <AnimatePresence>
           {isSaved && (

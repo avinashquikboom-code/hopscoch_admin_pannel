@@ -44,7 +44,7 @@ export default function PincodePage() {
           titlePart2="Pincode Serviceability"
           badgeText="Logistics Command Center"
           subtitle="Manage serviceable pincodes, COD, and express availability."
-          showClock={true}
+
           actions={
             <div className="flex gap-2">
               <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60 cursor-pointer">

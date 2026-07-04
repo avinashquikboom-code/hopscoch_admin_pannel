@@ -37,7 +37,7 @@ export default function ShippingReportsPage() {
           titlePart2="Reports"
           badgeText="Logistics Command Center"
           subtitle="Analyze delivery performance, courier efficiency, and return rates."
-          showClock={true}
+
           actions={
             <div className="flex gap-2">
               <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileText className="h-3.5 w-3.5" /> CSV</Button>

@@ -38,7 +38,7 @@ export default function ShippingSettingsPage() {
           titlePart2="Global Settings"
           badgeText="Logistics Command Center"
           subtitle="Configure default courier, tracking, and dispatch preferences."
-          showClock={true}
+
           actions={
             <Button onClick={handleSave} className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               {saved ? '✓ Saved!' : 'Save Settings'}

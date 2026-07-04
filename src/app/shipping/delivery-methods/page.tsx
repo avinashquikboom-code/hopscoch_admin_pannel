@@ -50,7 +50,7 @@ export default function DeliveryMethodsPage() {
           titlePart2="Delivery Methods"
           badgeText="Logistics Command Center"
           subtitle="Enable or disable delivery options for your store."
-          showClock={true}
+
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Globe, Save, Check } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const initialRates = [
@@ -57,18 +58,19 @@ export default function SettingsShippingPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12 max-w-4xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Shipping Zones & Rates</h1>
-            <p className="text-muted-foreground mt-1.5 font-light">
-              Set up geolocated shipping rates, custom courier types, and free thresholds.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-[#14b8a6] bg-teal-500/10 border border-teal-500/15 px-3.5 py-1.5 rounded-full w-fit">
-            <Globe className="w-3.5 h-3.5" />
-            Global Delivery Network
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Settings"
+          titlePart2="Shipping Zones"
+          badgeText="Store Configuration"
+          subtitle="Set up geolocated shipping rates, custom courier types, and free thresholds."
+
+          actions={
+            <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-[#14b8a6] bg-teal-500/10 border border-teal-500/15 px-3.5 py-1.5 rounded-full">
+              <Globe className="w-3.5 h-3.5" />
+              Global Delivery Network
+            </div>
+          }
+        />
 
         <AnimatePresence>
           {isSaved && (

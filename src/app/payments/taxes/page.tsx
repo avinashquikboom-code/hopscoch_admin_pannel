@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetTrigger } from '@/components/ui/sheet';
 import { Plus, Edit, Trash2, Receipt, Percent } from 'lucide-react';
+import { AppDrawer } from '@/components/ui/app-drawer';
+import { PageHeader } from '@/components/layout/page-header';
 
 const taxRules = [
   { id: '1', name: 'GST 5% — Apparel (≤₹999)', category: 'Apparel', rate: 5, type: 'inclusive', hsn: '6101', active: true },
@@ -40,62 +41,58 @@ export default function TaxesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Taxes</h1>
-            <p className="text-muted-foreground mt-1 font-light">Configure GST rates and tax rules for your products.</p>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Tax Rules"
+          badgeText="Finance Command Center"
+          subtitle="Configure GST rates and tax rules for your products."
+
+          actions={
+            <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Plus className="h-4 w-4" /> Add Tax Rule
+            </Button>
+          }
+        />
+
+        <AppDrawer
+          title="Add Tax Rule"
+          subtitle="Create a new GST/tax configuration."
+          open={open}
+          onClose={setOpen}
+          onSubmit={handleAdd}
+        >
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Rule Name *</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. GST 5% — Apparel" className="h-11 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Category</Label>
+              <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="h-11 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Tax Rate (%)</Label>
+                <Input type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-11 rounded-lg" />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">HSN Code</Label>
+                <Input value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} placeholder="e.g. 6101" className="h-11 rounded-lg" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Tax Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {['inclusive', 'exclusive'].map(t => (
+                  <button type="button" key={t} onClick={() => setForm({ ...form, type: t })}
+                    className={`p-3 rounded-lg border text-sm capitalize font-semibold transition-all ${form.type === t ? 'border-primary bg-primary/5 text-primary' : 'border-border/60 text-muted-foreground'}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger render={
-              <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-                <Plus className="h-4 w-4" /> Add Tax Rule
-              </Button>
-            } />
-            <SheetContent side="right" className="w-full sm:max-w-[480px] p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
-              <SheetHeader className="p-6 border-b border-border/20">
-                <SheetTitle className="text-xl font-bold">Add Tax Rule</SheetTitle>
-                <SheetDescription className="text-sm text-muted-foreground">Create a new GST/tax configuration.</SheetDescription>
-              </SheetHeader>
-              <form onSubmit={handleAdd} className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Rule Name *</Label>
-                    <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. GST 5% — Apparel" className="h-11 rounded-lg" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Category</Label>
-                    <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="h-11 rounded-lg" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">Tax Rate (%)</Label>
-                      <Input type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-11 rounded-lg" />
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold">HSN Code</Label>
-                      <Input value={form.hsn} onChange={e => setForm({ ...form, hsn: e.target.value })} placeholder="e.g. 6101" className="h-11 rounded-lg" />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Tax Type</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['inclusive', 'exclusive'].map(t => (
-                        <button type="button" key={t} onClick={() => setForm({ ...form, type: t })}
-                          className={`p-3 rounded-lg border text-sm capitalize font-semibold transition-all ${form.type === t ? 'border-primary bg-primary/5 text-primary' : 'border-border/60 text-muted-foreground'}`}>
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <SheetFooter className="p-6 bg-muted/15 border-t border-border/20 flex gap-3 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-lg">Cancel</Button>
-                  <Button type="submit" className="rounded-lg bg-primary text-white hover:bg-primary/95">Save Rule</Button>
-                </SheetFooter>
-              </form>
-            </SheetContent>
-          </Sheet>
-        </div>
+        </AppDrawer>
 
         {/* GST Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

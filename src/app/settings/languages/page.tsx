@@ -40,6 +40,7 @@ import {
   Globe,
   DollarSign
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 // Languages Initial Mock Data
 const initialLanguages = [
@@ -139,12 +140,13 @@ export default function LanguagesAndCurrencyPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Languages & Currency</h1>
-          <p className="text-muted-foreground mt-1 font-light">
-            Manage multi-lingual store configurations, locale flags, standard currencies, and active exchange rates.
-          </p>
-        </div>
+        <PageHeader
+          titlePart1="Settings"
+          titlePart2="Languages & Currency"
+          badgeText="Store Configuration"
+          subtitle="Manage multi-lingual store configurations, locale flags, standard currencies, and active exchange rates."
+
+        />
 
         <Tabs defaultValue="languages" className="space-y-6">
           <TabsList className="bg-muted/30 p-1 rounded-md border border-border/40 w-fit">

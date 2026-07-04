@@ -32,7 +32,7 @@ export default function PackagingPage() {
           titlePart2="Packaging Sizes"
           badgeText="Logistics Command Center"
           subtitle="Define packaging types and auto-assignment rules."
-          showClock={true}
+
           actions={
             <Button className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Box className="h-4 w-4" /> Add Package Type

@@ -47,7 +47,7 @@ export default function TransactionsPage() {
           titlePart2="Transactions"
           badgeText="Finance Command Center"
           subtitle="View and manage all payment transactions."
-          showClock={true}
+
           actions={
             <Button variant="outline" className="rounded-md gap-2 text-sm border-border/60 cursor-pointer">
               <Download className="h-4 w-4" /> Export

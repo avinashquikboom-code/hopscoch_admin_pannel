@@ -47,7 +47,7 @@ export default function FreeShippingPage() {
           titlePart2="Free Rules"
           badgeText="Logistics Command Center"
           subtitle="Configure conditions for free shipping eligibility."
-          showClock={true}
+
           actions={
             <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Plus className="h-4 w-4" /> Add Rule

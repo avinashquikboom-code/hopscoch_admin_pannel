@@ -33,7 +33,7 @@ export default function CODSettingsPage() {
           titlePart2="COD Settings"
           badgeText="Logistics Command Center"
           subtitle="Configure Cash on Delivery rules, charges, and restrictions."
-          showClock={true}
+
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

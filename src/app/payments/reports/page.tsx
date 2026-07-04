@@ -4,6 +4,7 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, FileSpreadsheet, Download } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, AreaChart, Area,
@@ -37,17 +38,20 @@ export default function PaymentReportsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Payment Reports</h1>
-            <p className="text-muted-foreground mt-1 font-light">Revenue, refunds, failed payments, and gateway performance.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60"><FileText className="h-3.5 w-3.5" /> CSV</Button>
-            <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60"><FileSpreadsheet className="h-3.5 w-3.5" /> Excel</Button>
-            <Button className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95"><Download className="h-3.5 w-3.5" /> PDF</Button>
-          </div>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Reports"
+          badgeText="Finance Command Center"
+          subtitle="Revenue, refunds, failed payments, and gateway performance."
+
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileText className="h-3.5 w-3.5" /> CSV</Button>
+              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileSpreadsheet className="h-3.5 w-3.5" /> Excel</Button>
+              <Button className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer"><Download className="h-3.5 w-3.5" /> PDF</Button>
+            </div>
+          }
+        />
 
         <Card className="border-border/40 bg-card rounded-lg">
           <CardHeader><CardTitle className="text-sm font-bold">Monthly Revenue vs Refunds vs Failed</CardTitle></CardHeader>

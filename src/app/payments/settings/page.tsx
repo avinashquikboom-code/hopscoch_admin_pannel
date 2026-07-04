@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { DollarSign, FileText, RefreshCcw, Clock, SlidersHorizontal, Shield } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 
 export default function PaymentSettingsPage() {
   const [saved, setSaved] = useState(false);
@@ -30,15 +31,18 @@ export default function PaymentSettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Payment Settings</h1>
-            <p className="text-muted-foreground mt-1 font-light">Configure global payment preferences for your store.</p>
-          </div>
-          <Button onClick={handleSave} className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-sm shadow-primary/10">
-            {saved ? '✓ Saved!' : 'Save Settings'}
-          </Button>
-        </div>
+        <PageHeader
+          titlePart1="Payment"
+          titlePart2="Global Settings"
+          badgeText="Finance Command Center"
+          subtitle="Configure global payment preferences for your store."
+
+          actions={
+            <Button onClick={handleSave} className="rounded-md bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              {saved ? '✓ Saved!' : 'Save Settings'}
+            </Button>
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* General */}

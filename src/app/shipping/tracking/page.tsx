@@ -54,7 +54,7 @@ export default function TrackingPage() {
           titlePart2="Tracking"
           badgeText="Logistics Command Center"
           subtitle="Track shipments and view live delivery timelines."
-          showClock={true}
+
         />
 
         {/* Search Bar */}
