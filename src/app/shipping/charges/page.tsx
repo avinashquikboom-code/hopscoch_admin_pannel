@@ -13,6 +13,16 @@ import { Plus, Search, Edit, Trash2, DollarSign, Weight, ShoppingCart, Zap } fro
 
 type ChargeType = 'flat' | 'weight' | 'value' | 'free' | 'express';
 
+interface Charge {
+  id: string;
+  name: string;
+  type: ChargeType;
+  amount: number;
+  min: number;
+  max: number | null;
+  active: boolean;
+}
+
 const typeConfig: Record<ChargeType, { label: string; color: string; icon: React.ComponentType<{className?: string}> }> = {
   flat:    { label: 'Flat Rate',    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',    icon: DollarSign },
   weight:  { label: 'Weight Based', color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400', icon: Weight },
@@ -21,19 +31,19 @@ const typeConfig: Record<ChargeType, { label: string; color: string; icon: React
   express: { label: 'Express',      color: 'bg-[#14b8a6]/10 text-[#14b8a6]',                     icon: Zap },
 };
 
-const initialCharges = [
-  { id: '1', name: 'Standard Delivery', type: 'flat' as ChargeType, amount: 49, min: 0, max: null, active: true },
-  { id: '2', name: 'Free Shipping (₹999+)', type: 'free' as ChargeType, amount: 0, min: 999, max: null, active: true },
-  { id: '3', name: 'Weight Based (up to 2kg)', type: 'weight' as ChargeType, amount: 30, min: 0, max: 2, active: true },
-  { id: '4', name: 'Express Delivery', type: 'express' as ChargeType, amount: 149, min: 0, max: null, active: true },
-  { id: '5', name: 'Free on Orders ₹499+', type: 'free' as ChargeType, amount: 0, min: 499, max: null, active: false },
+const initialCharges: Charge[] = [
+  { id: '1', name: 'Standard Delivery', type: 'flat', amount: 49, min: 0, max: null, active: true },
+  { id: '2', name: 'Free Shipping (₹999+)', type: 'free', amount: 0, min: 999, max: null, active: true },
+  { id: '3', name: 'Weight Based (up to 2kg)', type: 'weight', amount: 30, min: 0, max: 2, active: true },
+  { id: '4', name: 'Express Delivery', type: 'express', amount: 149, min: 0, max: null, active: true },
+  { id: '5', name: 'Free on Orders ₹499+', type: 'free', amount: 0, min: 499, max: null, active: false },
 ];
 
 export default function ShippingChargesPage() {
-  const [charges, setCharges] = useState<any[]>([]);
+  const [charges, setCharges] = useState<Charge[]>([]);
   const [search, setSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingCharge, setEditingCharge] = useState<any | null>(null);
+  const [editingCharge, setEditingCharge] = useState<Charge | null>(null);
   const [form, setForm] = useState({ name: '', type: 'flat' as ChargeType, amount: '', min: '', max: '' });
 
   useEffect(() => {
@@ -46,7 +56,7 @@ export default function ShippingChargesPage() {
     }
   }, []);
 
-  const saveCharges = (newCharges: any[]) => {
+  const saveCharges = (newCharges: Charge[]) => {
     setCharges(newCharges);
     localStorage.setItem('hopscotch_shipping_charges', JSON.stringify(newCharges));
   };
@@ -63,7 +73,7 @@ export default function ShippingChargesPage() {
       saveCharges(updated);
       setEditingCharge(null);
     } else {
-      const newCharge = {
+      const newCharge: Charge = {
         id: String(Date.now()), name: form.name, type: form.type,
         amount: Number(form.amount), min: Number(form.min) || 0, max: form.max ? Number(form.max) : null, active: true,
       };
@@ -73,7 +83,7 @@ export default function ShippingChargesPage() {
     setSheetOpen(false);
   };
 
-  const startEdit = (charge: any) => {
+  const startEdit = (charge: Charge) => {
     setEditingCharge(charge);
     setForm({
       name: charge.name,
@@ -154,7 +164,7 @@ export default function ShippingChargesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((c) => {
-            const cfg = typeConfig[c.type as ChargeType];
+            const cfg = typeConfig[c.type];
             const TypeIcon = cfg.icon;
             return (
               <Card key={c.id} className="border-border/40 bg-card rounded-lg">
