@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,24 +30,68 @@ const initialCharges = [
 ];
 
 export default function ShippingChargesPage() {
-  const [charges, setCharges] = useState(initialCharges);
+  const [charges, setCharges] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingCharge, setEditingCharge] = useState<any | null>(null);
   const [form, setForm] = useState({ name: '', type: 'flat' as ChargeType, amount: '', min: '', max: '' });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('hopscotch_shipping_charges');
+    if (saved) {
+      setCharges(JSON.parse(saved));
+    } else {
+      setCharges(initialCharges);
+      localStorage.setItem('hopscotch_shipping_charges', JSON.stringify(initialCharges));
+    }
+  }, []);
+
+  const saveCharges = (newCharges: any[]) => {
+    setCharges(newCharges);
+    localStorage.setItem('hopscotch_shipping_charges', JSON.stringify(newCharges));
+  };
 
   const filtered = charges.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    setCharges(cs => [...cs, {
-      id: String(cs.length + 1), name: form.name, type: form.type,
-      amount: Number(form.amount), min: Number(form.min), max: form.max ? Number(form.max) : null, active: true,
-    }]);
+    if (editingCharge) {
+      const updated = charges.map(c => c.id === editingCharge.id ? {
+        ...c, name: form.name, type: form.type,
+        amount: Number(form.amount), min: Number(form.min) || 0, max: form.max ? Number(form.max) : null
+      } : c);
+      saveCharges(updated);
+      setEditingCharge(null);
+    } else {
+      const newCharge = {
+        id: String(Date.now()), name: form.name, type: form.type,
+        amount: Number(form.amount), min: Number(form.min) || 0, max: form.max ? Number(form.max) : null, active: true,
+      };
+      saveCharges([...charges, newCharge]);
+    }
     setForm({ name: '', type: 'flat', amount: '', min: '', max: '' });
     setSheetOpen(false);
   };
 
-  const handleDelete = (id: string) => setCharges(cs => cs.filter(c => c.id !== id));
+  const startEdit = (charge: any) => {
+    setEditingCharge(charge);
+    setForm({
+      name: charge.name,
+      type: charge.type,
+      amount: String(charge.amount),
+      min: String(charge.min || ''),
+      max: String(charge.max || ''),
+    });
+    setSheetOpen(true);
+  };
+
+  const handleToggle = (id: string) => {
+    saveCharges(charges.map(c => c.id === id ? { ...c, active: !c.active } : c));
+  };
+
+  const handleDelete = (id: string) => {
+    saveCharges(charges.filter(c => c.id !== id));
+  };
 
   return (
     <AdminLayout>
@@ -59,17 +103,17 @@ export default function ShippingChargesPage() {
           subtitle="Configure flat, weight-based, and value-based shipping rates."
 
           actions={
-            <Button onClick={() => setSheetOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+            <Button onClick={() => { setEditingCharge(null); setForm({ name: '', type: 'flat', amount: '', min: '', max: '' }); setSheetOpen(true); }} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Plus className="h-4 w-4" /> Add Charge Rule
             </Button>
           }
         />
 
         <AppDrawer
-          title="Add Shipping Charge"
-          subtitle="Create a new shipping rate rule."
+          title={editingCharge ? "Edit Shipping Charge" : "Add Shipping Charge"}
+          subtitle={editingCharge ? "Modify shipping rate rules." : "Create a new shipping rate rule."}
           open={sheetOpen}
-          onClose={setSheetOpen}
+          onClose={(open) => { setSheetOpen(open); if (!open) setEditingCharge(null); }}
           onSubmit={handleAdd}
         >
           <div className="space-y-6">
@@ -110,7 +154,7 @@ export default function ShippingChargesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((c) => {
-            const cfg = typeConfig[c.type];
+            const cfg = typeConfig[c.type as ChargeType];
             const TypeIcon = cfg.icon;
             return (
               <Card key={c.id} className="border-border/40 bg-card rounded-lg">
@@ -135,11 +179,14 @@ export default function ShippingChargesPage() {
                     </p>
                   )}
                   <div className="flex items-center justify-between">
-                    <Badge className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold ${c.active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+                    <Badge
+                      onClick={() => handleToggle(c.id)}
+                      className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold cursor-pointer transition-all hover:scale-105 ${c.active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}
+                    >
                       {c.active ? 'Active' : 'Inactive'}
                     </Badge>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60"><Edit className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60" onClick={() => startEdit(c)}><Edit className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => handleDelete(c.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>

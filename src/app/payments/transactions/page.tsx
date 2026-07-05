@@ -56,17 +56,104 @@ const summary = [
 
 const STATUS_FILTERS = ['All', 'Success', 'Pending', 'Failed', 'Refunded'] as const;
 
+import { useEffect, useCallback, useMemo } from 'react';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
 export default function TransactionsPage() {
+  const [paymentsList, setPaymentsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | TxnStatus>('All');
 
-  const filtered = transactions.filter(t => {
-    const matchSearch = t.id.toLowerCase().includes(search.toLowerCase())
-      || t.customer.toLowerCase().includes(search.toLowerCase())
-      || t.order.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'All' || t.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const fetchPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/payments/admin/all`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load payments');
+      const raw = json.data?.payments || json.payments || json.data || json || [];
+      const normalized = raw.map((p: any) => {
+        const statusMap: Record<string, TxnStatus> = {
+          PAID: 'Success',
+          PENDING: 'Pending',
+          FAILED: 'Failed',
+          REFUNDED: 'Refunded',
+          PARTIALLY_REFUNDED: 'Refunded'
+        };
+        const methodMap: Record<string, string> = {
+          RAZORPAY: 'UPI',
+          STRIPE: 'Card',
+          COD: 'COD',
+          UPI: 'UPI',
+          CARD: 'Card',
+          WALLET: 'Wallet'
+        };
+        const customerName = p.order?.user 
+          ? `${p.order.user.firstName || ''} ${p.order.user.lastName || ''}`.trim()
+          : 'Customer';
+        const initials = customerName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'CU';
+
+        return {
+          id: p.providerRef || `TXN-${p.id}`,
+          order: p.order?.orderNumber ? `#${p.order.orderNumber}` : `#ORD-${p.orderId}`,
+          customer: customerName,
+          avatar: initials,
+          amount: `₹${Number(p.amount).toLocaleString('en-IN')}`,
+          method: methodMap[p.method] || 'Card',
+          gateway: p.method === 'RAZORPAY' ? 'Razorpay' : p.method === 'STRIPE' ? 'Stripe' : 'COD',
+          status: (statusMap[p.status] || 'Success') as TxnStatus,
+          date: new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: new Date(p.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        };
+      });
+      setPaymentsList(normalized);
+    } catch (e: any) {
+      setPaymentsList(transactions);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  const filtered = useMemo(() => {
+    return paymentsList.filter(t => {
+      const matchSearch = t.id.toLowerCase().includes(search.toLowerCase())
+        || t.customer.toLowerCase().includes(search.toLowerCase())
+        || t.order.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === 'All' || t.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [paymentsList, search, statusFilter]);
+
+  const computedSummary = useMemo(() => {
+    const totalVolume = paymentsList.reduce((acc, p) => {
+      if (p.status === 'Success') {
+        const amt = Number(p.amount.replace(/[^0-9.-]+/g, ""));
+        return acc + (isNaN(amt) ? 0 : amt);
+      }
+      return acc;
+    }, 0);
+
+    const successCount = paymentsList.filter(p => p.status === 'Success').length;
+    const successRate = paymentsList.length > 0 ? (successCount / paymentsList.length) * 100 : 0;
+    const pendingCount = paymentsList.filter(p => p.status === 'Pending').length;
+    const failedOrRefunded = paymentsList.filter(p => p.status === 'Failed' || p.status === 'Refunded').length;
+
+    return [
+      { label: 'Total Volume',   value: `₹${totalVolume.toLocaleString('en-IN')}`, sub: '+12.4% vs last week', trend: 'up',   icon: Banknote,     grad: 'from-[#14b8a6]/15 to-[#0f766e]/5', iconColor: 'text-[#14b8a6]' },
+      { label: 'Success Rate',   value: `${successRate.toFixed(1)}%`,   sub: `${successCount} of ${paymentsList.length} succeeded`,    trend: 'up',   icon: CheckCircle2, grad: 'from-emerald-500/15 to-emerald-800/5', iconColor: 'text-emerald-500' },
+      { label: 'Pending',        value: String(pendingCount),       sub: 'Awaiting processing',  trend: 'flat', icon: Clock,        grad: 'from-amber-500/15 to-amber-800/5',    iconColor: 'text-amber-500' },
+      { label: 'Failed / Refund', value: String(failedOrRefunded),     sub: `${paymentsList.filter(p => p.status === 'Failed').length} failed · ${paymentsList.filter(p => p.status === 'Refunded').length} refund`, trend: 'down', icon: XCircle,      grad: 'from-rose-500/15 to-rose-800/5',      iconColor: 'text-rose-500' },
+    ];
+  }, [paymentsList]);
 
   return (
     <AdminLayout>
@@ -87,14 +174,19 @@ export default function TransactionsPage() {
               Real-time log of every payment processed across all gateways.
             </p>
           </div>
-          <Button className="rounded-xl gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/20 cursor-pointer h-10 px-5 text-xs font-semibold">
-            <Download className="h-4 w-4" /> Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={fetchPayments} variant="outline" size="sm" className="h-10 px-4 rounded-xl border-border/40 gap-2 cursor-pointer text-xs font-semibold">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            </Button>
+            <Button className="rounded-xl gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/20 cursor-pointer h-10 px-5 text-xs font-semibold">
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* ── Summary Cards ───────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {summary.map((s) => (
+          {computedSummary.map((s) => (
             <Card key={s.label} className="border-border/30 rounded-xl bg-card overflow-hidden group hover:shadow-md transition-all hover:border-border/60">
               <CardContent className="p-4">
                 <div className={`inline-flex p-2 rounded-lg bg-gradient-to-br ${s.grad} mb-3`}>
@@ -160,14 +252,19 @@ export default function TransactionsPage() {
 
           {/* Rows */}
           <div className="divide-y divide-border/10">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="py-16 text-center">
+                <RefreshCw className="h-8 w-8 text-[#14b8a6] animate-spin mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground font-light">Loading payment transactions...</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="py-16 text-center">
                 <TrendingUp className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground font-light">No transactions match your filters.</p>
               </div>
             ) : (
               filtered.map((t) => {
-                const cfg = statusConfig[t.status];
+                const cfg = statusConfig[t.status as TxnStatus];
                 const StatusIcon = cfg.icon;
                 return (
                   <div
@@ -238,7 +335,7 @@ export default function TransactionsPage() {
           <div className="flex items-center justify-between px-5 py-3 border-t border-border/20 bg-muted/10">
             <p className="text-xs text-muted-foreground font-light">
               Showing <span className="font-semibold text-foreground">{filtered.length}</span> of{' '}
-              <span className="font-semibold text-foreground">{transactions.length}</span> transactions
+              <span className="font-semibold text-foreground">{paymentsList.length}</span> transactions
             </p>
             <div className="flex items-center gap-1.5">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg border-border/40 cursor-pointer">

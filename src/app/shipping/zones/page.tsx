@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,11 +20,28 @@ const initialZones = [
   { id: '5', name: 'International — SAARC', country: 'Global', states: 'BD, LK, NP, PK', cities: 'Dhaka, Colombo, Kathmandu', pincodes: 'N/A', status: false },
 ];
 
+
 export default function ShippingZonesPage() {
-  const [zones, setZones] = useState(initialZones);
+  const [zones, setZones] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [editingZone, setEditingZone] = useState<any | null>(null);
   const [form, setForm] = useState({ name: '', country: 'India', states: '', cities: '', pincodes: '' });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('hopscotch_shipping_zones');
+    if (saved) {
+      setZones(JSON.parse(saved));
+    } else {
+      setZones(initialZones);
+      localStorage.setItem('hopscotch_shipping_zones', JSON.stringify(initialZones));
+    }
+  }, []);
+
+  const saveZones = (newZones: any[]) => {
+    setZones(newZones);
+    localStorage.setItem('hopscotch_shipping_zones', JSON.stringify(newZones));
+  };
 
   const filtered = zones.filter(z =>
     z.name.toLowerCase().includes(search.toLowerCase()) || z.country.toLowerCase().includes(search.toLowerCase())
@@ -32,9 +49,35 @@ export default function ShippingZonesPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    setZones(zs => [...zs, { id: String(zs.length + 1), ...form, status: true }]);
+    if (editingZone) {
+      const updated = zones.map(z => z.id === editingZone.id ? { ...z, ...form } : z);
+      saveZones(updated);
+      setEditingZone(null);
+    } else {
+      saveZones([...zones, { id: String(Date.now()), ...form, status: true }]);
+    }
     setForm({ name: '', country: 'India', states: '', cities: '', pincodes: '' });
     setOpen(false);
+  };
+
+  const startEdit = (zone: any) => {
+    setEditingZone(zone);
+    setForm({
+      name: zone.name,
+      country: zone.country,
+      states: zone.states,
+      cities: zone.cities,
+      pincodes: zone.pincodes,
+    });
+    setOpen(true);
+  };
+
+  const handleToggle = (id: string) => {
+    saveZones(zones.map(z => z.id === id ? { ...z, status: !z.status } : z));
+  };
+
+  const handleDelete = (id: string) => {
+    saveZones(zones.filter(z => z.id !== id));
   };
 
   return (
@@ -47,17 +90,17 @@ export default function ShippingZonesPage() {
           subtitle="Define geographic zones for shipping rate assignments."
 
           actions={
-            <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+            <Button onClick={() => { setEditingZone(null); setForm({ name: '', country: 'India', states: '', cities: '', pincodes: '' }); setOpen(true); }} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Plus className="h-4 w-4" /> Add Zone
             </Button>
           }
         />
 
         <AppDrawer
-          title="Add Shipping Zone"
-          subtitle="Define a new geographic delivery zone."
+          title={editingZone ? "Edit Shipping Zone" : "Add Shipping Zone"}
+          subtitle={editingZone ? "Modify geographic delivery zone parameters." : "Define a new geographic delivery zone."}
           open={open}
-          onClose={setOpen}
+          onClose={(o) => { setOpen(o); if (!o) setEditingZone(null); }}
           onSubmit={handleAdd}
         >
           <div className="space-y-6">
@@ -108,14 +151,17 @@ export default function ShippingZonesPage() {
                       <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate">{z.cities}</TableCell>
                       <TableCell className="text-xs font-mono text-muted-foreground/80 max-w-[140px] truncate">{z.pincodes}</TableCell>
                       <TableCell>
-                        <Badge className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold ${z.status ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+                        <Badge
+                          onClick={() => handleToggle(z.id)}
+                          className={`text-[10px] rounded-full px-2.5 border-transparent font-semibold cursor-pointer transition-all hover:scale-105 ${z.status ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}
+                        >
                           {z.status ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60"><Edit className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => setZones(z2 => z2.filter(x => x.id !== z.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60" onClick={() => startEdit(z)}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => handleDelete(z.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
