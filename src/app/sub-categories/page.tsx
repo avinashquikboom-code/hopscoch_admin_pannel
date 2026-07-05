@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -53,61 +53,110 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialSubCategories = [
-  { id: '1', name: 'Casual Dresses', parentName: 'Dresses', slug: 'casual-dresses', count: 20, isVisible: true, description: 'Comfortable day-to-day dresses, sundresses, and knit dresses.' },
-  { id: '2', name: 'Formal Dresses', parentName: 'Dresses', slug: 'formal-dresses', count: 15, isVisible: true, description: 'Evening gowns, prom dresses, cocktail wear, and official event attire.' },
-  { id: '3', name: 'T-Shirts', parentName: 'Tops', slug: 't-shirts', count: 18, isVisible: true, description: 'Cotton tees, crop tops, oversized t-shirts, and graphic tees.' },
-  { id: '4', name: 'Blouses', parentName: 'Tops', slug: 'blouses', count: 12, isVisible: true, description: 'Elegant silk shirts, linen blouses, and button-up shirts for work.' },
-  { id: '5', name: 'Sweaters', parentName: 'Tops', slug: 'sweaters', count: 8, isVisible: false, description: 'Knit cardigans, oversized pullovers, turtlenecks, and hoodies.' },
-  { id: '6', name: 'Jeans', parentName: 'Bottoms', slug: 'jeans', count: 22, isVisible: true, description: 'Slim fit, high rise, skinny, mom-jeans, and bootcut denims.' },
-  { id: '7', name: 'Skirts', parentName: 'Bottoms', slug: 'skirts', count: 10, isVisible: true, description: 'Mini skirts, midi pleated skirts, leather skirts, and denim skirts.' },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeSubCategory(c: any, parentName: string) {
+  return {
+    id: c.id || c._id || String(Math.random()),
+    name: c.name || 'Subcategory',
+    parentName: parentName,
+    slug: c.slug || c.name?.toLowerCase().replace(/\s+/g, '-') || '',
+    count: Number(c.productCount ?? c._count?.products ?? 0),
+    isVisible: c.isVisible ?? c.isActive ?? true,
+    description: c.description || '',
+  };
+}
 
 export default function SubCategoriesPage() {
-  const [subCategoriesList, setSubCategoriesList] = useState(initialSubCategories);
+  const [subCategoriesList, setSubCategoriesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
-
-  // Filters State
   const [showFilters, setShowFilters] = useState(false);
   const [parentFilter, setParentFilter] = useState('all');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(null);
 
-  // Preview Drawer
-  const [selectedSubCategory, setSelectedSubCategory] = useState<typeof initialSubCategories[0] | null>(null);
+  const fetchSubCategories = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load categories');
+      const raw = json.data ?? json.categories ?? json ?? [];
+      const list: any[] = [];
+      raw.forEach((parent: any) => {
+        if (Array.isArray(parent.children)) {
+          parent.children.forEach((c: any) => {
+            list.push(normalizeSubCategory(c, parent.name));
+          });
+        }
+      });
+      setSubCategoriesList(list);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => { fetchSubCategories(); }, [fetchSubCategories]);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSc = {
-      id: String(subCategoriesList.length + 1),
+    const body = {
       name: formData.name,
       parentName: formData.parentName,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
-      count: 0,
       isVisible: formData.isVisible,
-      description: formData.description || `A premium selection of ${formData.name}.`,
+      description: formData.description,
     };
-    setSubCategoriesList([...subCategoriesList, newSc]);
+    try {
+      // Find parent ID to post under
+      const resParent = await fetch(`${API_BASE}/api/categories`, { headers: authHeaders() });
+      const jsonParent = await resParent.json();
+      const parentList = jsonParent.data ?? jsonParent.categories ?? jsonParent ?? [];
+      const parentObj = parentList.find((p: any) => p.name === formData.parentName);
+      if (parentObj) {
+        await fetch(`${API_BASE}/api/categories/${parentObj.id || parentObj._id}/children`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(body),
+        });
+      }
+      await fetchSubCategories();
+    } catch {
+      setSubCategoriesList(prev => [...prev, { ...body, id: String(Date.now()), count: 0 }]);
+    }
     setFormData({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
     setIsAddOpen(false);
   };
 
-  const handleToggleVisibility = (id: string) => {
+  const handleToggleVisibility = async (id: string) => {
     setSubCategoriesList(prev =>
       prev.map(sc => sc.id === id ? { ...sc, isVisible: !sc.isVisible } : sc)
     );
-    setSelectedSubCategory(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isVisible: !prev.isVisible };
+    setSelectedSubCategory((prev: any) => prev && prev.id === id ? { ...prev, isVisible: !prev.isVisible } : prev);
+    try {
+      const target = subCategoriesList.find(sc => sc.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/categories/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isVisible: !target.isVisible })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
     setSubCategoriesList(prev => prev.filter(sc => sc.id !== id));
     setSelectedSubCategory(null);
+    try {
+      await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const filteredSubCategories = useMemo(() => {
@@ -400,7 +449,7 @@ export default function SubCategoriesPage() {
                                 )}
                               </DropdownMenuItem>
                               <Separator className="my-1 border-border/10" />
-                              <DropdownMenuItem onClick={() => handleDelete(sc.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                              <DropdownMenuItem onClick={() => handleDeleteItem(sc.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
                                 <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -546,7 +595,7 @@ export default function SubCategoriesPage() {
                         variant="ghost" 
                         size="icon" 
                         className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
-                        onClick={() => handleDelete(selectedSubCategory.id)}
+                        onClick={() => handleDeleteItem(selectedSubCategory.id)}
                         title="Delete Subcategory"
                       >
                         <Trash2 className="h-4.5 w-4.5" />

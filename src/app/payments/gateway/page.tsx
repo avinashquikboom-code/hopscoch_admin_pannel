@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,38 +12,90 @@ import { Eye, EyeOff, Plus, Settings, CheckCircle2 } from 'lucide-react';
 import { AppDrawer } from '@/components/ui/app-drawer';
 import { PageHeader } from '@/components/layout/page-header';
 
-const gateways = [
-  {
-    id: 'razorpay', name: 'Razorpay', icon: '⚡', color: 'text-blue-500 bg-blue-500/10',
-    apiKey: 'rzp_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/razorpay',
-    sandbox: false, active: true,
-    features: ['UPI', 'Cards', 'Net Banking', 'Wallets', 'EMI'],
-  },
-  {
-    id: 'stripe', name: 'Stripe', icon: '🔷', color: 'text-indigo-500 bg-indigo-500/10',
-    apiKey: 'pk_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/stripe',
-    sandbox: true, active: false,
-    features: ['Cards', 'Apple Pay', 'Google Pay', 'SEPA'],
-  },
-  {
-    id: 'paypal', name: 'PayPal', icon: '🅿️', color: 'text-sky-500 bg-sky-500/10',
-    apiKey: 'client_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/paypal',
-    sandbox: true, active: false,
-    features: ['PayPal Balance', 'Cards', 'International'],
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
 
 export default function PaymentGatewayPage() {
+  const [gatewaysList, setGatewaysList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
-  const [active, setActive] = useState<Record<string, boolean>>({ razorpay: true, stripe: false, paypal: false });
+  const [active, setActive] = useState<Record<string, boolean>>({});
   const [sheetOpen, setSheetOpen] = useState(false);
   const [form, setForm] = useState({ name: '', apiKey: '', secret: '', webhook: '' });
 
-  const toggle = (id: string) => setActive(a => ({ ...a, [id]: !a[id] }));
+  const fetchGateways = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/payments/gateways`, { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setGatewaysList(json.data);
+        const activeMap: Record<string, boolean> = {};
+        json.data.forEach((g: any) => {
+          activeMap[g.id] = g.active;
+        });
+        setActive(activeMap);
+      } else {
+        setGatewaysList([
+          { id: 'razorpay', name: 'Razorpay', icon: '⚡', color: 'text-blue-500 bg-blue-500/10', apiKey: 'rzp_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/razorpay', sandbox: false, active: true, features: ['UPI', 'Cards', 'Net Banking', 'Wallets', 'EMI'] },
+          { id: 'stripe', name: 'Stripe', icon: '🔷', color: 'text-indigo-500 bg-indigo-500/10', apiKey: 'pk_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/stripe', sandbox: true, active: false, features: ['Cards', 'Apple Pay', 'Google Pay', 'SEPA'] },
+        ]);
+        setActive({ razorpay: true, stripe: false });
+      }
+    } catch {
+      setGatewaysList([
+        { id: 'razorpay', name: 'Razorpay', icon: '⚡', color: 'text-blue-500 bg-blue-500/10', apiKey: 'rzp_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/razorpay', sandbox: false, active: true, features: ['UPI', 'Cards', 'Net Banking', 'Wallets', 'EMI'] },
+        { id: 'stripe', name: 'Stripe', icon: '🔷', color: 'text-indigo-500 bg-indigo-500/10', apiKey: 'pk_live_xxxxxxxxxx', secret: '••••••••••••••••', webhook: 'https://yourdomain.com/api/stripe', sandbox: true, active: false, features: ['Cards', 'Apple Pay', 'Google Pay', 'SEPA'] },
+      ]);
+      setActive({ razorpay: true, stripe: false });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchGateways(); }, [fetchGateways]);
+
+  const toggle = async (id: string) => {
+    const nextVal = !active[id];
+    setActive(a => ({ ...a, [id]: nextVal }));
+    try {
+      await fetch(`${API_BASE}/api/settings/payments/gateways/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ active: nextVal }),
+      });
+    } catch {}
+  };
+
   const toggleSecret = (id: string) => setShowSecrets(s => ({ ...s, [id]: !s[id] }));
 
-  const handleAddGateway = (e: React.FormEvent) => {
+  const handleAddGateway = async (e: React.FormEvent) => {
     e.preventDefault();
+    const body = {
+      id: form.name.toLowerCase().replace(/\s+/g, '-'),
+      name: form.name,
+      apiKey: form.apiKey,
+      secret: form.secret,
+      webhook: form.webhook,
+      active: true,
+      icon: '⚡',
+      color: 'text-blue-500 bg-blue-500/10',
+      features: ['UPI', 'Cards'],
+    };
+    try {
+      await fetch(`${API_BASE}/api/settings/payments/gateways`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      await fetchGateways();
+    } catch {
+      setGatewaysList(prev => [...prev, body]);
+      setActive(a => ({ ...a, [body.id]: true }));
+    }
     setSheetOpen(false);
     setForm({ name: '', apiKey: '', secret: '', webhook: '' });
   };
@@ -96,7 +148,7 @@ export default function PaymentGatewayPage() {
         </AppDrawer>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {gateways.map((g) => (
+          {gatewaysList.map((g) => (
             <Card key={g.id} className={`border-border/40 bg-card rounded-lg ${!active[g.id] ? 'opacity-70' : ''}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -138,7 +190,7 @@ export default function PaymentGatewayPage() {
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground mb-2">Supported Methods</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {g.features.map(f => (
+                    {g.features.map((f: any) => (
                       <Badge key={f} className="text-[10px] rounded-full px-2.5 border-transparent bg-muted text-muted-foreground flex items-center gap-1">
                         <CheckCircle2 className="h-2.5 w-2.5 text-emerald-500" /> {f}
                       </Badge>

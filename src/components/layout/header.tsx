@@ -13,7 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -21,7 +22,29 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState<{ firstName: string; lastName: string; email: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const getInitials = () => {
+    if (!user) return 'AD';
+    const f = user.firstName ? user.firstName.charAt(0).toUpperCase() : '';
+    const l = user.lastName ? user.lastName.charAt(0).toUpperCase() : '';
+    return `${f}${l}` || 'AD';
+  };
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -119,32 +142,59 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* User Account Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger render={
-            <div className="relative h-10 w-10 rounded-md hover:bg-muted/65 p-0 border border-border/30 cursor-pointer bg-transparent">
-              <Avatar className="h-9 w-9 rounded-lg">
-                <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-lg">
-                  AD
+            <div className="relative h-10 w-10 rounded-full hover:bg-muted/65 p-0 border border-[#14b8a6]/30 cursor-pointer bg-transparent flex items-center justify-center">
+              <Avatar className="h-9 w-9 rounded-full">
+                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt="Admin" />}
+                <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-full">
+                  {getInitials()}
                 </AvatarFallback>
               </Avatar>
             </div>
           } />
-          <DropdownMenuContent align="end" className="w-56 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
+          <DropdownMenuContent align="end" className="w-60 p-2 rounded-lg bg-card/95 border border-border/30 backdrop-blur-lg">
+            {/* User mini-profile block */}
             <DropdownMenuLabel className="px-2 py-2">
-              <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-bold text-foreground">Admin User</p>
-              <p className="text-xs text-muted-foreground font-light">admin@aura.com</p>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 rounded-full border border-[#14b8a6]/20 flex-shrink-0">
+                  {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt="Admin" />}
+                  <AvatarFallback className="rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] text-black text-xs font-black">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">
+                    {user ? `${user.firstName} ${user.lastName}`.trim() || 'Admin User' : 'Admin User'}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-light truncate">
+                    {user?.email || 'admin@hopscotch.com'}
+                  </p>
+                </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem
+              onClick={() => router.push('/profile')}
+              className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium"
+            >
               <User className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
-              Profile
+              My Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem
+              onClick={() => router.push('/settings')}
+              className="p-2.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm font-medium"
+            >
               <Settings className="mr-2.5 h-4 w-4 text-[#14b8a6]" />
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="p-2.5 rounded-md text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-sm font-medium">
+            <DropdownMenuItem
+              onClick={() => {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                router.push('/login');
+              }}
+              className="p-2.5 rounded-md text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer text-sm font-medium"
+            >
               <LogOut className="mr-2.5 h-4 w-4 text-rose-500" />
               Logout
             </DropdownMenuItem>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -51,74 +51,42 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// Initial mock orders data
-const initialOrders = [
-  {
-    id: 'ORD-1234',
-    customer: 'Sarah Johnson',
-    email: 'sarah@email.com',
-    amount: 234.50,
-    status: 'delivered',
-    paymentStatus: 'paid',
-    items: 3,
-    date: '2026-07-02',
-    trackingNumber: 'TRK123456789',
-    phone: '+1 (555) 234-5678',
-    address: '123 Fashion Ave, Suite 400, New York, NY 10001',
-  },
-  {
-    id: 'ORD-1235',
-    customer: 'Michael Brown',
-    email: 'michael@email.com',
-    amount: 189.00,
-    status: 'processing',
-    paymentStatus: 'paid',
-    items: 2,
-    date: '2026-07-03',
-    trackingNumber: '',
-    phone: '+1 (555) 987-6543',
-    address: '456 Denim Road, Los Angeles, CA 90012',
-  },
-  {
-    id: 'ORD-1236',
-    customer: 'Emily Davis',
-    email: 'emily@email.com',
-    amount: 456.75,
-    status: 'pending',
-    paymentStatus: 'pending',
-    items: 5,
-    date: '2026-07-04',
-    trackingNumber: '',
-    phone: '+1 (555) 456-7890',
-    address: '789 Silk Blvd, Chicago, IL 60611',
-  },
-  {
-    id: 'ORD-1237',
-    customer: 'James Wilson',
-    email: 'james@email.com',
-    amount: 123.25,
-    status: 'shipped',
-    paymentStatus: 'paid',
-    items: 1,
-    date: '2026-07-01',
-    trackingNumber: 'TRK987654321',
-    phone: '+1 (555) 789-0123',
-    address: '101 Leather Way, Austin, TX 78701',
-  },
-  {
-    id: 'ORD-1238',
-    customer: 'Lisa Anderson',
-    email: 'lisa@email.com',
-    amount: 345.00,
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    items: 4,
-    date: '2026-06-30',
-    trackingNumber: '',
-    phone: '+1 (555) 890-1234',
-    address: '202 Cotton Lane, Seattle, WA 98101',
-  },
-];
+// ── API helper ──────────────────────────────────────────────────────────────
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+// Normalize a raw API order into the shape the UI expects
+function normalizeOrder(raw: any) {
+  const user = raw.user || {};
+  const shippingAddress = raw.shippingAddress || raw.address || {};
+  const addressStr = typeof shippingAddress === 'string'
+    ? shippingAddress
+    : [shippingAddress.addressLine1, shippingAddress.city, shippingAddress.state, shippingAddress.pincode]
+        .filter(Boolean).join(', ');
+
+  return {
+    id: raw.orderNumber || raw.id || '',
+    _rawId: raw.id,
+    customer: `${user.firstName || ''} ${user.lastName || ''}`.trim() || raw.customerName || 'Customer',
+    email: user.email || raw.email || '',
+    phone: user.phone || raw.phone || '',
+    amount: Number(raw.totalAmount || raw.total || 0),
+    status: (raw.status || 'pending').toLowerCase(),
+    paymentStatus: (raw.paymentStatus || 'pending').toLowerCase(),
+    items: raw.orderItems?.length ?? raw.itemCount ?? 0,
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-IN') : '',
+    trackingNumber: raw.trackingNumber || raw.shipments?.[0]?.trackingNumber || '',
+    address: addressStr,
+    orderItems: raw.orderItems || [],
+  };
+}
 
 // Map statuses to styling
 const statusConfig = {
@@ -131,39 +99,19 @@ const statusConfig = {
   refunded: { label: 'Refunded', icon: RefreshCw, color: 'bg-gray-500/10 text-gray-500 dark:bg-gray-500/5 dark:text-gray-400 border-gray-500/20' },
 };
 
-// Mock items helper matching order.amount and items count
-const getMockItemsForOrder = (orderId: string) => {
-  if (orderId === 'ORD-1234') {
-    return [
-      { name: 'Summer Floral Dress', quantity: 2, price: 99.99, size: 'M', color: 'Blue' },
-      { name: 'Silk Scarf', quantity: 1, price: 34.52, size: 'OS', color: 'Red' },
-    ];
+// Extract order items from the real API shape
+function getOrderItems(order: any) {
+  if (!order.orderItems || order.orderItems.length === 0) {
+    return [{ name: 'Order Item', quantity: 1, price: order.amount, size: '—', color: '—' }];
   }
-  if (orderId === 'ORD-1235') {
-    return [
-      { name: 'Classic White Blouse', quantity: 2, price: 94.50, size: 'S', color: 'White' },
-    ];
-  }
-  if (orderId === 'ORD-1236') {
-    return [
-      { name: 'High-Waist Jeans', quantity: 3, price: 89.99, size: '28', color: 'Denim' },
-      { name: 'Classic White Blouse', quantity: 2, price: 93.39, size: 'M', color: 'White' },
-    ];
-  }
-  if (orderId === 'ORD-1237') {
-    return [
-      { name: 'Leather Handbag', quantity: 1, price: 123.25, size: 'OS', color: 'Tan' },
-    ];
-  }
-  if (orderId === 'ORD-1238') {
-    return [
-      { name: 'Silk Scarf', quantity: 4, price: 86.25, size: 'OS', color: 'Purple' },
-    ];
-  }
-  return [
-    { name: 'Premium Store Item', quantity: 1, price: 50.00, size: 'M', color: 'Standard' }
-  ];
-};
+  return order.orderItems.map((item: any) => ({
+    name: item.product?.name || item.productName || 'Product',
+    quantity: item.quantity,
+    price: Number(item.price || item.unitPrice || 0),
+    size: item.variant?.size || item.size || '—',
+    color: item.variant?.color || item.color || '—',
+  }));
+}
 
 const getAvatarFallback = (name: string) => {
   const parts = name.split(' ');
@@ -186,10 +134,12 @@ const getAvatarColor = (name: string) => {
 };
 
 export default function OrdersPage() {
-  const [ordersList, setOrdersList] = useState(initialOrders);
+  const [ordersList, setOrdersList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  
+
   // Advanced filters state
   const [showFilters, setShowFilters] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -198,45 +148,52 @@ export default function OrdersPage() {
   const [maxAmount, setMaxAmount] = useState('');
 
   // Selected Order for slide out preview
-  const [selectedOrder, setSelectedOrder] = useState<typeof initialOrders[0] | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-  // Status transitions handler
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
-    setOrdersList(prev => 
-      prev.map(order => {
-        if (order.id === orderId) {
-          let trackingNumber = order.trackingNumber;
-          // Auto generate tracking number if marked shipped
-          if (newStatus === 'shipped' && !trackingNumber) {
-            trackingNumber = `TRK${Math.floor(100000000 + Math.random() * 900000000)}`;
-          }
-          return {
-            ...order,
-            status: newStatus,
-            trackingNumber,
-            paymentStatus: newStatus === 'refunded' ? 'refunded' : order.paymentStatus
-          };
-        }
-        return order;
-      })
-    );
-    
-    // Sync the current open drawer preview
-    setSelectedOrder(prev => {
-      if (prev && prev.id === orderId) {
-        let trackingNumber = prev.trackingNumber;
-        if (newStatus === 'shipped' && !trackingNumber) {
-          trackingNumber = `TRK${Math.floor(100000000 + Math.random() * 900000000)}`;
-        }
-        return {
-          ...prev,
-          status: newStatus,
-          trackingNumber,
-          paymentStatus: newStatus === 'refunded' ? 'refunded' : prev.paymentStatus
-        };
+  // ── Fetch orders from API ─────────────────────────────────────────────────
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load orders');
+      const raw = json.data ?? json.orders ?? json ?? [];
+      setOrdersList(Array.isArray(raw) ? raw.map(normalizeOrder) : []);
+    } catch (e: any) {
+      setError(e.message || 'Could not fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  // Status transitions — calls API then refreshes
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    const order = ordersList.find(o => o.id === orderId);
+    const rawId = order?._rawId || orderId;
+
+    // Optimistic update in UI
+    const patch = (o: any) => {
+      if (o.id !== orderId) return o;
+      const trackingNumber = newStatus === 'shipped' && !o.trackingNumber
+        ? `TRK${Math.floor(100000000 + Math.random() * 900000000)}`
+        : o.trackingNumber;
+      return { ...o, status: newStatus, trackingNumber, paymentStatus: newStatus === 'refunded' ? 'refunded' : o.paymentStatus };
+    };
+    setOrdersList(prev => prev.map(patch));
+    setSelectedOrder((prev: any | null) => prev ? patch(prev) : prev);
+
+    try {
+      if (newStatus === 'cancelled') {
+        await fetch(`${API_BASE}/api/orders/${rawId}/cancel`, { method: 'PATCH', headers: authHeaders() });
       }
-      return prev;
-    });
+      // For other transitions, re-fetch to get server truth
+      await fetchOrders();
+    } catch (e) {
+      console.error('Status update failed', e);
+    }
   };
 
   // Filtered orders selector
@@ -331,8 +288,10 @@ export default function OrdersPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-muted-foreground uppercase">Total Sales Volume</p>
-                  <p className="text-2xl font-bold text-foreground mt-2">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                  <p className="text-xs text-muted-foreground mt-1">From {stats.totalCount} overall orders placed</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">
+                    {loading ? '—' : `₹${stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">From {loading ? '…' : stats.totalCount} overall orders placed</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#14b8a6]/10 text-[#14b8a6]">
                   <DollarSign className="h-5 w-5" />
@@ -566,7 +525,27 @@ export default function OrdersPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrders.length === 0 ? (
+                      {loading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <TableRow key={i}>
+                            {Array.from({ length: 9 }).map((__, j) => (
+                              <TableCell key={j} className="py-4">
+                                <div className="h-4 bg-muted/40 rounded animate-pulse" />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : error ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-12">
+                            <div className="flex flex-col items-center justify-center space-y-3">
+                              <AlertCircle className="h-8 w-8 text-rose-400" />
+                              <p className="text-sm font-semibold text-muted-foreground">{error}</p>
+                              <button onClick={fetchOrders} className="text-xs text-[#14b8a6] underline">Retry</button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredOrders.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={9} className="text-center py-12">
                             <div className="flex flex-col items-center justify-center space-y-3">
@@ -886,7 +865,7 @@ export default function OrdersPage() {
                   <div className="space-y-4">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Receipt Breakdown</h3>
                     <div className="border border-border/30 rounded-xl overflow-hidden bg-muted/5 divide-y divide-border/20">
-                      {getMockItemsForOrder(selectedOrder.id).map((item, idx) => (
+                      {getOrderItems(selectedOrder).map((item: any, idx: number) => (
                         <div key={idx} className="flex items-center justify-between p-4 bg-card/25">
                           <div className="flex flex-col gap-1">
                             <span className="text-sm font-semibold text-foreground">{item.name}</span>
@@ -898,7 +877,7 @@ export default function OrdersPage() {
                           </div>
                           <div className="flex items-center gap-6">
                             <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
-                            <span className="text-sm font-bold text-foreground">${(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="text-sm font-bold text-foreground">₹{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         </div>
                       ))}
@@ -907,16 +886,18 @@ export default function OrdersPage() {
                       <div className="p-4 bg-muted/20 space-y-2 text-xs">
                         <div className="flex justify-between text-muted-foreground">
                           <span>Subtotal</span>
-                          <span>${(selectedOrder.amount - 15.00).toFixed(2)}</span>
+                          <span>₹{Math.max(0, selectedOrder.amount - (selectedOrder.shippingFee || 0)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Est. Shipping & Taxes</span>
-                          <span>$15.00</span>
-                        </div>
+                        {(selectedOrder.shippingFee || selectedOrder.taxAmount) > 0 && (
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Shipping & Taxes</span>
+                            <span>₹{((selectedOrder.shippingFee || 0) + (selectedOrder.taxAmount || 0)).toFixed(2)}</span>
+                          </div>
+                        )}
                         <Separator className="my-2 border-border/20" />
                         <div className="flex justify-between text-sm font-black text-foreground">
                           <span>Grand Total</span>
-                          <span>${selectedOrder.amount.toFixed(2)}</span>
+                          <span>₹{selectedOrder.amount.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>

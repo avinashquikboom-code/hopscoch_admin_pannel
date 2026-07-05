@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -56,6 +56,27 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     Analytics: false,
     Settings: true,
   });
+  const [user, setUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const getInitials = () => {
+    if (!user) return 'AD';
+    const f = user.firstName ? user.firstName.charAt(0).toUpperCase() : '';
+    const l = user.lastName ? user.lastName.charAt(0).toUpperCase() : '';
+    return `${f}${l}` || 'AD';
+  };
 
   const toggleGroup = (name: string) => {
     setOpenGroups((prev) => ({
@@ -322,12 +343,16 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       {!collapsed && (
         <div className="border-t border-border p-4 bg-muted/50">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
-              AD
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] text-black font-bold text-xs flex-shrink-0">
+              {getInitials()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">Admin User</p>
-              <p className="text-xs text-muted-foreground truncate">admin@aura.com</p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {user ? `${user.firstName} ${user.lastName}`.trim() || 'Admin User' : 'Admin User'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email || 'admin@hopscotch.com'}
+              </p>
             </div>
           </div>
         </div>

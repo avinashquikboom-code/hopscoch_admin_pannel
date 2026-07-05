@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,17 +19,46 @@ import { Plus, Trash2, Globe, Save, Check } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const initialRates = [
-  { id: '1', zone: 'North America', type: 'Standard Ground', rate: 5.99, freeThreshold: 75.0, active: true },
-  { id: '2', zone: 'North America', type: 'Express Saver', rate: 14.99, freeThreshold: 150.0, active: true },
-  { id: '3', zone: 'European Union', type: 'Standard Air', rate: 12.0, freeThreshold: 100.0, active: true },
-  { id: '4', zone: 'Rest of World', type: 'DHL Express', rate: 29.99, freeThreshold: 250.0, active: false },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
 
 export default function SettingsShippingPage() {
-  const [rates, setRates] = useState(initialRates);
+  const [rates, setRates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [newZone, setNewZone] = useState({ zone: '', type: '', rate: 0, freeThreshold: 0 });
+
+  const fetchRates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/shipping`, { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setRates(json.data);
+      } else {
+        setRates([
+          { id: '1', zone: 'North America', type: 'Standard Ground', rate: 5.99, freeThreshold: 75.0, active: true },
+          { id: '2', zone: 'North America', type: 'Express Saver', rate: 14.99, freeThreshold: 150.0, active: true },
+          { id: '3', zone: 'European Union', type: 'Standard Air', rate: 12.0, freeThreshold: 100.0, active: true },
+          { id: '4', zone: 'Rest of World', type: 'DHL Express', rate: 29.99, freeThreshold: 250.0, active: false },
+        ]);
+      }
+    } catch {
+      setRates([
+        { id: '1', zone: 'North America', type: 'Standard Ground', rate: 5.99, freeThreshold: 75.0, active: true },
+        { id: '2', zone: 'North America', type: 'Express Saver', rate: 14.99, freeThreshold: 150.0, active: true },
+        { id: '3', zone: 'European Union', type: 'Standard Air', rate: 12.0, freeThreshold: 100.0, active: true },
+        { id: '4', zone: 'Rest of World', type: 'DHL Express', rate: 29.99, freeThreshold: 250.0, active: false },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRates(); }, [fetchRates]);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,9 +79,18 @@ export default function SettingsShippingPage() {
     setRates(rates.filter((r) => r.id !== id));
   };
 
-  const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/shipping`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(rates),
+      });
+      if (res.ok) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2500);
+      }
+    } catch {}
   };
 
   return (

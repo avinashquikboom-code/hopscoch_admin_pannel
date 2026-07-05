@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,6 +34,26 @@ import {
 } from 'recharts';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizePayment(raw: any) {
+  return {
+    id: raw.id || raw._id || raw.transactionId || `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+    order: raw.orderId || raw.order?.id || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+    customer: raw.customerName || `${raw.user?.firstName || ''} ${raw.user?.lastName || ''}`.trim() || 'Customer',
+    amount: raw.amount ? `₹${Number(raw.amount).toLocaleString('en-IN')}` : '₹0',
+    method: raw.method || raw.paymentMethod || 'UPI',
+    status: (raw.status || 'Pending').charAt(0).toUpperCase() + (raw.status || 'Pending').slice(1).toLowerCase(),
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-CA') : raw.date || '',
+    gateway: raw.gateway || raw.paymentGateway || 'Razorpay',
+    email: raw.email || raw.user?.email || 'customer@email.com',
+  };
+}
+
 const initialStats = [
   { label: 'Total Revenue', value: '₹48.2L', icon: DollarSign, color: 'text-[#14b8a6]', bg: 'bg-[#14b8a6]/10', change: '+18%' },
   { label: "Today's Revenue", value: '₹1.8L', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', change: '+9%' },
@@ -52,13 +72,6 @@ const paymentMethodData = [
   { name: 'Net Banking', value: 12, color: '#8b5cf6' },
   { name: 'Wallets', value: 10, color: '#f59e0b' },
   { name: 'COD', value: 8, color: '#f43f5e' },
-];
-
-const initialTransactions = [
-  { id: 'TXN-98821', order: 'ORD-4421', customer: 'Priya Sharma', amount: '₹4,820', method: 'UPI', status: 'Success', date: '2026-07-04', gateway: 'Razorpay', email: 'priya@email.com' },
-  { id: 'TXN-98820', order: 'ORD-4420', customer: 'Aditya Mehta', amount: '₹2,150', method: 'Card', status: 'Success', date: '2026-07-04', gateway: 'Stripe', email: 'aditya@email.com' },
-  { id: 'TXN-98819', order: 'ORD-4419', customer: 'Neha Kapoor', amount: '₹7,640', method: 'Net Banking', status: 'Pending', date: '2026-07-03', gateway: 'Razorpay', email: 'neha@email.com' },
-  { id: 'TXN-98818', order: 'ORD-4418', customer: 'Rohan Gupta', amount: '₹1,290', method: 'COD', status: 'Failed', date: '2026-07-03', gateway: 'None', email: 'rohan@email.com' },
 ];
 
 const txnStatusStyle: Record<string, string> = {
@@ -83,11 +96,28 @@ const getAvatarColor = (name: string) => {
 };
 
 export default function PaymentsDashboardPage() {
-  const [txnList, setTxnList] = useState(initialTransactions);
+  const [txnList, setTxnList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTxn, setSelectedTxn] = useState<any | null>(null);
 
-  // Selected Txn for drawer preview
-  const [selectedTxn, setSelectedTxn] = useState<typeof initialTransactions[0] | null>(null);
+  const fetchPayments = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/payments/admin/all`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load payments');
+      const raw = json.data ?? json.payments ?? json ?? [];
+      setTxnList(Array.isArray(raw) ? raw.map(normalizePayment) : []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
   const filteredTxns = useMemo(() => {
     return txnList.filter(t =>

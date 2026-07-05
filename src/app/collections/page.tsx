@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -58,56 +58,26 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-const initialCollections = [
-  {
-    id: '1',
-    name: 'Summer Collection 2026',
-    slug: 'summer-collection-2026',
-    type: 'summer',
-    description: 'Fresh lightweight styles, linens, and sun dresses perfect for summer.',
-    isActive: true,
-    order: 1,
-    productCount: 25,
-    startDate: '2026-06-01',
-    endDate: '2026-08-31',
-  },
-  {
-    id: '2',
-    name: 'Winter Collection 2026',
-    slug: 'winter-collection-2026',
-    type: 'winter',
-    description: 'Heavy knits, coats, sweaters, and thermals for winter weather.',
-    isActive: false,
-    order: 2,
-    productCount: 30,
-    startDate: '2026-12-01',
-    endDate: '2027-02-28',
-  },
-  {
-    id: '3',
-    name: 'Festival Special',
-    slug: 'festival-special',
-    type: 'festival',
-    description: 'Curated traditional patterns, embroidery, and celebratory drops.',
-    isActive: true,
-    order: 3,
-    productCount: 18,
-    startDate: '2026-10-01',
-    endDate: '2026-11-30',
-  },
-  {
-    id: '4',
-    name: 'Luxury Line',
-    slug: 'luxury-line',
-    type: 'luxury',
-    description: 'Crafted premium apparel from the finest pure silks and high-grade wools.',
-    isActive: true,
-    order: 4,
-    productCount: 15,
-    startDate: '',
-    endDate: '',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeCollection(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    name: raw.name || 'Unnamed Collection',
+    slug: raw.slug || raw.name?.toLowerCase().replace(/\s+/g, '-') || '',
+    type: raw.type || 'summer',
+    description: raw.description || '',
+    isActive: raw.isActive ?? true,
+    order: Number(raw.order || raw.displayOrder || 1),
+    productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
+    startDate: raw.startDate ? new Date(raw.startDate).toLocaleDateString('en-CA') : '',
+    endDate: raw.endDate ? new Date(raw.endDate).toLocaleDateString('en-CA') : '',
+  };
+}
 
 const collectionTypes = {
   summer: { label: 'Summer', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
@@ -126,50 +96,71 @@ const collectionGradients = [
 ];
 
 export default function CollectionsPage() {
-  const [collectionsList, setCollectionsList] = useState(initialCollections);
+  const [collectionsList, setCollectionsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  
-  // Add Form State
   const [formData, setFormData] = useState({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
+  const [selectedCollection, setSelectedCollection] = useState<any | null>(null);
 
-  // Selected Collection for details drawer
-  const [selectedCollection, setSelectedCollection] = useState<typeof initialCollections[0] | null>(null);
+  const fetchCollections = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/collections`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load collections');
+      const raw = json.data ?? json.collections ?? json ?? [];
+      setCollectionsList(Array.isArray(raw) ? raw.map(normalizeCollection) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => { fetchCollections(); }, [fetchCollections]);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newColl = {
-      id: String(collectionsList.length + 1),
+    const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       type: formData.type,
       description: formData.description,
       isActive: formData.isActive,
-      order: parseInt(formData.order) || 1,
-      productCount: 0,
       startDate: formData.startDate || '',
       endDate: formData.endDate || '',
+      order: parseInt(formData.order) || 1,
     };
-    setCollectionsList([...collectionsList, newColl]);
+    try {
+      const res = await fetch(`${API_BASE}/api/collections`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchCollections(); }
+      else { setCollectionsList(prev => [...prev, normalizeCollection({ ...body, id: String(Date.now()), productCount: 0 })]); }
+    } catch { setCollectionsList(prev => [...prev, normalizeCollection({ ...body, id: String(Date.now()), productCount: 0 })]); }
     setFormData({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
     setIsAddOpen(false);
   };
 
-  const handleToggleActive = (id: string) => {
+  const handleToggleActive = async (id: string) => {
     setCollectionsList(prev =>
       prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c)
     );
-    setSelectedCollection(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isActive: !prev.isActive };
+    setSelectedCollection((prev: any) => prev && prev.id === id ? { ...prev, isActive: !prev.isActive } : prev);
+    try {
+      const target = collectionsList.find(c => c.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/collections/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isActive: !target.isActive })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteCollection = async (id: string) => {
     setCollectionsList(prev => prev.filter(c => c.id !== id));
     setSelectedCollection(null);
+    try {
+      await fetch(`${API_BASE}/api/collections/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const filteredCollections = useMemo(() => {
@@ -361,7 +352,7 @@ export default function CollectionsPage() {
                                 )}
                               </DropdownMenuItem>
                               <Separator className="my-1 border-border/10" />
-                              <DropdownMenuItem onClick={() => handleDelete(collection.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
+                              <DropdownMenuItem onClick={() => handleDeleteCollection(collection.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
                                 <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -546,7 +537,7 @@ export default function CollectionsPage() {
                         variant="ghost" 
                         size="icon" 
                         className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
-                        onClick={() => handleDelete(selectedCollection.id)}
+                        onClick={() => handleDeleteCollection(selectedCollection.id)}
                         title="Delete Collection"
                       >
                         <Trash2 className="h-4.5 w-4.5" />

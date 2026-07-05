@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -45,42 +45,60 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialInventory = [
-  { id: '1', sku: 'AURA-DR-001-S', name: 'Silk Cocktail Dress - S', category: 'Dresses', stock: 4, minStock: 5, location: 'Shelf A3', description: 'Small size variant of the Silk Cocktail Dress. Silk fabric.' },
-  { id: '2', sku: 'AURA-DR-001-M', name: 'Silk Cocktail Dress - M', category: 'Dresses', stock: 12, minStock: 5, location: 'Shelf A3', description: 'Medium size variant of the Silk Cocktail Dress. Silk fabric.' },
-  { id: '3', sku: 'AURA-TS-042-L', name: 'Premium Cotton T-Shirt - L', category: 'Tops', stock: 2, minStock: 10, location: 'Shelf B1', description: 'Large size variant of the Premium Cotton Tee. 100% Cotton.' },
-  { id: '4', sku: 'AURA-BL-109-M', name: 'Chiffon Ruffle Blouse - M', category: 'Tops', stock: 25, minStock: 8, location: 'Shelf B4', description: 'Medium size variant of the Chiffon Ruffle Blouse. Semi-sheer.' },
-  { id: '5', sku: 'AURA-JN-883-32', name: 'High-Waist Slim Jeans - 32', category: 'Bottoms', stock: 0, minStock: 6, location: 'Shelf C2', description: 'Size 32 variant of the High-Waist Jeans. Stretch denim.' },
-  { id: '6', sku: 'AURA-SK-054-S', name: 'A-Line Pleated Skirt - S', category: 'Bottoms', stock: 15, minStock: 5, location: 'Shelf C5', description: 'Small size variant of the A-Line Pleated Skirt.' },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+function normalizeInventory(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    sku: raw.sku || raw.variant?.sku || `INV-${raw.id?.slice(0, 6) || '000'}`,
+    name: raw.name || raw.productName || raw.variant?.name || raw.product?.name || 'Item',
+    category: raw.category || raw.product?.category?.name || 'General',
+    stock: Number(raw.stock ?? raw.quantity ?? raw.quantityOnHand ?? 0),
+    minStock: Number(raw.minStock ?? raw.reorderPoint ?? raw.threshold ?? 5),
+    location: raw.location || raw.warehouseLocation || raw.warehouse?.name || 'Warehouse',
+    description: raw.description || raw.notes || '',
+  };
+}
 
 export default function InventoryPage() {
-  const [inventoryList, setInventoryList] = useState(initialInventory);
+  const [inventoryList, setInventoryList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-
-  // Form State
   const [formData, setFormData] = useState({ sku: '', name: '', category: 'Dresses', stock: '10', minStock: '5', location: 'Shelf A1', description: '' });
-
-  // Selected Item for Preview
-  const [selectedItem, setSelectedItem] = useState<typeof initialInventory[0] | null>(null);
-
-  // Adjust stock inputs in drawer
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [qtyInput, setQtyInput] = useState('');
 
-  const handleCreateItem = (e: React.FormEvent) => {
+  const fetchInventory = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load inventory');
+      const raw = json.data ?? json.items ?? json ?? [];
+      setInventoryList(Array.isArray(raw) ? raw.map(normalizeInventory) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchInventory(); }, [fetchInventory]);
+
+  const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newItem = {
-      id: String(inventoryList.length + 1),
+    const body = {
       sku: formData.sku.toUpperCase().replace(/\s+/g, ''),
-      name: formData.name,
-      category: formData.category,
-      stock: parseInt(formData.stock) || 0,
-      minStock: parseInt(formData.minStock) || 5,
-      location: formData.location || 'Shelf A1',
-      description: formData.description || `Inventory record for ${formData.name}`,
+      name: formData.name, category: formData.category,
+      stock: parseInt(formData.stock) || 0, minStock: parseInt(formData.minStock) || 5,
+      location: formData.location, description: formData.description,
     };
-    setInventoryList([...inventoryList, newItem]);
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchInventory(); }
+      else { setInventoryList(prev => [...prev, normalizeInventory({ ...body, id: String(Date.now()) })]); }
+    } catch { setInventoryList(prev => [...prev, normalizeInventory({ ...body, id: String(Date.now()) })]); }
     setFormData({ sku: '', name: '', category: 'Dresses', stock: '10', minStock: '5', location: 'Shelf A1', description: '' });
     setIsAddOpen(false);
   };
@@ -95,7 +113,7 @@ export default function InventoryPage() {
         return item;
       })
     );
-    setSelectedItem(prev => {
+    setSelectedItem((prev: any) => {
       if (prev && prev.id === itemId) {
         return { ...prev, stock: Math.max(0, prev.stock + quantity) };
       }
@@ -107,7 +125,7 @@ export default function InventoryPage() {
     setInventoryList(prev =>
       prev.map(item => item.id === itemId ? { ...item, minStock: Math.max(0, newMin) } : item)
     );
-    setSelectedItem(prev => {
+    setSelectedItem((prev: any) => {
       if (prev && prev.id === itemId) {
         return { ...prev, minStock: Math.max(0, newMin) };
       }
@@ -115,9 +133,10 @@ export default function InventoryPage() {
     });
   };
 
-  const handleDeleteItem = (itemId: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     setInventoryList(prev => prev.filter(i => i.id !== itemId));
     setSelectedItem(null);
+    try { await fetch(`${API_BASE}/api/inventory/${itemId}`, { method: 'DELETE', headers: authHeaders() }); } catch { }
   };
 
   const filteredInventory = useMemo(() => {

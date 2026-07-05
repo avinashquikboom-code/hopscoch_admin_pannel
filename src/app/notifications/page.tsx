@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -60,48 +60,24 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialNotifications = [
-  {
-    id: '1',
-    title: 'Summer Sale is Live!',
-    message: 'Get up to 50% off on all summer collection items. Limited time offer!',
-    type: 'offer',
-    sendToAll: true,
-    targetUsers: [],
-    isSent: true,
-    sentAt: '2026-06-01 10:00 AM',
-  },
-  {
-    id: '2',
-    title: 'New Coupon: WELCOME20',
-    message: 'Use code WELCOME20 to get 20% off your first order.',
-    type: 'coupon',
-    sendToAll: false,
-    targetUsers: ['sarah@email.com', 'michael@email.com', 'lisa@email.com'],
-    isSent: true,
-    sentAt: '2026-06-02 02:00 PM',
-  },
-  {
-    id: '3',
-    title: 'Order Shipped',
-    message: 'Your order #ORD-1234 has been shipped and will arrive in 2-3 business days.',
-    type: 'order',
-    sendToAll: false,
-    targetUsers: ['james@email.com'],
-    isSent: true,
-    sentAt: '2026-06-03 09:00 AM',
-  },
-  {
-    id: '4',
-    title: 'Winter Collection Alert',
-    message: 'Check out our new winter collection now available in store.',
-    type: 'general',
-    sendToAll: true,
-    targetUsers: [],
-    isSent: false,
-    sentAt: '',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeNotification(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    title: raw.title || 'System Notification',
+    message: raw.message || raw.body || '',
+    type: raw.type || 'general',
+    sendToAll: raw.sendToAll ?? true,
+    targetUsers: Array.isArray(raw.targetUsers) ? raw.targetUsers : [],
+    isSent: raw.isSent !== undefined ? raw.isSent : (raw.status === 'sent'),
+    sentAt: raw.sentAt ? new Date(raw.sentAt).toLocaleString() : raw.createdAt ? new Date(raw.createdAt).toLocaleString() : '',
+  };
+}
 
 const notificationTypes = {
   offer: { label: 'Offer', icon: Tag, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
@@ -111,54 +87,68 @@ const notificationTypes = {
 };
 
 export default function NotificationsPage() {
-  const [notificationsList, setNotificationsList] = useState(initialNotifications);
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [sendToAll, setSendToAll] = useState(true);
-
-  // Form State
   const [formData, setFormData] = useState({ title: '', type: 'general', message: '', link: '', targetUsers: '' });
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
 
-  // Selected Notification for Quick View
-  const [selectedNotification, setSelectedNotification] = useState<typeof initialNotifications[0] | null>(null);
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load notifications');
+      const raw = json.data ?? json.notifications ?? json ?? [];
+      setNotificationsList(Array.isArray(raw) ? raw.map(normalizeNotification) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleCreateNotification = (e: React.FormEvent) => {
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  const handleCreateNotification = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newNotif = {
-      id: String(notificationsList.length + 1),
+    const body = {
       title: formData.title,
       type: formData.type,
       message: formData.message,
       sendToAll: sendToAll,
       targetUsers: sendToAll ? [] : formData.targetUsers.split(',').map(u => u.trim()).filter(Boolean),
       isSent: false,
-      sentAt: '',
     };
-    setNotificationsList([newNotif, ...notificationsList]);
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchNotifications(); }
+      else { setNotificationsList(prev => [normalizeNotification({ ...body, id: String(Date.now()) }), ...prev]); }
+    } catch { setNotificationsList(prev => [normalizeNotification({ ...body, id: String(Date.now()) }), ...prev]); }
     setFormData({ title: '', type: 'general', message: '', link: '', targetUsers: '' });
     setSendToAll(true);
     setIsAddOpen(false);
   };
 
-  const handleSendNotification = (id: string) => {
+  const handleSendNotification = async (id: string) => {
     const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-    
+    const formattedDate = now.toLocaleString();
     setNotificationsList(prev =>
       prev.map(n => n.id === id ? { ...n, isSent: true, sentAt: formattedDate } : n)
     );
-    setSelectedNotification(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isSent: true, sentAt: formattedDate };
-      }
-      return prev;
-    });
+    setSelectedNotification((prev: any) => prev && prev.id === id ? { ...prev, isSent: true, sentAt: formattedDate } : prev);
+    try {
+      await fetch(`${API_BASE}/api/notifications/${id}/send`, { method: 'POST', headers: authHeaders() });
+    } catch {}
   };
 
-  const handleDeleteNotification = (id: string) => {
+  const handleDeleteNotification = async (id: string) => {
     setNotificationsList(prev => prev.filter(n => n.id !== id));
     setSelectedNotification(null);
+    try {
+      await fetch(`${API_BASE}/api/notifications/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
+
 
   const filteredNotifications = useMemo(() => {
     return notificationsList.filter(
@@ -609,7 +599,7 @@ export default function NotificationsPage() {
                           <div className="pt-2 border-t border-border/10 space-y-1.5">
                             <span className="text-[10px] text-muted-foreground block font-bold uppercase tracking-wider">Recipients List</span>
                             <div className="flex flex-wrap gap-1.5 mt-1">
-                              {selectedNotification.targetUsers.map((email, idx) => (
+                              {selectedNotification.targetUsers.map((email: any, idx: number) => (
                                 <Badge key={idx} variant="outline" className="font-mono text-xs">{email}</Badge>
                               ))}
                             </div>

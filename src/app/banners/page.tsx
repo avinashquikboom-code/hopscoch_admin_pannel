@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -56,52 +56,25 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialBanners = [
-  {
-    id: '1',
-    title: 'Summer Sale 2026',
-    type: 'home',
-    link: '/summer-sale',
-    position: 1,
-    startDate: '2026-06-01',
-    endDate: '2026-08-31',
-    isActive: true,
-    description: 'Hero homepage banner for summer discounts campaign.',
-  },
-  {
-    id: '2',
-    title: 'New Arrivals Launch',
-    type: 'slider',
-    link: '/new-collection',
-    position: 2,
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    isActive: true,
-    description: 'Automatic slideshow banner featuring catalog launches.',
-  },
-  {
-    id: '3',
-    title: 'Festival Special Offer',
-    type: 'offer',
-    link: '/festival',
-    position: 3,
-    startDate: '2026-10-01',
-    endDate: '2026-11-30',
-    isActive: false,
-    description: 'Promotional announcement block highlighting traditional festival discounts.',
-  },
-  {
-    id: '4',
-    title: 'Welcome Discount Popup',
-    type: 'popup',
-    link: '/welcome',
-    position: 4,
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    isActive: true,
-    description: 'Lightbox overlay coupon popup shown to new newsletter subscribers.',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeBanner(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    title: raw.title || 'Ad Banner',
+    type: raw.type || 'home',
+    link: raw.link || raw.targetUrl || '/',
+    position: Number(raw.position || raw.order || 1),
+    startDate: raw.startDate ? new Date(raw.startDate).toLocaleDateString('en-CA') : '2026-01-01',
+    endDate: raw.endDate ? new Date(raw.endDate).toLocaleDateString('en-CA') : '2026-12-31',
+    isActive: raw.isActive ?? true,
+    description: raw.description || '',
+  };
+}
 
 const bannerTypes = {
   home: { label: 'Home Banner', color: 'bg-teal-500/10 text-teal-500 border-teal-500/20' },
@@ -118,20 +91,30 @@ const bannerGradients = [
 ];
 
 export default function BannersPage() {
-  const [bannersList, setBannersList] = useState(initialBanners);
+  const [bannersList, setBannersList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-
-  // Form State
   const [formData, setFormData] = useState({ title: '', type: 'home', link: '', position: '1', startDate: '', endDate: '', isActive: true, description: '' });
+  const [selectedBanner, setSelectedBanner] = useState<any | null>(null);
 
-  // Selected Banner for details drawer
-  const [selectedBanner, setSelectedBanner] = useState<typeof initialBanners[0] | null>(null);
+  const fetchBanners = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/banners`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load banners');
+      const raw = json.data ?? json.banners ?? json ?? [];
+      setBannersList(Array.isArray(raw) ? raw.map(normalizeBanner) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleCreateBanner = (e: React.FormEvent) => {
+  useEffect(() => { fetchBanners(); }, [fetchBanners]);
+
+  const handleCreateBanner = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newBanner = {
-      id: String(bannersList.length + 1),
+    const body = {
       title: formData.title,
       type: formData.type,
       link: formData.link || '/',
@@ -139,28 +122,40 @@ export default function BannersPage() {
       startDate: formData.startDate || '2026-01-01',
       endDate: formData.endDate || '2026-12-31',
       isActive: formData.isActive,
-      description: formData.description || `Special advertisement banner for ${formData.title}.`,
+      description: formData.description,
     };
-    setBannersList([...bannersList, newBanner]);
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/banners`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchBanners(); }
+      else { setBannersList(prev => [...prev, normalizeBanner({ ...body, id: String(Date.now()) })]); }
+    } catch { setBannersList(prev => [...prev, normalizeBanner({ ...body, id: String(Date.now()) })]); }
     setFormData({ title: '', type: 'home', link: '', position: '1', startDate: '', endDate: '', isActive: true, description: '' });
     setIsAddOpen(false);
   };
 
-  const handleToggleActive = (id: string) => {
+  const handleToggleActive = async (id: string) => {
     setBannersList(prev => 
       prev.map(b => b.id === id ? { ...b, isActive: !b.isActive } : b)
     );
-    setSelectedBanner(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isActive: !prev.isActive };
+    setSelectedBanner((prev: any) => prev && prev.id === id ? { ...prev, isActive: !prev.isActive } : prev);
+    try {
+      const target = bannersList.find(b => b.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/settings/banners/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isActive: !target.isActive })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDeleteBanner = (id: string) => {
+  const handleDeleteBanner = async (id: string) => {
     setBannersList(prev => prev.filter(b => b.id !== id));
     setSelectedBanner(null);
+    try {
+      await fetch(`${API_BASE}/api/settings/banners/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const moveBanner = (id: string, direction: 'up' | 'down') => {

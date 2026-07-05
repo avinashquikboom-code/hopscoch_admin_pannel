@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Fragment, useMemo } from 'react';
+import React, { useState, Fragment, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -56,73 +56,52 @@ import {
   EyeOff
 } from 'lucide-react';
 
-const initialCategories = [
-  {
-    id: '1',
-    name: 'Dresses',
-    slug: 'dresses',
-    description: 'Beautiful dresses for all occasions, seasons, and style preferences.',
-    order: 1,
-    isVisible: true,
-    productCount: 45,
-    children: [
-      { id: '1-1', name: 'Casual Dresses', slug: 'casual-dresses', productCount: 20 },
-      { id: '1-2', name: 'Formal Dresses', slug: 'formal-dresses', productCount: 15 },
-      { id: '1-3', name: 'Party Dresses', slug: 'party-dresses', productCount: 10 },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Tops',
-    slug: 'tops',
-    description: 'Stylish tops, daily blouses, casual t-shirts, and cozy sweaters.',
-    order: 2,
-    isVisible: true,
-    productCount: 38,
-    children: [
-      { id: '2-1', name: 'T-Shirts', slug: 't-shirts', productCount: 18 },
-      { id: '2-2', name: 'Blouses', slug: 'blouses', productCount: 12 },
-      { id: '2-3', name: 'Sweaters', slug: 'sweaters', productCount: 8 },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Bottoms',
-    slug: 'bottoms',
-    description: 'Denim jeans, high-waist pants, flowy skirts, and casual shorts.',
-    order: 3,
-    isVisible: true,
-    productCount: 32,
-    children: [
-      { id: '3-1', name: 'Jeans', slug: 'jeans', productCount: 22 },
-      { id: '3-2', name: 'Skirts', slug: 'skirts', productCount: 10 },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Accessories',
-    slug: 'accessories',
-    description: 'Premium handbags, handmade jewelry, soft silk scarves, and belts.',
-    order: 4,
-    isVisible: false,
-    productCount: 7,
-    children: [
-      { id: '4-1', name: 'Bags', slug: 'bags', productCount: 7 },
-    ],
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeCategory(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    name: raw.name || 'Unnamed Category',
+    slug: raw.slug || raw.name?.toLowerCase().replace(/\s+/g, '-') || '',
+    description: raw.description || '',
+    order: Number(raw.order || raw.displayOrder || 1),
+    isVisible: raw.isVisible ?? raw.isActive ?? true,
+    productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
+    children: Array.isArray(raw.children) ? raw.children.map((c: any) => ({
+      id: c.id || c._id,
+      name: c.name || '',
+      slug: c.slug || '',
+      productCount: Number(c.productCount ?? c._count?.products ?? 0),
+    })) : [],
+  };
+}
 
 export default function CategoriesPage() {
-  const [categoriesList, setCategoriesList] = useState(initialCategories);
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['1', '2', '3']);
-  
-  // Add Form State
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({ name: '', slug: '', description: '', order: '1', isVisible: true });
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
 
-  // Selected Category for Details Drawer
-  const [selectedCategory, setSelectedCategory] = useState<typeof initialCategories[0] | null>(null);
+  const fetchCategories = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load categories');
+      const raw = json.data ?? json.categories ?? json ?? [];
+      setCategoriesList(Array.isArray(raw) ? raw.map(normalizeCategory) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const toggleCategory = (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid triggering row select
@@ -133,38 +112,47 @@ export default function CategoriesPage() {
     );
   };
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newCat = {
-      id: String(categoriesList.length + 1),
+    const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       description: formData.description,
       order: parseInt(formData.order) || 1,
       isVisible: formData.isVisible,
-      productCount: 0,
-      children: [],
     };
-    setCategoriesList([...categoriesList, newCat]);
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchCategories(); }
+      else { setCategoriesList(prev => [...prev, normalizeCategory({ ...body, id: String(Date.now()), productCount: 0, children: [] })]); }
+    } catch { setCategoriesList(prev => [...prev, normalizeCategory({ ...body, id: String(Date.now()), productCount: 0, children: [] })]); }
     setIsAddOpen(false);
     setFormData({ name: '', slug: '', description: '', order: '1', isVisible: true });
   };
 
-  const handleToggleVisibility = (catId: string) => {
+  const handleToggleVisibility = async (catId: string) => {
     setCategoriesList(prev => 
       prev.map(c => c.id === catId ? { ...c, isVisible: !c.isVisible } : c)
     );
-    setSelectedCategory(prev => {
-      if (prev && prev.id === catId) {
-        return { ...prev, isVisible: !prev.isVisible };
+    setSelectedCategory((prev: any) => prev && prev.id === catId ? { ...prev, isVisible: !prev.isVisible } : prev);
+    try {
+      const target = categoriesList.find(c => c.id === catId);
+      if (target) {
+        await fetch(`${API_BASE}/api/categories/${catId}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isVisible: !target.isVisible })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDeleteCategory = (catId: string) => {
+  const handleDeleteCategory = async (catId: string) => {
     setCategoriesList(prev => prev.filter(c => c.id !== catId));
     setSelectedCategory(null);
+    try {
+      await fetch(`${API_BASE}/api/categories/${catId}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const filteredCategories = useMemo(() => {
@@ -378,7 +366,7 @@ export default function CategoriesPage() {
 
                       {/* Nested Subcategories */}
                       {expandedCategories.includes(category.id) && category.children && (
-                        category.children.map((child) => (
+                        category.children.map((child: any) => (
                           <TableRow 
                             key={child.id}
                             className="bg-muted/5 hover:bg-muted/10 border-b border-border/20 group/row"
@@ -604,7 +592,7 @@ export default function CategoriesPage() {
                     <div className="space-y-3">
                       <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Mapped Subcategories</h3>
                       <div className="border border-border/30 rounded-xl overflow-hidden bg-muted/5 divide-y divide-border/20">
-                        {selectedCategory.children.map((child, idx) => (
+                        {selectedCategory.children.map((child: any, idx: number) => (
                           <div key={idx} className="flex items-center justify-between p-4 bg-card/25">
                             <div className="flex items-center gap-2">
                               <FolderTree className="h-4 w-4 text-[#14b8a6]" />

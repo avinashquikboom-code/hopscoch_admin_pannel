@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -54,68 +54,26 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialReviews = [
-  {
-    id: '1',
-    customer: 'Sarah Johnson',
-    product: 'Summer Floral Dress',
-    rating: 5,
-    title: 'Absolutely stunning!',
-    comment: 'The dress is beautiful and fits perfectly. The quality is amazing and the color is exactly as shown in the pictures.',
-    status: 'approved',
-    isVerified: true,
-    helpfulCount: 12,
-    date: '2026-07-02',
-  },
-  {
-    id: '2',
-    customer: 'Michael Brown',
-    product: 'Classic White Blouse',
-    rating: 4,
-    title: 'Good quality fabric',
-    comment: 'Nice blouse, good material. Would have given 5 stars but the sizing runs a bit small.',
-    status: 'pending',
-    isVerified: true,
-    helpfulCount: 5,
-    date: '2026-07-03',
-  },
-  {
-    id: '3',
-    customer: 'Emily Davis',
-    product: 'High-Waist Jeans',
-    rating: 5,
-    title: 'Perfect fit & stretch',
-    comment: 'Best jeans I have ever bought. The fit is perfect and they are very comfortable.',
-    status: 'approved',
-    isVerified: true,
-    helpfulCount: 8,
-    date: '2026-07-04',
-  },
-  {
-    id: '4',
-    customer: 'James Wilson',
-    product: 'Silk Scarf',
-    rating: 3,
-    title: 'Decent but expensive',
-    comment: 'The scarf is nice but I feel it is overpriced for what you get in terms of dimensions.',
-    status: 'pending',
-    isVerified: false,
-    helpfulCount: 2,
-    date: '2026-07-01',
-  },
-  {
-    id: '5',
-    customer: 'Lisa Anderson',
-    product: 'Leather Handbag',
-    rating: 1,
-    title: 'Poor stitching quality',
-    comment: 'The stitching came apart after just one week of use. Very disappointed with customer support.',
-    status: 'rejected',
-    isVerified: true,
-    helpfulCount: 0,
-    date: '2026-06-30',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeReview(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    customer: raw.customerName || `${raw.user?.firstName || ''} ${raw.user?.lastName || ''}`.trim() || raw.user?.email || 'Customer',
+    product: raw.productName || raw.product?.name || 'Product',
+    rating: Number(raw.rating || raw.stars || 5),
+    title: raw.title || 'Review',
+    comment: raw.comment || raw.reviewText || raw.text || '',
+    status: (raw.status || 'pending').toLowerCase(),
+    isVerified: raw.isVerified ?? raw.verifiedPurchase ?? true,
+    helpfulCount: Number(raw.helpfulCount || raw.helpful || 0),
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-CA') : raw.date || '',
+  };
+}
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
@@ -132,12 +90,25 @@ const customerGradients = [
 ];
 
 export default function ReviewsPage() {
-  const [reviewsList, setReviewsList] = useState(initialReviews);
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedReview, setSelectedReview] = useState<any | null>(null);
 
-  // Selected review for moderating drawer
-  const [selectedReview, setSelectedReview] = useState<typeof initialReviews[0] | null>(null);
+  const fetchReviews = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/reviews`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load reviews');
+      const raw = json.data ?? json.reviews ?? json ?? [];
+      setReviewsList(Array.isArray(raw) ? raw.map(normalizeReview) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
   const getAvatarFallback = (name: string) => {
     return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
@@ -151,21 +122,29 @@ export default function ReviewsPage() {
     return customerGradients[Math.abs(hash) % customerGradients.length];
   };
 
-  const handleUpdateStatus = (id: string, newStatus: string) => {
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
     setReviewsList(prev => 
       prev.map(r => r.id === id ? { ...r, status: newStatus } : r)
     );
-    setSelectedReview(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, status: newStatus };
-      }
-      return prev;
-    });
+    setSelectedReview((prev: any) => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
+    try {
+      await fetch(`${API_BASE}/api/reviews/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch {}
   };
 
-  const handleDeleteReview = (id: string) => {
+  const handleDeleteReview = async (id: string) => {
     setReviewsList(prev => prev.filter(r => r.id !== id));
     setSelectedReview(null);
+    try {
+      await fetch(`${API_BASE}/api/reviews/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+    } catch {}
   };
 
   const filteredReviews = useMemo(() => {

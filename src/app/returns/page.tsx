@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -55,83 +55,28 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialReturns = [
-  {
-    id: 'RET-1234',
-    orderId: 'ORD-1234',
-    customer: 'Sarah Johnson',
-    email: 'sarah@email.com',
-    amount: 234.50,
-    status: 'pending_review',
-    pickupStatus: 'not_scheduled',
-    inspectionStatus: 'pending',
-    refundStatus: 'pending',
-    reason: 'Wrong size received (Too small)',
-    items: 2,
-    date: '2026-07-02',
-    imagesCount: 2,
-  },
-  {
-    id: 'RET-1235',
-    orderId: 'ORD-1235',
-    customer: 'Michael Brown',
-    email: 'michael@email.com',
-    amount: 189.00,
-    status: 'approved',
-    pickupStatus: 'scheduled',
-    inspectionStatus: 'pending',
-    refundStatus: 'pending',
-    reason: 'Product damaged on delivery',
-    items: 1,
-    date: '2026-07-03',
-    imagesCount: 3,
-  },
-  {
-    id: 'RET-1236',
-    orderId: 'ORD-1236',
-    customer: 'Emily Davis',
-    email: 'emily@email.com',
-    amount: 456.75,
-    status: 'picked_up',
-    pickupStatus: 'completed',
-    inspectionStatus: 'in_progress',
-    refundStatus: 'pending',
-    reason: 'Fabric quality issues',
-    items: 3,
-    date: '2026-07-04',
-    imagesCount: 1,
-  },
-  {
-    id: 'RET-1237',
-    orderId: 'ORD-1237',
-    customer: 'James Wilson',
-    email: 'james@email.com',
-    amount: 123.25,
-    status: 'completed',
-    pickupStatus: 'completed',
-    inspectionStatus: 'passed',
-    refundStatus: 'completed',
-    reason: 'Changed mind after purchase',
-    items: 1,
-    date: '2026-07-01',
-    imagesCount: 0,
-  },
-  {
-    id: 'RET-1238',
-    orderId: 'ORD-1238',
-    customer: 'Lisa Anderson',
-    email: 'lisa@email.com',
-    amount: 345.00,
-    status: 'rejected',
-    pickupStatus: 'not_scheduled',
-    inspectionStatus: 'not_required',
-    refundStatus: 'rejected',
-    reason: 'Return request window expired',
-    items: 4,
-    date: '2026-06-30',
-    imagesCount: 0,
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+function normalizeReturn(raw: any) {
+  return {
+    id: raw.id || raw._id || raw.returnId || `RET-${Date.now()}`,
+    orderId: raw.orderId || raw.order?.id || '',
+    customer: raw.customerName || `${raw.user?.firstName || ''} ${raw.user?.lastName || ''}`.trim() || 'Customer',
+    email: raw.email || raw.user?.email || '',
+    amount: Number(raw.amount || raw.refundAmount || 0),
+    status: raw.status || 'pending_review',
+    pickupStatus: raw.pickupStatus || 'not_scheduled',
+    inspectionStatus: raw.inspectionStatus || 'pending',
+    refundStatus: raw.refundStatus || 'pending',
+    reason: raw.reason || raw.returnReason || '',
+    items: Number(raw.itemCount || raw.items || 1),
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-CA') : raw.date || '',
+    imagesCount: raw.images?.length ?? raw.imagesCount ?? 0,
+  };
+}
 
 const statusConfig = {
   pending_review: { label: 'Pending Review', icon: Clock, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
@@ -157,80 +102,42 @@ const getAvatarColor = (name: string) => {
 };
 
 export default function ReturnsPage() {
-  const [returnsList, setReturnsList] = useState(initialReturns);
+  const [returnsList, setReturnsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedReturn, setSelectedReturn] = useState<any | null>(null);
 
-  // Selected Return for Details drawer
-  const [selectedReturn, setSelectedReturn] = useState<typeof initialReturns[0] | null>(null);
+  const fetchReturns = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/returns`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load returns');
+      const raw = json.data ?? json.returns ?? json ?? [];
+      setReturnsList(Array.isArray(raw) ? raw.map(normalizeReturn) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleUpdateStatus = (id: string, newStatus: string) => {
-    setReturnsList(prev =>
-      prev.map(r => {
-        if (r.id === id) {
-          let pickup = r.pickupStatus;
-          let inspect = r.inspectionStatus;
-          let refund = r.refundStatus;
+  useEffect(() => { fetchReturns(); }, [fetchReturns]);
 
-          if (newStatus === 'approved') {
-            pickup = 'scheduled';
-          } else if (newStatus === 'picked_up') {
-            pickup = 'completed';
-            inspect = 'in_progress';
-          } else if (newStatus === 'completed') {
-            pickup = 'completed';
-            inspect = 'passed';
-            refund = 'completed';
-          } else if (newStatus === 'rejected') {
-            pickup = 'not_scheduled';
-            inspect = 'not_required';
-            refund = 'rejected';
-          }
-
-          return {
-            ...r,
-            status: newStatus,
-            pickupStatus: pickup,
-            inspectionStatus: inspect,
-            refundStatus: refund
-          };
-        }
-        return r;
-      })
-    );
-
-    setSelectedReturn(prev => {
-      if (prev && prev.id === id) {
-        let pickup = prev.pickupStatus;
-        let inspect = prev.inspectionStatus;
-        let refund = prev.refundStatus;
-
-        if (newStatus === 'approved') {
-          pickup = 'scheduled';
-        } else if (newStatus === 'picked_up') {
-          pickup = 'completed';
-          inspect = 'in_progress';
-        } else if (newStatus === 'completed') {
-          pickup = 'completed';
-          inspect = 'passed';
-          refund = 'completed';
-        } else if (newStatus === 'rejected') {
-          pickup = 'not_scheduled';
-          inspect = 'not_required';
-          refund = 'rejected';
-        }
-
-        return {
-          ...prev,
-          status: newStatus,
-          pickupStatus: pickup,
-          inspectionStatus: inspect,
-          refundStatus: refund
-        };
-      }
-      return prev;
-    });
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    // Optimistic UI update
+    setReturnsList(prev => prev.map(r => {
+      if (r.id !== id) return r;
+      let pickup = r.pickupStatus, inspect = r.inspectionStatus, refund = r.refundStatus;
+      if (newStatus === 'approved') { pickup = 'scheduled'; }
+      else if (newStatus === 'picked_up') { pickup = 'completed'; inspect = 'in_progress'; }
+      else if (newStatus === 'completed') { pickup = 'completed'; inspect = 'passed'; refund = 'completed'; }
+      else if (newStatus === 'rejected') { pickup = 'not_scheduled'; inspect = 'not_required'; refund = 'rejected'; }
+      return { ...r, status: newStatus, pickupStatus: pickup, inspectionStatus: inspect, refundStatus: refund };
+    }));
+    setSelectedReturn((prev: any) => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
+    try { await fetch(`${API_BASE}/api/returns/${id}/status`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ status: newStatus }) }); } catch { }
   };
+
+
 
   const filteredReturns = useMemo(() => {
     return returnsList.filter(returnItem => {

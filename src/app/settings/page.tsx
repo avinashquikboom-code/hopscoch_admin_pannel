@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -29,17 +29,57 @@ import {
   Sparkles
 } from 'lucide-react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [config, setConfig] = useState({
+    storeName: 'AURA COUTURE',
+    storeEmail: 'admin@auracouture.com',
+    storePhone: '+1 234 567 8900',
+    storeAddress: '123 Fashion Street, New York, NY 10001',
+    currency: 'USD',
+    language: 'en',
+    timezone: 'UTC',
+    metaTitle: 'AURA COUTURE - Luxury Premium Fashion Store',
+    metaDescription: 'Discover premium couture fashion and high-end accessories at AURA COUTURE. Exquisite quality for the modern wardrobe.',
+    newOrderAlerts: true,
+    lowStockWarnings: true,
+    weeklyDigests: false,
+  });
 
-  const handleSave = () => {
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings`, { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setConfig(prev => ({ ...prev, ...json.data }));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  const handleSave = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(config),
+      });
+      if (res.ok) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2500);
+      }
+    } catch {} finally {
       setIsLoading(false);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2500);
-    }, 1000);
+    }
   };
 
   return (
@@ -72,17 +112,17 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="storeName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Name</Label>
-                    <Input id="storeName" defaultValue="AURA COUTURE" className="h-10 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                    <Input id="storeName" value={config.storeName} onChange={e => setConfig(prev => ({ ...prev, storeName: e.target.value }))} className="h-10 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20" />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="storeEmail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Email</Label>
-                    <Input id="storeEmail" type="email" defaultValue="admin@auracouture.com" className="h-10 rounded-lg border-border/50" />
+                    <Input id="storeEmail" type="email" value={config.storeEmail} onChange={e => setConfig(prev => ({ ...prev, storeEmail: e.target.value }))} className="h-10 rounded-lg border-border/50" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="storePhone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Hotline Phone</Label>
-                  <Input id="storePhone" type="tel" defaultValue="+1 234 567 8900" className="h-10 rounded-lg border-border/50" />
+                  <Input id="storePhone" type="tel" value={config.storePhone} onChange={e => setConfig(prev => ({ ...prev, storePhone: e.target.value }))} className="h-10 rounded-lg border-border/50" />
                 </div>
 
                 <div className="space-y-1.5">
@@ -90,7 +130,8 @@ export default function SettingsPage() {
                   <Textarea 
                     id="storeAddress" 
                     rows={3} 
-                    defaultValue="123 Fashion Street, New York, NY 10001" 
+                    value={config.storeAddress}
+                    onChange={e => setConfig(prev => ({ ...prev, storeAddress: e.target.value }))}
                     className="rounded-lg border-border/50 bg-background resize-none text-sm p-3 focus:border-primary focus:ring-1 focus:ring-primary/20" 
                   />
                 </div>
@@ -100,7 +141,8 @@ export default function SettingsPage() {
                     <Label htmlFor="currency" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default Currency</Label>
                     <select
                       id="currency"
-                      defaultValue="USD"
+                      value={config.currency}
+                      onChange={e => setConfig(prev => ({ ...prev, currency: e.target.value }))}
                       className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                     >
                       <option value="USD">USD ($)</option>
@@ -112,7 +154,8 @@ export default function SettingsPage() {
                     <Label htmlFor="language" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Language</Label>
                     <select
                       id="language"
-                      defaultValue="en"
+                      value={config.language}
+                      onChange={e => setConfig(prev => ({ ...prev, language: e.target.value }))}
                       className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                     >
                       <option value="en">English</option>
@@ -124,7 +167,8 @@ export default function SettingsPage() {
                     <Label htmlFor="timezone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Timezone Coordinates</Label>
                     <select
                       id="timezone"
-                      defaultValue="UTC"
+                      value={config.timezone}
+                      onChange={e => setConfig(prev => ({ ...prev, timezone: e.target.value }))}
                       className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                     >
                       <option value="UTC">UTC</option>

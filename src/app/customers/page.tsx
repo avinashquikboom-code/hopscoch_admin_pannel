@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -56,73 +56,27 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialCustomers = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@email.com',
-    phone: '+1 234 567 8900',
-    totalOrders: 12,
-    totalSpent: 2340.50,
-    averageOrderValue: 195.04,
-    status: 'active',
-    lastOrderDate: '2026-07-02',
-    joinedDate: '2025-06-15',
-    address: '123 Fashion Ave, Suite 400, New York, NY 10001',
-  },
-  {
-    id: '2',
-    name: 'Michael Brown',
-    email: 'michael.brown@email.com',
-    phone: '+1 234 567 8901',
-    totalOrders: 8,
-    totalSpent: 1560.00,
-    averageOrderValue: 195.00,
-    status: 'active',
-    lastOrderDate: '2026-07-03',
-    joinedDate: '2025-08-20',
-    address: '456 Denim Road, Los Angeles, CA 90012',
-  },
-  {
-    id: '3',
-    name: 'Emily Davis',
-    email: 'emily.davis@email.com',
-    phone: '+1 234 567 8902',
-    totalOrders: 15,
-    totalSpent: 3450.75,
-    averageOrderValue: 230.05,
-    status: 'active',
-    lastOrderDate: '2026-07-04',
-    joinedDate: '2025-05-10',
-    address: '789 Silk Blvd, Chicago, IL 60611',
-  },
-  {
-    id: '4',
-    name: 'James Wilson',
-    email: 'james.wilson@email.com',
-    phone: '+1 234 567 8903',
-    totalOrders: 5,
-    totalSpent: 890.25,
-    averageOrderValue: 178.05,
-    status: 'active',
-    lastOrderDate: '2026-07-01',
-    joinedDate: '2025-10-05',
-    address: '101 Leather Way, Austin, TX 78701',
-  },
-  {
-    id: '5',
-    name: 'Lisa Anderson',
-    email: 'lisa.anderson@email.com',
-    phone: '+1 234 567 8904',
-    totalOrders: 3,
-    totalSpent: 567.00,
-    averageOrderValue: 189.00,
-    status: 'inactive',
-    lastOrderDate: '2026-06-30',
-    joinedDate: '2025-12-01',
-    address: '202 Cotton Lane, Seattle, WA 98101',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+function normalizeCustomer(raw: any) {
+  const addr = raw.addresses?.[0] || {};
+  return {
+    id: raw.id || raw._id,
+    name: `${raw.firstName || ''} ${raw.lastName || ''}`.trim() || raw.name || 'Customer',
+    email: raw.email || '',
+    phone: raw.phone || raw.phoneNumber || '',
+    totalOrders: raw.totalOrders ?? raw._count?.orders ?? 0,
+    totalSpent: Number(raw.totalSpent || raw.lifetimeValue || 0),
+    averageOrderValue: Number(raw.averageOrderValue || 0),
+    status: raw.isActive === false ? 'inactive' : (raw.status || 'active').toLowerCase(),
+    lastOrderDate: raw.lastOrderDate || raw.updatedAt || '',
+    joinedDate: raw.createdAt || raw.joinedDate || '',
+    address: [addr.addressLine1, addr.city, addr.state].filter(Boolean).join(', ') || raw.address || '',
+  };
+}
 
 const customerGradients = [
   'from-pink-400 to-rose-500 text-white shadow-pink-500/10',
@@ -133,15 +87,26 @@ const customerGradients = [
 ];
 
 export default function CustomersPage() {
-  const [customersList, setCustomersList] = useState(initialCustomers);
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  
-  // Add Form State
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
-  // Selected customer for preview drawer
-  const [selectedCustomer, setSelectedCustomer] = useState<typeof initialCustomers[0] | null>(null);
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/users`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load customers');
+      const raw = json.data ?? json.users ?? json ?? [];
+      setCustomersList(Array.isArray(raw) ? raw.map(normalizeCustomer) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   const getAvatarFallback = (name: string) => {
     const parts = name.split(' ');
@@ -180,7 +145,7 @@ export default function CustomersPage() {
     setCustomersList(prev => 
       prev.map(c => c.id === id ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } : c)
     );
-    setSelectedCustomer(prev => {
+    setSelectedCustomer((prev: any) => {
       if (prev && prev.id === id) {
         return { ...prev, status: prev.status === 'active' ? 'inactive' : 'active' };
       }

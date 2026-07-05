@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,12 @@ import {
   Cell,
 } from 'recharts';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
 const salesData = [
   { month: 'Jan', revenue: 45000, orders: 320 },
   { month: 'Feb', revenue: 52000, orders: 380 },
@@ -58,6 +64,17 @@ const COLORS = ['#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4'];
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState('30days');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      await fetch(`${API_BASE}/api/reports/dashboard`, { headers: authHeaders() });
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchReports(); }, [fetchReports]);
 
   return (
     <AdminLayout>

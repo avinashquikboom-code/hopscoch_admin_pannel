@@ -110,13 +110,13 @@
   --chart-4: #16A34A;
   --chart-5: #DC2626;
 
-  /* Base radius: 12px */
-  --radius: 0.75rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.125rem;
-  --radius-2xl: 1.25rem;
+  /* Base radius: 6px (sharp, slightly curved) */
+  --radius: 0.375rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
 
   /* ── SIDEBAR ────────────────────────────────────────────── */
   --sidebar:                    #FFFFFF;

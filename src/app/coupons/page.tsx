@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -55,72 +55,50 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialCoupons = [
-  {
-    id: '1',
-    code: 'SUMMER20',
-    type: 'percentage',
-    value: 20,
-    minimumOrder: 100,
-    maximumDiscount: 50,
-    expiryDate: '2026-08-31',
-    usageLimit: 1000,
-    usedCount: 245,
-    isActive: true,
-    description: 'Get 20% off on orders above $100. Max discount capped at $50.',
-  },
-  {
-    id: '2',
-    code: 'WELCOME10',
-    type: 'flat',
-    value: 10,
-    minimumOrder: 50,
-    maximumDiscount: null,
-    expiryDate: '2026-12-31',
-    usageLimit: 500,
-    usedCount: 89,
-    isActive: true,
-    description: 'Welcome discount of flat $10 off on your first order above $50.',
-  },
-  {
-    id: '3',
-    code: 'FESTIVAL25',
-    type: 'percentage',
-    value: 25,
-    minimumOrder: 200,
-    maximumDiscount: 100,
-    expiryDate: '2026-11-30',
-    usageLimit: 200,
-    usedCount: 156,
-    isActive: true,
-    description: 'Celebratory holiday offer of 25% off. Requires minimum spend of $200.',
-  },
-  {
-    id: '4',
-    code: 'FLASHSALE',
-    type: 'percentage',
-    value: 30,
-    minimumOrder: 150,
-    maximumDiscount: 75,
-    expiryDate: '2026-01-31',
-    usageLimit: 100,
-    usedCount: 100,
-    isActive: false,
-    description: 'Flash sale exclusive of 30% off. Limited to first 100 redemptions.',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeCoupon(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    code: raw.code || 'PROMO',
+    type: raw.type || raw.discountType || 'percentage',
+    value: Number(raw.value || raw.discountValue || raw.amount || 0),
+    minimumOrder: Number(raw.minimumOrder || raw.minPurchase || 0),
+    maximumDiscount: raw.maximumDiscount || null,
+    expiryDate: raw.expiryDate ? new Date(raw.expiryDate).toLocaleDateString('en-CA') : raw.expiry || '2026-12-31',
+    usageLimit: Number(raw.usageLimit || raw.limit || 1000),
+    usedCount: Number(raw.usedCount || raw.uses || 0),
+    isActive: raw.isActive ?? true,
+    description: raw.description || '',
+  };
+}
 
 export default function CouponsPage() {
-  const [couponsList, setCouponsList] = useState(initialCoupons);
+  const [couponsList, setCouponsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  // Form State
   const [formData, setFormData] = useState({ code: '', type: 'percentage', value: '', minimumOrder: '', maximumDiscount: '', expiryDate: '', usageLimit: '', isActive: true, description: '' });
+  const [selectedCoupon, setSelectedCoupon] = useState<any | null>(null);
 
-  // Selected Coupon for Details drawer
-  const [selectedCoupon, setSelectedCoupon] = useState<typeof initialCoupons[0] | null>(null);
+  const fetchCoupons = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/coupons`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load coupons');
+      const raw = json.data ?? json.coupons ?? json ?? [];
+      setCouponsList(Array.isArray(raw) ? raw.map(normalizeCoupon) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
 
   const copyCode = (code: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -129,10 +107,9 @@ export default function CouponsPage() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleCreateCoupon = (e: React.FormEvent) => {
+  const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newCoupon = {
-      id: String(couponsList.length + 1),
+    const body = {
       code: formData.code.toUpperCase().replace(/\s+/g, ''),
       type: formData.type,
       value: parseFloat(formData.value) || 0,
@@ -140,30 +117,41 @@ export default function CouponsPage() {
       maximumDiscount: formData.maximumDiscount ? parseFloat(formData.maximumDiscount) : null,
       expiryDate: formData.expiryDate || '2026-12-31',
       usageLimit: parseInt(formData.usageLimit) || 1000,
-      usedCount: 0,
       isActive: formData.isActive,
-      description: formData.description || `Special promo code ${formData.code.toUpperCase()}.`,
+      description: formData.description,
     };
-    setCouponsList([newCoupon, ...couponsList]);
+    try {
+      const res = await fetch(`${API_BASE}/api/coupons`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchCoupons(); }
+      else { setCouponsList(prev => [normalizeCoupon({ ...body, id: String(Date.now()), usedCount: 0 }), ...prev]); }
+    } catch { setCouponsList(prev => [normalizeCoupon({ ...body, id: String(Date.now()), usedCount: 0 }), ...prev]); }
     setFormData({ code: '', type: 'percentage', value: '', minimumOrder: '', maximumDiscount: '', expiryDate: '', usageLimit: '', isActive: true, description: '' });
     setIsAddOpen(false);
   };
 
-  const handleToggleActive = (id: string) => {
+  const handleToggleActive = async (id: string) => {
     setCouponsList(prev => 
       prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c)
     );
-    setSelectedCoupon(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isActive: !prev.isActive };
+    setSelectedCoupon((prev: any) => prev && prev.id === id ? { ...prev, isActive: !prev.isActive } : prev);
+    try {
+      const target = couponsList.find(c => c.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/coupons/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isActive: !target.isActive })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDeleteCoupon = (id: string) => {
+  const handleDeleteCoupon = async (id: string) => {
     setCouponsList(prev => prev.filter(c => c.id !== id));
     setSelectedCoupon(null);
+    try {
+      await fetch(`${API_BASE}/api/coupons/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const filteredCoupons = useMemo(() => {

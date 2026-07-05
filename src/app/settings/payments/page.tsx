@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,12 @@ function CustomSwitch({ checked, onChange }: GatewayToggleProps) {
   );
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
 export default function SettingsPaymentsPage() {
   const [gateways, setGateways] = useState({
     stripe: { enabled: true, publishableKey: 'pk_live_51M3...', secretKey: 'sk_live_51M3...' },
@@ -43,10 +49,31 @@ export default function SettingsPaymentsPage() {
 
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchGateways = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/payments`, { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setGateways(prev => ({ ...prev, ...json.data }));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchGateways(); }, [fetchGateways]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/payments`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(gateways),
+      });
+      if (res.ok) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2500);
+      }
+    } catch {}
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -58,48 +58,24 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-const initialBrands = [
-  {
-    id: '1',
-    name: 'Aura Original',
-    slug: 'aura-original',
-    description: 'Our core in-house premium collection designed for modern everyday silhouettes.',
-    status: 'active',
-    isFeatured: true,
-    order: 1,
-    productCount: 45,
-  },
-  {
-    id: '2',
-    name: 'Aura Denim',
-    slug: 'aura-denim',
-    description: 'Crafted premium denim jeans, jackets, skirts and wash utilities.',
-    status: 'active',
-    isFeatured: true,
-    order: 2,
-    productCount: 32,
-  },
-  {
-    id: '3',
-    name: 'Aura Luxury',
-    slug: 'aura-luxury',
-    description: 'Exclusive, high-end seasonal wear with fine fabrics and limited drops.',
-    status: 'active',
-    isFeatured: true,
-    order: 3,
-    productCount: 28,
-  },
-  {
-    id: '4',
-    name: 'Aura Accessories',
-    slug: 'aura-accessories',
-    description: 'Complementary catalog styling pieces like bags, hats, and scarves.',
-    status: 'inactive',
-    isFeatured: false,
-    order: 4,
-    productCount: 56,
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeBrand(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    name: raw.name || 'Unnamed Brand',
+    slug: raw.slug || raw.name?.toLowerCase().replace(/\s+/g, '-') || '',
+    description: raw.description || '',
+    status: (raw.status || (raw.isActive !== false ? 'active' : 'inactive')).toLowerCase(),
+    isFeatured: raw.isFeatured ?? false,
+    order: Number(raw.order || raw.displayOrder || 1),
+    productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
+  };
+}
 
 const brandColors = [
   'from-teal-500 to-cyan-400 text-white shadow-teal-500/10',
@@ -109,58 +85,86 @@ const brandColors = [
 ];
 
 export default function BrandsPage() {
-  const [brandsList, setBrandsList] = useState(initialBrands);
+  const [brandsList, setBrandsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
+  const [selectedBrand, setSelectedBrand] = useState<any | null>(null);
 
-  // Selected Brand for Preview
-  const [selectedBrand, setSelectedBrand] = useState<typeof initialBrands[0] | null>(null);
+  const fetchBrands = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/brands`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load brands');
+      const raw = json.data ?? json.brands ?? json ?? [];
+      setBrandsList(Array.isArray(raw) ? raw.map(normalizeBrand) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
 
-  const handleCreateBrand = (e: React.FormEvent) => {
+  useEffect(() => { fetchBrands(); }, [fetchBrands]);
+
+  const handleCreateBrand = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newBrand = {
-      id: String(brandsList.length + 1),
+    const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       description: formData.description,
-      status: 'active',
       isFeatured: formData.isFeatured,
       order: parseInt(formData.order) || 1,
-      productCount: 0,
+      status: 'active',
     };
-    setBrandsList([...brandsList, newBrand]);
+    try {
+      const res = await fetch(`${API_BASE}/api/brands`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      if (res.ok) { await fetchBrands(); }
+      else { setBrandsList(prev => [...prev, normalizeBrand({ ...body, id: String(Date.now()), productCount: 0 })]); }
+    } catch { setBrandsList(prev => [...prev, normalizeBrand({ ...body, id: String(Date.now()), productCount: 0 })]); }
     setFormData({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
     setIsAddOpen(false);
   };
 
-  const handleToggleStatus = (id: string) => {
+  const handleToggleStatus = async (id: string) => {
     setBrandsList(prev => 
       prev.map(b => b.id === id ? { ...b, status: b.status === 'active' ? 'inactive' : 'active' } : b)
     );
-    setSelectedBrand(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, status: prev.status === 'active' ? 'inactive' : 'active' };
+    setSelectedBrand((prev: any) => prev && prev.id === id ? { ...prev, status: prev.status === 'active' ? 'inactive' : 'active' } : prev);
+    try {
+      const target = brandsList.find(b => b.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/brands/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ status: target.status === 'active' ? 'inactive' : 'active' })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleToggleFeatured = (id: string) => {
+  const handleToggleFeatured = async (id: string) => {
     setBrandsList(prev => 
       prev.map(b => b.id === id ? { ...b, isFeatured: !b.isFeatured } : b)
     );
-    setSelectedBrand(prev => {
-      if (prev && prev.id === id) {
-        return { ...prev, isFeatured: !prev.isFeatured };
+    setSelectedBrand((prev: any) => prev && prev.id === id ? { ...prev, isFeatured: !prev.isFeatured } : prev);
+    try {
+      const target = brandsList.find(b => b.id === id);
+      if (target) {
+        await fetch(`${API_BASE}/api/brands/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ isFeatured: !target.isFeatured })
+        });
       }
-      return prev;
-    });
+    } catch {}
   };
 
-  const handleDeleteBrand = (id: string) => {
+  const handleDeleteBrand = async (id: string) => {
     setBrandsList(prev => prev.filter(b => b.id !== id));
     setSelectedBrand(null);
+    try {
+      await fetch(`${API_BASE}/api/brands/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
   };
 
   const filteredBrands = useMemo(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -54,119 +54,77 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const initialProducts = [
-  {
-    id: '1',
-    name: 'Summer Floral Dress',
-    sku: 'SKU-001',
-    price: 99.99,
-    stock: 45,
-    category: 'Dresses',
-    brand: 'Aura Original',
-    status: 'active',
-    isFeatured: true,
-    isTrending: false,
-    isBestSeller: true,
-    description: 'A light, breathable summer dress crafted from premium cotton, featuring a colorful floral pattern and a flattering silhouette.',
-  },
-  {
-    id: '2',
-    name: 'Classic White Blouse',
-    sku: 'SKU-002',
-    price: 79.99,
-    stock: 32,
-    category: 'Tops',
-    brand: 'Aura Original',
-    status: 'active',
-    isFeatured: false,
-    isTrending: true,
-    isBestSeller: false,
-    description: 'A timeless wardrobe essential. This crisp white cotton blouse offers a structured fit, perfect for business or smart-casual wear.',
-  },
-  {
-    id: '3',
-    name: 'High-Waist Jeans',
-    sku: 'SKU-003',
-    price: 89.99,
-    stock: 28,
-    category: 'Bottoms',
-    brand: 'Aura Denim',
-    status: 'active',
-    isFeatured: true,
-    isTrending: true,
-    isBestSeller: true,
-    description: 'Classic high-rise fit denim crafted with a touch of stretch for ultimate all-day comfort. Features a slight wash fade.',
-  },
-  {
-    id: '4',
-    name: 'Silk Scarf',
-    sku: 'SKU-004',
-    price: 49.99,
-    stock: 15,
-    category: 'Accessories',
-    brand: 'Aura Accessories',
-    status: 'active',
-    isFeatured: false,
-    isTrending: false,
-    isBestSeller: false,
-    description: 'Luxurious 100% pure silk scarf with a hand-rolled hem and an elegant abstract print. Elevates any outfit instantly.',
-  },
-  {
-    id: '5',
-    name: 'Leather Handbag',
-    sku: 'SKU-005',
-    price: 199.99,
-    stock: 8,
-    category: 'Accessories',
-    brand: 'Aura Luxury',
-    status: 'active',
-    isFeatured: true,
-    isTrending: false,
-    isBestSeller: true,
-    description: 'Expertly crafted full-grain leather handbag featuring a spacious lined interior, premium brass accents, and structured top handles.',
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeProduct(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    name: raw.name || raw.title || 'Unnamed Product',
+    sku: raw.sku || raw.code || `SKU-${raw.id?.slice(0, 6) || '000'}`,
+    price: Number(raw.price || raw.sellingPrice || raw.mrp || 0),
+    stock: Number(raw.stock ?? raw.stockQuantity ?? raw.inventory?.quantity ?? 0),
+    category: raw.category?.name || raw.categoryName || raw.category || 'General',
+    brand: raw.brand?.name || raw.brandName || raw.brand || 'Unbranded',
+    status: (raw.status || (raw.isActive ? 'active' : 'inactive')).toLowerCase(),
+    isFeatured: raw.isFeatured ?? false,
+    isTrending: raw.isTrending ?? false,
+    isBestSeller: raw.isBestSeller ?? false,
+    description: raw.description || raw.shortDescription || '',
+    images: raw.images || [],
+  };
+}
 
 export default function ProductsPage() {
-  const [productsList, setProductsList] = useState(initialProducts);
+  const [productsList, setProductsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
-  
-  // View mode: 'grid' or 'list'
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  // Advanced Filters
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockLevelFilter, setStockLevelFilter] = useState('all');
-
-  // Selected product for preview drawer
-  const [selectedProduct, setSelectedProduct] = useState<typeof initialProducts[0] | null>(null);
-  
-  // State for inventory adjustment in drawer
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [adjustQtyInput, setAdjustQtyInput] = useState('');
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const fetchProducts = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/catalog/products`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load products');
+      const raw = json.data ?? json.products ?? json ?? [];
+      setProductsList(Array.isArray(raw) ? raw.map(normalizeProduct) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newProduct = {
-      id: String(productsList.length + 1),
-      name: formData.name,
-      sku: formData.sku,
+    const body = {
+      name: formData.name, sku: formData.sku,
       price: parseFloat(formData.price) || 0,
       stock: parseInt(formData.stock) || 0,
-      category: formData.category,
-      brand: formData.brand || 'Aura Original',
-      status: 'active',
-      isFeatured: false,
-      isTrending: false,
-      isBestSeller: false,
-      description: formData.description || 'A premium clothing item from Aura Couture.',
+      category: formData.category, brand: formData.brand,
+      description: formData.description,
+      status: 'active', isFeatured: false, isTrending: false, isBestSeller: false,
     };
-    setProductsList([newProduct, ...productsList]);
+    try {
+      const res = await fetch(`${API_BASE}/api/catalog/products`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      const json = await res.json();
+      if (res.ok) { await fetchProducts(); }
+      else { setProductsList(prev => [normalizeProduct({ ...body, id: String(Date.now()) }), ...prev]); }
+    } catch { setProductsList(prev => [normalizeProduct({ ...body, id: String(Date.now()) }), ...prev]); }
     setAddSheetOpen(false);
     setFormData({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
   };
@@ -181,7 +139,7 @@ export default function ProductsPage() {
         return p;
       })
     );
-    setSelectedProduct(prev => {
+    setSelectedProduct((prev: any) => {
       if (prev && prev.id === productId) {
         return { ...prev, stock: Math.max(0, prev.stock + quantity) };
       }
@@ -198,7 +156,7 @@ export default function ProductsPage() {
         return p;
       })
     );
-    setSelectedProduct(prev => {
+    setSelectedProduct((prev: any) => {
       if (prev && prev.id === productId) {
         return { ...prev, isFeatured: !prev.isFeatured };
       }
@@ -206,9 +164,10 @@ export default function ProductsPage() {
     });
   };
 
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     setProductsList(prev => prev.filter(p => p.id !== productId));
     setSelectedProduct(null);
+    try { await fetch(`${API_BASE}/api/catalog/products/${productId}`, { method: 'DELETE', headers: authHeaders() }); } catch { }
   };
 
   const filteredProducts = useMemo(() => {

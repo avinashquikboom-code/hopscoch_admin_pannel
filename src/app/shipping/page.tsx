@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +35,25 @@ import {
 } from 'recharts';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+function authHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function normalizeShipment(raw: any) {
+  return {
+    id: raw.id || raw._id || raw.shipmentId || `SHP-${Math.floor(10000 + Math.random() * 90000)}`,
+    order: raw.orderId || raw.order?.id || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+    customer: raw.customerName || `${raw.user?.firstName || ''} ${raw.user?.lastName || ''}`.trim() || 'Customer',
+    courier: raw.courier || raw.carrier || 'Delhivery',
+    status: (raw.status || 'Pending').charAt(0).toUpperCase() + (raw.status || 'Pending').slice(1).toLowerCase(),
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-CA') : raw.date || '',
+    city: raw.city || raw.deliveryCity || 'Mumbai',
+    trackingUrl: raw.trackingUrl || raw.trackingLink || '#',
+  };
+}
+
 const initialStats = [
   { label: 'Total Shipments', value: '4,821', icon: Truck, color: 'text-[#14b8a6]', bg: 'bg-[#14b8a6]/10', change: '+12%' },
   { label: 'Pending Dispatch', value: '142', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', change: '-3%' },
@@ -60,14 +79,6 @@ const courierData = [
   { name: 'Shadowfax', shipments: 420, delivered: 380 },
 ];
 
-const initialShipments = [
-  { id: 'SHP-8821', order: 'ORD-4421', customer: 'Priya Sharma', courier: 'Delhivery', status: 'Delivered', date: '2026-07-04', city: 'Mumbai', trackingUrl: 'https://track.delhivery.com/ORD-4421' },
-  { id: 'SHP-8820', order: 'ORD-4420', customer: 'Aditya Mehta', courier: 'Blue Dart', status: 'Shipped', date: '2026-07-04', city: 'Delhi', trackingUrl: 'https://track.bluedart.com/ORD-4420' },
-  { id: 'SHP-8819', order: 'ORD-4419', customer: 'Neha Kapoor', courier: 'XpressBees', status: 'Packed', date: '2026-07-03', city: 'Bangalore', trackingUrl: 'https://track.xpressbees.com/ORD-4419' },
-  { id: 'SHP-8818', order: 'ORD-4418', customer: 'Rohan Gupta', courier: 'DTDC', status: 'Pending', date: '2026-07-03', city: 'Chennai', trackingUrl: 'https://track.dtdc.com/ORD-4418' },
-  { id: 'SHP-8817', order: 'ORD-4417', customer: 'Anjali Singh', courier: 'Shadowfax', status: 'Returned', date: '2026-07-02', city: 'Hyderabad', trackingUrl: 'https://track.shadowfax.in/ORD-4417' },
-];
-
 const statusStyles: Record<string, string> = {
   Delivered: 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20',
   Shipped: 'bg-blue-500/10 text-blue-500 dark:bg-blue-500/5 dark:text-blue-400 border-blue-500/20',
@@ -78,11 +89,24 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function ShippingDashboardPage() {
-  const [shipmentsList, setShipmentsList] = useState(initialShipments);
+  const [shipmentsList, setShipmentsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Selected shipment for drawer preview
-  const [selectedShipment, setSelectedShipment] = useState<typeof initialShipments[0] | null>(null);
+  const [selectedShipment, setSelectedShipment] = useState<any | null>(null);
+
+  const fetchShipments = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/shipments/admin/all`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load shipments');
+      const raw = json.data ?? json.shipments ?? json ?? [];
+      setShipmentsList(Array.isArray(raw) ? raw.map(normalizeShipment) : []);
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchShipments(); }, [fetchShipments]);
 
   const filteredShipments = useMemo(() => {
     return shipmentsList.filter(s =>
