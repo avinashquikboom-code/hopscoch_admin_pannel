@@ -23,6 +23,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -39,7 +40,8 @@ import {
   Search, 
   MoreVertical, 
   Edit, 
-  Trash2, 
+  Trash2,
+  Save, 
   Eye,
   Upload,
   Image as ImageIcon,
@@ -99,6 +101,12 @@ export default function BannersPage() {
   const [formData, setFormData] = useState({ title: '', type: 'home', link: '', position: '1', startDate: '', endDate: '', isActive: true, description: '' });
   const [selectedBanner, setSelectedBanner] = useState<any | null>(null);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editLink, setEditLink] = useState('');
+  const [editPosition, setEditPosition] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
   const fetchBanners = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -155,6 +163,34 @@ export default function BannersPage() {
     setSelectedBanner(null);
     try {
       await fetch(`${API_BASE}/api/settings/banners/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
+  };
+
+  const handleSaveBanner = async () => {
+    if (!selectedBanner) return;
+    const updated = {
+      ...selectedBanner,
+      title: editTitle,
+      link: editLink,
+      position: parseInt(editPosition) || 1,
+      description: editDesc,
+    };
+
+    setBannersList(prev => prev.map(b => b.id === selectedBanner.id ? updated : b));
+    setSelectedBanner(updated);
+    setIsEditing(false);
+
+    try {
+      await fetch(`${API_BASE}/api/settings/banners/${selectedBanner.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: editTitle,
+          link: editLink,
+          position: parseInt(editPosition) || 1,
+          description: editDesc,
+        }),
+      });
     } catch {}
   };
 
@@ -586,7 +622,8 @@ export default function BannersPage() {
         </Sheet>
 
         {/* Quick View Details Drawer */}
-        <Sheet open={selectedBanner !== null} onOpenChange={(open) => { if (!open) setSelectedBanner(null); }}>
+        <Sheet open={selectedBanner !== null} onOpenChange={(open) => { if (!open) { setSelectedBanner(null); setIsEditing(false); } }}>
+          <SheetTrigger nativeButton={false} render={<span />} />
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedBanner && (
               <>
@@ -609,6 +646,25 @@ export default function BannersPage() {
                       <Button 
                         variant="outline" 
                         size="icon" 
+                        className={`h-9 w-9 rounded-lg transition-colors ${isEditing ? 'text-primary border-primary/40 bg-primary/5' : ''}`} 
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveBanner();
+                          } else {
+                            setEditTitle(selectedBanner.title);
+                            setEditLink(selectedBanner.link);
+                            setEditPosition(String(selectedBanner.position));
+                            setEditDesc(selectedBanner.description);
+                            setIsEditing(true);
+                          }
+                        }}
+                        title={isEditing ? "Save Banner Details" : "Edit Banner Details"}
+                      >
+                        {isEditing ? <Save className="h-4.5 w-4.5" /> : <Edit className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
                         className={`h-9 w-9 rounded-lg`} 
                         onClick={() => handleToggleActive(selectedBanner.id)}
                         title="Toggle Status"
@@ -627,8 +683,19 @@ export default function BannersPage() {
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">{selectedBanner.title}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Redirect URL Link: {selectedBanner.link}</p>
+                    {isEditing ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Banner Title</Label>
+                          <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-bold text-foreground">{selectedBanner.title}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-light">Redirect URL Link: {selectedBanner.link}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -640,10 +707,10 @@ export default function BannersPage() {
                       {selectedBanner.type.toUpperCase()} MOCKUP PREVIEW
                     </span>
                     <h4 className="text-lg font-black text-white leading-tight drop-shadow-md">
-                      {selectedBanner.title}
+                      {isEditing ? editTitle : selectedBanner.title}
                     </h4>
                     <span className="text-[10px] text-white/80 border border-white/20 px-2 py-0.5 rounded bg-white/10 backdrop-blur self-end font-mono">
-                      {selectedBanner.link}
+                      {isEditing ? editLink : selectedBanner.link}
                     </span>
                   </div>
 
@@ -660,20 +727,40 @@ export default function BannersPage() {
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
                       <CardContent className="p-4">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5 text-primary" /> Campaign Timeline
+                          <Calendar className="h-3.5 w-3.5 text-primary" /> Placement Position
                         </span>
-                        <h4 className="text-xs font-semibold text-foreground mt-2 truncate">
-                          {selectedBanner.startDate} to {selectedBanner.endDate}
-                        </h4>
+                        {isEditing ? (
+                          <Input type="number" value={editPosition} onChange={e => setEditPosition(e.target.value)} className="h-9 rounded-md border border-border/50 mt-1.5 text-sm focus:border-primary" />
+                        ) : (
+                          <h4 className="text-lg font-bold text-foreground mt-2 truncate">
+                            Index Position: {selectedBanner.position}
+                          </h4>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
 
+                  {isEditing && (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Redirect Link</Label>
+                      <Input value={editLink} onChange={e => setEditLink(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Promotion Brief</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                      {selectedBanner.description}
-                    </p>
+                    {isEditing ? (
+                      <textarea
+                        rows={4}
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none animate-fade-in"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                        {selectedBanner.description}
+                      </p>
+                    )}
                   </div>
                 </ScrollArea>
               </>

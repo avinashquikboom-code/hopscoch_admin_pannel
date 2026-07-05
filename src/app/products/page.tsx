@@ -37,6 +37,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  Save,
   Filter,
   Download,
   Package,
@@ -96,6 +97,12 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [adjustQtyInput, setAdjustQtyInput] = useState('');
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editBrand, setEditBrand] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
   const fetchProducts = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -127,6 +134,34 @@ export default function ProductsPage() {
     } catch { setProductsList(prev => [normalizeProduct({ ...body, id: String(Date.now()) }), ...prev]); }
     setAddSheetOpen(false);
     setFormData({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
+  };
+
+  const handleSaveProduct = async () => {
+    if (!selectedProduct) return;
+    const updated = {
+      ...selectedProduct,
+      name: editName,
+      price: parseFloat(editPrice) || 0,
+      brand: editBrand,
+      description: editDesc,
+    };
+    
+    setProductsList(prev => prev.map(p => p.id === selectedProduct.id ? updated : p));
+    setSelectedProduct(updated);
+    setIsEditing(false);
+
+    try {
+      await fetch(`${API_BASE}/api/catalog/products/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: editName,
+          price: parseFloat(editPrice) || 0,
+          brand: editBrand,
+          description: editDesc,
+        }),
+      });
+    } catch {}
   };
 
   const handleUpdateStock = (productId: string, quantity: number) => {
@@ -776,7 +811,8 @@ export default function ProductsPage() {
         </Sheet>
 
         {/* Quick View Product Details Drawer */}
-        <Sheet open={selectedProduct !== null} onOpenChange={(open) => { if (!open) setSelectedProduct(null); }}>
+        <Sheet open={selectedProduct !== null} onOpenChange={(open) => { if (!open) { setSelectedProduct(null); setIsEditing(false); } }}>
+          <SheetTrigger nativeButton={false} render={<span />} />
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedProduct && (
               <>
@@ -799,6 +835,25 @@ export default function ProductsPage() {
                       <Button 
                         variant="outline" 
                         size="icon" 
+                        className={`h-9 w-9 rounded-lg transition-colors ${isEditing ? 'text-primary border-primary/40 bg-primary/5' : ''}`} 
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveProduct();
+                          } else {
+                            setEditName(selectedProduct.name);
+                            setEditPrice(String(selectedProduct.price));
+                            setEditBrand(selectedProduct.brand);
+                            setEditDesc(selectedProduct.description);
+                            setIsEditing(true);
+                          }
+                        }}
+                        title={isEditing ? "Save Product Details" : "Edit Product Details"}
+                      >
+                        {isEditing ? <Save className="h-4.5 w-4.5" /> : <Edit className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
                         className={`h-9 w-9 rounded-lg transition-colors ${selectedProduct.isFeatured ? 'text-amber-500 hover:text-amber-600 bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20' : ''}`} 
                         onClick={() => handleToggleFeatured(selectedProduct.id)}
                         title="Toggle Featured Status"
@@ -817,8 +872,23 @@ export default function ProductsPage() {
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">{selectedProduct.name}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Brand: {selectedProduct.brand}</p>
+                    {isEditing ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Product Name</Label>
+                          <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Brand Label</Label>
+                          <Input value={editBrand} onChange={e => setEditBrand(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-bold text-foreground">{selectedProduct.name}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-light">Brand: {selectedProduct.brand}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -839,7 +909,11 @@ export default function ProductsPage() {
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
                           <DollarSign className="h-3.5 w-3.5 text-primary" /> Listing Price
                         </span>
-                        <h4 className="text-2xl font-black text-foreground mt-1.5">${selectedProduct.price.toFixed(2)}</h4>
+                        {isEditing ? (
+                          <Input type="number" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="h-9 rounded-md border-border/50 mt-1.5 font-mono text-sm focus:border-primary" />
+                        ) : (
+                          <h4 className="text-2xl font-black text-foreground mt-1.5">${selectedProduct.price.toFixed(2)}</h4>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -907,9 +981,18 @@ export default function ProductsPage() {
 
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Catalog Description</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                      {selectedProduct.description}
-                    </p>
+                    {isEditing ? (
+                      <textarea
+                        rows={4}
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                        {selectedProduct.description}
+                      </p>
+                    )}
                   </div>
                 </ScrollArea>
               </>

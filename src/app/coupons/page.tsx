@@ -22,6 +22,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ import {
   Edit, 
   Trash2, 
   Copy,
+  Save,
   Calendar,
   Percent,
   DollarSign,
@@ -86,6 +88,13 @@ export default function CouponsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [formData, setFormData] = useState({ code: '', type: 'percentage', value: '', minimumOrder: '', maximumDiscount: '', expiryDate: '', usageLimit: '', isActive: true, description: '' });
   const [selectedCoupon, setSelectedCoupon] = useState<any | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editCode, setEditCode] = useState('');
+  const [editType, setEditType] = useState('percentage');
+  const [editValue, setEditValue] = useState('');
+  const [editLimit, setEditLimit] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   const fetchCoupons = useCallback(async () => {
     setLoading(true); setError(null);
@@ -151,6 +160,36 @@ export default function CouponsPage() {
     setSelectedCoupon(null);
     try {
       await fetch(`${API_BASE}/api/coupons/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
+  };
+
+  const handleSaveCoupon = async () => {
+    if (!selectedCoupon) return;
+    const updated = {
+      ...selectedCoupon,
+      code: editCode,
+      type: editType,
+      value: parseFloat(editValue) || 0,
+      usageLimit: parseInt(editLimit) || 0,
+      description: editDesc,
+    };
+
+    setCouponsList(prev => prev.map(c => c.id === selectedCoupon.id ? updated : c));
+    setSelectedCoupon(updated);
+    setIsEditing(false);
+
+    try {
+      await fetch(`${API_BASE}/api/coupons/${selectedCoupon.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          code: editCode,
+          type: editType,
+          value: parseFloat(editValue) || 0,
+          usageLimit: parseInt(editLimit) || 0,
+          description: editDesc,
+        }),
+      });
     } catch {}
   };
 
@@ -574,7 +613,8 @@ export default function CouponsPage() {
         </Sheet>
 
         {/* Quick View Details Drawer */}
-        <Sheet open={selectedCoupon !== null} onOpenChange={(open) => { if (!open) setSelectedCoupon(null); }}>
+        <Sheet open={selectedCoupon !== null} onOpenChange={(open) => { if (!open) { setSelectedCoupon(null); setIsEditing(false); } }}>
+          <SheetTrigger nativeButton={false} render={<span />} />
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedCoupon && (
               <>
@@ -597,6 +637,26 @@ export default function CouponsPage() {
                       <Button 
                         variant="outline" 
                         size="icon" 
+                        className={`h-9 w-9 rounded-lg transition-colors ${isEditing ? 'text-primary border-primary/40 bg-primary/5' : ''}`} 
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveCoupon();
+                          } else {
+                            setEditCode(selectedCoupon.code);
+                            setEditType(selectedCoupon.type);
+                            setEditValue(String(selectedCoupon.value));
+                            setEditLimit(String(selectedCoupon.usageLimit));
+                            setEditDesc(selectedCoupon.description);
+                            setIsEditing(true);
+                          }
+                        }}
+                        title={isEditing ? "Save Coupon Details" : "Edit Coupon Details"}
+                      >
+                        {isEditing ? <Save className="h-4.5 w-4.5" /> : <Edit className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
                         className={`h-9 w-9 rounded-lg`} 
                         onClick={() => handleToggleActive(selectedCoupon.id)}
                         title="Toggle Status"
@@ -615,8 +675,19 @@ export default function CouponsPage() {
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">Promo: {selectedCoupon.code}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Campaign Limit: {selectedCoupon.usageLimit} Max uses</p>
+                    {isEditing ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Coupon Code</Label>
+                          <Input value={editCode} onChange={e => setEditCode(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-bold text-foreground">Promo: {selectedCoupon.code}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-light">Campaign Limit: {selectedCoupon.usageLimit} Max uses</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -628,9 +699,23 @@ export default function CouponsPage() {
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
                           <Ticket className="h-3.5 w-3.5 text-primary" /> Discount Value
                         </span>
-                        <h4 className="text-2xl font-black text-foreground mt-1.5">
-                          {selectedCoupon.type === 'percentage' ? `${selectedCoupon.value}%` : `$${selectedCoupon.value}`}
-                        </h4>
+                        {isEditing ? (
+                          <div className="flex gap-2 mt-1.5">
+                            <select
+                              value={editType}
+                              onChange={e => setEditType(e.target.value)}
+                              className="h-9 rounded-md border border-border/50 bg-background text-xs px-2"
+                            >
+                              <option value="percentage">%</option>
+                              <option value="fixed">$</option>
+                            </select>
+                            <Input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="h-9 rounded-md border-border/50 text-sm font-mono focus:border-primary" />
+                          </div>
+                        ) : (
+                          <h4 className="text-2xl font-black text-foreground mt-1.5">
+                            {selectedCoupon.type === 'percentage' ? `${selectedCoupon.value}%` : `$${selectedCoupon.value}`}
+                          </h4>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -650,7 +735,14 @@ export default function CouponsPage() {
                       <CardContent className="p-5 space-y-4">
                         <div className="flex justify-between items-center text-sm font-semibold">
                           <span>Redeemed Count</span>
-                          <span>{selectedCoupon.usedCount} / {selectedCoupon.usageLimit} ({Math.round((selectedCoupon.usedCount / selectedCoupon.usageLimit) * 100)}%)</span>
+                          {isEditing ? (
+                            <div className="flex items-center gap-2">
+                              <span>Limit:</span>
+                              <Input type="number" value={editLimit} onChange={e => setEditLimit(e.target.value)} className="h-8 w-24 rounded-md border-border/50 focus:border-primary text-xs" />
+                            </div>
+                          ) : (
+                            <span>{selectedCoupon.usedCount} / {selectedCoupon.usageLimit} ({Math.round((selectedCoupon.usedCount / selectedCoupon.usageLimit) * 100)}%)</span>
+                          )}
                         </div>
                         <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
                           <div 
@@ -678,9 +770,18 @@ export default function CouponsPage() {
 
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Coupon Narrative</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                      {selectedCoupon.description}
-                    </p>
+                    {isEditing ? (
+                      <textarea
+                        rows={4}
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none animate-fade-in"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                        {selectedCoupon.description}
+                      </p>
+                    )}
                   </div>
                 </ScrollArea>
               </>

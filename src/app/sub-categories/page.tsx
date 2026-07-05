@@ -21,6 +21,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ import {
   Edit, 
   Trash2, 
   Sparkles, 
+  Save,
   Tag, 
   Hash, 
   FolderTree, 
@@ -82,6 +84,11 @@ export default function SubCategoriesPage() {
   const [parentFilter, setParentFilter] = useState('all');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState<any | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editSlug, setEditSlug] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   const fetchSubCategories = useCallback(async () => {
     setLoading(true); setError(null);
@@ -156,6 +163,32 @@ export default function SubCategoriesPage() {
     setSelectedSubCategory(null);
     try {
       await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
+  };
+
+  const handleSaveSubCategory = async () => {
+    if (!selectedSubCategory) return;
+    const updated = {
+      ...selectedSubCategory,
+      name: editName,
+      slug: editSlug,
+      description: editDesc,
+    };
+
+    setSubCategoriesList(prev => prev.map(sc => sc.id === selectedSubCategory.id ? updated : sc));
+    setSelectedSubCategory(updated);
+    setIsEditing(false);
+
+    try {
+      await fetch(`${API_BASE}/api/categories/${selectedSubCategory.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: editName,
+          slug: editSlug,
+          description: editDesc,
+        }),
+      });
     } catch {}
   };
 
@@ -562,7 +595,8 @@ export default function SubCategoriesPage() {
         </Sheet>
 
         {/* Quick View Details Drawer */}
-        <Sheet open={selectedSubCategory !== null} onOpenChange={(open) => { if (!open) setSelectedSubCategory(null); }}>
+        <Sheet open={selectedSubCategory !== null} onOpenChange={(open) => { if (!open) { setSelectedSubCategory(null); setIsEditing(false); } }}>
+          <SheetTrigger nativeButton={false} render={<span />} />
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedSubCategory && (
               <>
@@ -585,6 +619,24 @@ export default function SubCategoriesPage() {
                       <Button 
                         variant="outline" 
                         size="icon" 
+                        className={`h-9 w-9 rounded-lg transition-colors ${isEditing ? 'text-primary border-primary/40 bg-primary/5' : ''}`} 
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveSubCategory();
+                          } else {
+                            setEditName(selectedSubCategory.name);
+                            setEditSlug(selectedSubCategory.slug);
+                            setEditDesc(selectedSubCategory.description);
+                            setIsEditing(true);
+                          }
+                        }}
+                        title={isEditing ? "Save Subcategory Details" : "Edit Subcategory Details"}
+                      >
+                        {isEditing ? <Save className="h-4.5 w-4.5" /> : <Edit className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
                         className={`h-9 w-9 rounded-lg`} 
                         onClick={() => handleToggleVisibility(selectedSubCategory.id)}
                         title="Toggle Visibility"
@@ -603,8 +655,23 @@ export default function SubCategoriesPage() {
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">{selectedSubCategory.name}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Parent Department: {selectedSubCategory.parentName}</p>
+                    {isEditing ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Subcategory Name</Label>
+                          <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Subcategory Slug</Label>
+                          <Input value={editSlug} onChange={e => setEditSlug(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-bold text-foreground">{selectedSubCategory.name}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-light">Parent Department: {selectedSubCategory.parentName}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -632,9 +699,18 @@ export default function SubCategoriesPage() {
 
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Subcategory Scope</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                      {selectedSubCategory.description || "No customized description set for this subcategory."}
-                    </p>
+                    {isEditing ? (
+                      <textarea
+                        rows={4}
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none animate-fade-in"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                        {selectedSubCategory.description || "No customized description set for this subcategory."}
+                      </p>
+                    )}
                   </div>
                 </ScrollArea>
               </>
