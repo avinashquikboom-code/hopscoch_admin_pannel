@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, 
   MoreVertical, 
@@ -50,7 +51,9 @@ import {
   Sparkles,
   CheckCircle2,
   Globe,
-  EyeOff
+  EyeOff,
+  Filter,
+  SlidersHorizontal
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -96,6 +99,9 @@ export default function ReviewsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
   const fetchReviews = useCallback(async () => {
     setLoading(true); setError(null);
@@ -148,18 +154,40 @@ export default function ReviewsPage() {
   };
 
   const filteredReviews = useMemo(() => {
+    const now = new Date();
     return reviewsList.filter(review => {
-      const matchesSearch = 
+      const matchesSearch =
         review.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.comment.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesStatus = statusFilter === 'all' || review.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+
+      const matchesRating = ratingFilter === 'all' || review.rating === Number(ratingFilter);
+
+      let matchesDate = true;
+      if (dateFilter !== 'all' && review.date) {
+        const reviewDate = new Date(review.date);
+        const diff = (now.getTime() - reviewDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (dateFilter === 'today') matchesDate = diff < 1;
+        else if (dateFilter === '7days') matchesDate = diff <= 7;
+        else if (dateFilter === '30days') matchesDate = diff <= 30;
+      }
+
+      return matchesSearch && matchesStatus && matchesRating && matchesDate;
     });
-  }, [reviewsList, searchQuery, statusFilter]);
+  }, [reviewsList, searchQuery, statusFilter, ratingFilter, dateFilter]);
+
+  const isFiltersApplied = ratingFilter !== 'all' || dateFilter !== 'all';
+
+  const handleResetFilters = () => {
+    setRatingFilter('all');
+    setDateFilter('all');
+  };
+
+  const getStatusCount = (status: string) =>
+    status === 'all' ? reviewsList.length : reviewsList.filter(r => r.status === status).length;
 
   const stats = useMemo(() => {
     const totalCount = reviewsList.length;
@@ -262,54 +290,127 @@ export default function ReviewsPage() {
 
         {/* Reviews Table Panel */}
         <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
-          <CardContent className="p-6 space-y-6">
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex gap-1.5 bg-muted/40 p-1 border border-border/20 rounded-xl w-fit">
-                <Button
-                  variant={statusFilter === 'all' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-lg h-8 text-xs font-semibold px-3"
-                  onClick={() => setStatusFilter('all')}
-                >
-                  All ({reviewsList.length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'pending' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-lg h-8 text-xs font-semibold px-3"
-                  onClick={() => setStatusFilter('pending')}
-                >
-                  Pending ({reviewsList.filter(r => r.status === 'pending').length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'approved' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-lg h-8 text-xs font-semibold px-3"
-                  onClick={() => setStatusFilter('approved')}
-                >
-                  Approved ({reviewsList.filter(r => r.status === 'approved').length})
-                </Button>
-                <Button
-                  variant={statusFilter === 'rejected' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-lg h-8 text-xs font-semibold px-3"
-                  onClick={() => setStatusFilter('rejected')}
-                >
-                  Rejected ({reviewsList.filter(r => r.status === 'rejected').length})
-                </Button>
+          <CardContent className="p-6">
+
+            {/* Top Toolbar */}
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* Search Bar */}
+                <div className="relative flex-1 max-w-md group">
+                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-[#14b8a6] transition-colors" />
+                  <Input
+                    placeholder="Search by customer, product, or review text..."
+                    className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Filter Button */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={showFilters ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg h-10 px-4 flex items-center gap-2"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filters
+                    {isFiltersApplied && (
+                      <span className="ml-1 w-2 h-2 rounded-full bg-[#14b8a6]" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
-              <div className="relative max-w-sm flex-1 group">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  placeholder="Search reviews by comments or user..."
-                  className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              {/* Expandable Filters Panel */}
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 bg-muted/30 border border-border/40 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                      {/* Star Rating Filter */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Star className="h-3 w-3" /> Star Rating
+                        </span>
+                        <select
+                          value={ratingFilter}
+                          onChange={(e) => setRatingFilter(e.target.value)}
+                          className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
+                        >
+                          <option value="all">All Ratings</option>
+                          <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                          <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                          <option value="3">⭐⭐⭐ 3 Stars</option>
+                          <option value="2">⭐⭐ 2 Stars</option>
+                          <option value="1">⭐ 1 Star</option>
+                        </select>
+                      </div>
+
+                      {/* Date Range Filter */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> Date Range
+                        </span>
+                        <select
+                          value={dateFilter}
+                          onChange={(e) => setDateFilter(e.target.value)}
+                          className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
+                        >
+                          <option value="all">All Dates</option>
+                          <option value="today">Today</option>
+                          <option value="7days">Last 7 Days</option>
+                          <option value="30days">Last 30 Days</option>
+                        </select>
+                      </div>
+
+                      {/* Reset */}
+                      <div className="flex items-end">
+                        {isFiltersApplied && (
+                          <Button
+                            onClick={handleResetFilters}
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs font-semibold text-[#14b8a6] hover:text-[#0d9488] p-0 h-10"
+                          >
+                            Reset Active Filters
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            <Separator className="my-6 border-border/20" />
+
+            {/* Status Tabs */}
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="mb-6 bg-muted/40 p-1 border border-border/20 rounded-xl flex overflow-x-auto w-full md:w-fit justify-start h-auto">
+                <TabsTrigger value="all" className="rounded-lg py-2 px-4 text-xs font-semibold">
+                  All ({getStatusCount('all')})
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="rounded-lg py-2 px-4 text-xs font-semibold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Pending ({getStatusCount('pending')})
+                </TabsTrigger>
+                <TabsTrigger value="approved" className="rounded-lg py-2 px-4 text-xs font-semibold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Approved ({getStatusCount('approved')})
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="rounded-lg py-2 px-4 text-xs font-semibold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  Rejected ({getStatusCount('rejected')})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
             {/* Table */}
             <div className="border border-border/30 rounded-xl overflow-hidden bg-card/40">

@@ -714,7 +714,7 @@ export default function ProductsPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Summer Floral Dress"
+                    placeholder="Enter product name"
                     className="rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 h-11"
                   />
                 </div>

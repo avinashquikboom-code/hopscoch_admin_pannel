@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
                       <Input
                         id="email"
                         type="email"
-                        placeholder="admin@aura.com"
+                        placeholder="Enter your email"
                         className="pl-11 h-11 rounded-md
                                    bg-slate-50 dark:bg-zinc-950
                                    border-slate-200 dark:border-zinc-800

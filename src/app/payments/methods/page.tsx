@@ -2,14 +2,27 @@
 
 import { useState } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { Settings, Plus, Trash2, Edit } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { AppDrawer } from '@/components/ui/app-drawer';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
-const methods = [
+interface PaymentMethod {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  color: string;
+  popular: boolean;
+  active: boolean;
+}
+
+const initialMethods: PaymentMethod[] = [
   { id: 'upi', name: 'UPI', icon: '🔁', desc: 'PhonePe, Google Pay, Paytm UPI, BHIM', color: 'text-[#14b8a6] bg-[#14b8a6]/10', popular: true, active: true },
   { id: 'card', name: 'Credit / Debit Cards', icon: '💳', desc: 'Visa, Mastercard, RuPay, Amex', color: 'text-blue-500 bg-blue-500/10', popular: true, active: true },
   { id: 'netbanking', name: 'Net Banking', icon: '🏦', desc: 'All major Indian banks supported', color: 'text-violet-500 bg-violet-500/10', popular: false, active: true },
@@ -24,8 +37,69 @@ const methods = [
 ];
 
 export default function PaymentMethodsPage() {
-  const [items, setItems] = useState(methods);
+  const [items, setItems] = useState<PaymentMethod[]>(initialMethods);
+  const [open, setOpen] = useState(false);
+  const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
+  const [form, setForm] = useState({ name: '', desc: '', icon: '💳', popular: false, active: true });
+
   const toggle = (id: string) => setItems(ms => ms.map(m => m.id === id ? { ...m, active: !m.active } : m));
+
+  const handleOpenAdd = () => {
+    setEditingMethod(null);
+    setForm({ name: '', desc: '', icon: '💳', popular: false, active: true });
+    setOpen(true);
+  };
+
+  const handleOpenEdit = (m: PaymentMethod) => {
+    setEditingMethod(m);
+    setForm({
+      name: m.name,
+      desc: m.desc,
+      icon: m.icon,
+      popular: m.popular,
+      active: m.active,
+    });
+    setOpen(true);
+  };
+
+  const handleAddOrUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingMethod) {
+      setItems(prev =>
+        prev.map(m =>
+          m.id === editingMethod.id
+            ? { ...m, name: form.name, desc: form.desc, icon: form.icon, popular: form.popular, active: form.active }
+            : m
+        )
+      );
+    } else {
+      const colors = [
+        'text-[#14b8a6] bg-[#14b8a6]/10',
+        'text-blue-500 bg-blue-500/10',
+        'text-violet-500 bg-violet-500/10',
+        'text-amber-500 bg-amber-500/10',
+        'text-rose-500 bg-rose-500/10',
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      setItems(prev => [
+        ...prev,
+        {
+          id: String(Date.now()),
+          name: form.name,
+          desc: form.desc,
+          icon: form.icon,
+          color: randomColor,
+          popular: form.popular,
+          active: form.active,
+        },
+      ]);
+    }
+    setOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    setItems(prev => prev.filter(m => m.id !== id));
+  };
 
   return (
     <AdminLayout>
@@ -35,8 +109,49 @@ export default function PaymentMethodsPage() {
           titlePart2="Methods"
           badgeText="Finance Command Center"
           subtitle="Enable or disable payment options for your customers."
-
+          actions={
+            <Button onClick={handleOpenAdd} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+              <Plus className="h-4 w-4" /> Add Payment Method
+            </Button>
+          }
         />
+
+        <AppDrawer
+          title={editingMethod ? 'Configure Payment Method' : 'Add Payment Method'}
+          subtitle={editingMethod ? `Configure parameters for ${editingMethod.name}` : 'Create a new customized payment method.'}
+          open={open}
+          onClose={setOpen}
+          onSubmit={handleAddOrUpdate}
+        >
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Method Name *</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. UPI Express" className="h-11 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Icon / Emoji *</Label>
+              <Input required value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="e.g. 🔁" className="h-11 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Description *</Label>
+              <Input required value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} placeholder="e.g. Swift UPI bank transfers" className="h-11 rounded-lg" />
+            </div>
+            <div className="flex items-center justify-between border-t border-border/30 pt-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Popular Badge</Label>
+                <p className="text-xs text-muted-foreground">Highlight this option on checkout</p>
+              </div>
+              <Switch checked={form.popular} onCheckedChange={checked => setForm({ ...form, popular: checked })} />
+            </div>
+            <div className="flex items-center justify-between border-t border-border/30 pt-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Active Status</Label>
+                <p className="text-xs text-muted-foreground">Enable this payment method</p>
+              </div>
+              <Switch checked={form.active} onCheckedChange={checked => setForm({ ...form, active: checked })} />
+            </div>
+          </div>
+        </AppDrawer>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((m) => (
@@ -48,7 +163,7 @@ export default function PaymentMethodsPage() {
                       {m.icon}
                     </div>
                     <div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-semibold text-sm text-foreground">{m.name}</p>
                         {m.popular && <Badge className="text-[9px] rounded-full px-1.5 border-transparent bg-[#14b8a6]/10 text-[#14b8a6] font-semibold">Popular</Badge>}
                       </div>
@@ -61,9 +176,14 @@ export default function PaymentMethodsPage() {
                   <Badge className={`text-[10px] rounded-full px-2.5 py-1 border-transparent font-semibold ${m.active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
                     {m.active ? 'Enabled' : 'Disabled'}
                   </Badge>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs rounded-lg text-muted-foreground hover:text-foreground">
-                    <Settings className="h-3 w-3" /> Configure
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button onClick={() => handleOpenEdit(m)} variant="ghost" size="sm" className="h-7 gap-1 text-xs rounded-lg text-muted-foreground hover:text-foreground">
+                      <Settings className="h-3 w-3" /> Configure
+                    </Button>
+                    <Button onClick={() => handleDelete(m.id)} variant="ghost" size="icon" className="h-7 w-7 rounded-md text-rose-500 hover:bg-rose-500/10">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

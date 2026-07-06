@@ -192,7 +192,7 @@ export default function OrdersPage() {
       // For other transitions, re-fetch to get server truth
       await fetchOrders();
     } catch (e) {
-      console.error('Status update failed', e);
+      // Status update failed
     }
   };
 

@@ -476,7 +476,7 @@ export default function CategoriesPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Summer Collection" 
+                      placeholder="Enter category name" 
                       className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
                     />
                   </div>

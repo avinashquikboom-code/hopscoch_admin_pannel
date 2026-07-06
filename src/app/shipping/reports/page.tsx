@@ -4,7 +4,7 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart2, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -29,6 +29,38 @@ const courierPerf = [
 ];
 
 export default function ShippingReportsPage() {
+  const downloadCSV = () => {
+    const headers = ['Month', 'Shipped', 'Delivered', 'Returned'];
+    const rows = monthlyData.map(d => [d.month, d.shipped, d.delivered, d.returned]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "shipping_monthly_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadExcel = () => {
+    const headers = ['Month', 'Shipped', 'Delivered', 'Returned'];
+    const rows = monthlyData.map(d => [d.month, d.shipped, d.delivered, d.returned]);
+    const tsvContent = "data:text/xls;charset=utf-8," 
+      + [headers.join('\t'), ...rows.map(e => e.join('\t'))].join('\n');
+    const encodedUri = encodeURI(tsvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "shipping_monthly_report.xls");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadPDF = () => {
+    window.print();
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-8 pb-12">
@@ -37,12 +69,17 @@ export default function ShippingReportsPage() {
           titlePart2="Reports"
           badgeText="Logistics Command Center"
           subtitle="Analyze delivery performance, courier efficiency, and return rates."
-
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileText className="h-3.5 w-3.5" /> CSV</Button>
-              <Button variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer"><FileSpreadsheet className="h-3.5 w-3.5" /> Excel</Button>
-              <Button className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer"><Download className="h-3.5 w-3.5" /> PDF</Button>
+              <Button onClick={downloadCSV} variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer">
+                <FileText className="h-3.5 w-3.5" /> CSV
+              </Button>
+              <Button onClick={downloadExcel} variant="outline" className="rounded-md gap-2 text-xs border-border/60 cursor-pointer">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+              </Button>
+              <Button onClick={downloadPDF} className="rounded-md gap-2 text-xs bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+                <Download className="h-3.5 w-3.5" /> PDF
+              </Button>
             </div>
           }
         />

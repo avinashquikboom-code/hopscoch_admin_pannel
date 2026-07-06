@@ -38,11 +38,8 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    console.log('🚀 [Admin Panel] Login form submitted for:', formData.email);
-
     try {
       const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/auth/login';
-      console.log('📡 [Admin Panel] Fetching from:', apiUrl);
 
       const response = await fetch(
         apiUrl,
@@ -62,22 +59,18 @@ export default function LoginPage() {
       const resData = await response.json();
 
       if (!response.ok) {
-        console.warn('⚠️ [Admin Panel] Login request rejected by server:', resData);
         throw new Error(resData.message || 'Failed to sign in. Please verify your credentials.');
       }
 
       if (resData.success && resData.data) {
         const { accessToken, user } = resData.data;
-        console.log('✅ [Admin Panel] Login successful! Welcome:', user.firstName, user.lastName);
         localStorage.setItem('auth_token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
         router.push('/dashboard');
       } else {
-        console.warn('⚠️ [Admin Panel] Unexpected response structure:', resData);
         throw new Error(resData.message || 'Login was not successful.');
       }
     } catch (err: any) {
-      console.error('❌ [Admin Panel] Login error occurred:', err);
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -239,7 +232,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@aura.com"
+                    placeholder="Enter your email"
                     className="pl-11 h-11 rounded-md
                                bg-slate-50 dark:bg-zinc-950
                                border-slate-200 dark:border-zinc-800

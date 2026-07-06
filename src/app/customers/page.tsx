@@ -141,21 +141,47 @@ export default function CustomersPage() {
     setIsAddOpen(false);
   };
 
-  const handleToggleStatus = (id: string) => {
-    setCustomersList(prev => 
-      prev.map(c => c.id === id ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } : c)
+  const handleToggleStatus = async (id: string) => {
+    const target = customersList.find(c => c.id === id);
+    const newStatus = target?.status === 'active' ? 'inactive' : 'active';
+    setCustomersList(prev =>
+      prev.map(c => c.id === id ? { ...c, status: newStatus } : c)
     );
     setSelectedCustomer((prev: any) => {
-      if (prev && prev.id === id) {
-        return { ...prev, status: prev.status === 'active' ? 'inactive' : 'active' };
-      }
+      if (prev && prev.id === id) return { ...prev, status: newStatus };
       return prev;
     });
+    try {
+      await fetch(`${API_BASE}/api/admin/customers/${id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ isActive: newStatus === 'active' }),
+      });
+    } catch {}
   };
 
-  const handleDeleteCustomer = (id: string) => {
+  const handleDeleteCustomer = async (id: string) => {
     setCustomersList(prev => prev.filter(c => c.id !== id));
     setSelectedCustomer(null);
+    try {
+      await fetch(`${API_BASE}/api/admin/customers/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+    } catch {}
+  };
+
+  const handleUpdateCustomer = async (id: string, data: any) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/customers/${id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        await fetchCustomers();
+      }
+    } catch {}
   };
 
   const filteredCustomers = useMemo(() => {
@@ -453,7 +479,7 @@ export default function CustomersPage() {
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="sarah@email.com" 
+                        placeholder="Enter customer email" 
                         className="pl-10 h-11 rounded-lg border-border/50 focus:border-primary transition-all" 
                       />
                     </div>

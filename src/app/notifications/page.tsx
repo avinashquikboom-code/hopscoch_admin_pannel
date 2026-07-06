@@ -480,7 +480,7 @@ export default function NotificationsPage() {
                         id="targetUsers"
                         value={formData.targetUsers}
                         onChange={(e) => setFormData({ ...formData, targetUsers: e.target.value })}
-                        placeholder="e.g. sarah@email.com, james@email.com"
+                        placeholder="Enter email addresses separated by commas"
                         className="h-10 rounded-lg"
                       />
                       <p className="text-[10px] text-muted-foreground">Comma-separated email handles targeting specific customers</p>

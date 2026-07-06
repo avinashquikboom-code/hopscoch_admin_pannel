@@ -4,17 +4,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Download,
-  FileText,
-  Calendar,
-  TrendingUp,
-  BarChart3
+  TrendingDown,
+  Package,
+  DollarSign,
+  ShoppingCart,
+  Truck,
+  AlertTriangle,
+  BarChart3,
+  Percent,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
 } from 'lucide-react';
 import {
   LineChart,
@@ -29,6 +34,9 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
+  Legend,
 } from 'recharts';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -37,622 +45,424 @@ function authHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
-const salesData = [
-  { month: 'Jan', revenue: 45000, orders: 320 },
-  { month: 'Feb', revenue: 52000, orders: 380 },
-  { month: 'Mar', revenue: 48000, orders: 350 },
-  { month: 'Apr', revenue: 61000, orders: 450 },
-  { month: 'May', revenue: 58000, orders: 420 },
-  { month: 'Jun', revenue: 72000, orders: 520 },
-];
+const COLORS = ['#14b8a6', '#0d9488', '#2dd4bf', '#6366f1', '#f59e0b', '#f43f5e'];
 
-const customerData = [
-  { name: 'New Customers', value: 450 },
-  { name: 'Returning', value: 320 },
-  { name: 'Inactive', value: 180 },
-];
+const fmt = (n: number) => n?.toLocaleString('en-IN') ?? '0';
+const fmtCurrency = (n: number) => `₹${fmt(Math.round(n))}`;
+const fmtPct = (n: number) => `${(n ?? 0).toFixed(1)}%`;
 
-const productData = [
-  { name: 'Dresses', sales: 2340 },
-  { name: 'Tops', sales: 1890 },
-  { name: 'Bottoms', sales: 1560 },
-  { name: 'Accessories', sales: 1200 },
-  { name: 'Footwear', sales: 890 },
-];
+interface AnalyticsData {
+  summary: { totalRevenue: number; totalOrders: number; avgOrderValue: number; conversionRate: number };
+  monthlyTrend: { month: string; revenue: number; orders: number; returns: number }[];
+  orders: { pending: number; confirmed: number; processing: number; shipped: number; delivered: number; cancelled: number; total: number };
+  payments: { paid: number; failed: number; refunded: number; totalRevenue: number };
+  returns: { total: number; pending: number; approved: number; rejected: number };
+  inventory: { total: number; lowStock: number; outOfStock: number; lowStockProducts: string[] };
+  users: { total: number; active: number; new: number; inactive: number };
+  products: { total: number; topProducts: { name: string; sales: number }[] };
+}
 
-const COLORS = ['#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4'];
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card border border-border/40 rounded-xl p-3 shadow-xl text-sm">
+        <p className="font-bold text-foreground mb-1">{label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} style={{ color: p.color }} className="font-medium">
+            {p.name}: {typeof p.value === 'number' && p.name?.includes('Revenue') ? fmtCurrency(p.value) : fmt(p.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+function MetricCard({ label, value, change, up, colorClass, note }: { label: string; value: string; change?: string; up?: boolean; colorClass?: string; note?: string }) {
+  return (
+    <div className="p-4 rounded-xl border border-border/30 bg-muted/10">
+      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className={`text-xl font-black mt-2 ${colorClass ?? 'text-foreground'}`}>{value}</p>
+      {(change || note) && (
+        <p className={`text-xs font-semibold mt-1 flex items-center gap-1 ${up === undefined ? 'text-muted-foreground' : up ? 'text-emerald-500' : 'text-rose-500'}`}>
+          {up === true && <ArrowUpRight className="h-3 w-3" />}
+          {up === false && <ArrowDownRight className="h-3 w-3" />}
+          {change ?? note}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-muted/30" />)}
+      </div>
+      <div className="h-72 rounded-xl bg-muted/20" />
+    </div>
+  );
+}
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState('30days');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true); setError(null);
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await fetch(`${API_BASE}/api/reports/dashboard`, { headers: authHeaders() });
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
-  }, []);
+      const res = await fetch(`${API_BASE}/api/admin/analytics/full?date_range=${dateRange}`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load analytics');
+      setData(json.data ?? json);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange]);
 
-  useEffect(() => { fetchReports(); }, [fetchReports]);
+  useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
+
+  const d = data;
+
+  const customerPieData = d ? [
+    { name: 'Active', value: d.users.active, color: '#14b8a6' },
+    { name: 'Inactive', value: d.users.inactive, color: '#0d9488' },
+    { name: 'New', value: d.users.new, color: '#2dd4bf' },
+  ] : [];
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-12">
         <PageHeader
           titlePart1="Business"
           titlePart2="Analytics"
           badgeText="Reports Command Center"
-          subtitle="View, export, and analyze business performance reports."
+          subtitle="Track, analyze, and export your store's performance metrics across all channels."
           actions={
-            <select 
-              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm select-none outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-            >
-              <option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option>
-              <option value="90days">Last 90 Days</option>
-              <option value="1year">Last Year</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                className="flex h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+              >
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
+                <option value="1year">Last Year</option>
+              </select>
+              <Button onClick={fetchAnalytics} variant="outline" size="sm" className="rounded-lg h-10 px-4 flex items-center gap-2">
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-lg h-10 px-4 flex items-center gap-2">
+                <Download className="h-4 w-4" /> Export
+              </Button>
+            </div>
           }
         />
 
-        <Tabs defaultValue="sales" className="space-y-6">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-7 w-full">
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="shipping">Shipping</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="refunds">Refunds</TabsTrigger>
-            <TabsTrigger value="returns">Returns</TabsTrigger>
-            <TabsTrigger value="courier">Courier</TabsTrigger>
-          </TabsList>
+        {error && (
+          <div className="p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-sm font-medium flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
+          </div>
+        )}
 
-          <TabsContent value="sales">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+        {/* Top KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: 'Total Revenue', value: d ? fmtCurrency(d.summary.totalRevenue) : '—', sub: 'Fulfilled orders', trend: true, icon: <DollarSign className="h-5 w-5" />, accent: 'bg-primary/10 text-primary', glow: 'from-[#14b8a6]/5 to-[#0d9488]/5' },
+            { label: 'Total Orders', value: d ? fmt(d.summary.totalOrders) : '—', sub: `${d?.orders.pending ?? 0} pending`, trend: true, icon: <ShoppingCart className="h-5 w-5" />, accent: 'bg-blue-500/10 text-blue-500', glow: 'from-blue-500/5 to-indigo-500/5' },
+            { label: 'Avg Order Value', value: d ? fmtCurrency(d.summary.avgOrderValue) : '—', sub: 'Per transaction', trend: true, icon: <BarChart3 className="h-5 w-5" />, accent: 'bg-amber-500/10 text-amber-500', glow: 'from-amber-500/5 to-orange-500/5' },
+            { label: 'Conversion Rate', value: d ? fmtPct(d.summary.conversionRate) : '—', sub: 'Orders ÷ customers', trend: null, icon: <Percent className="h-5 w-5" />, accent: 'bg-rose-500/10 text-rose-500', glow: 'from-rose-500/5 to-pink-500/5' },
+          ].map((kpi) => (
+            <Card key={kpi.label} className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+              <div className={`absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br ${kpi.glow} blur-xl opacity-50 group-hover:scale-150 transition-all`} />
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>Sales Report</CardTitle>
-                    <CardDescription>Revenue and order trends</CardDescription>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{kpi.label}</span>
+                    <h3 className="text-2xl font-black text-foreground tracking-tight mt-2">{loading ? <span className="animate-pulse text-muted-foreground">...</span> : kpi.value}</h3>
+                    <p className="text-xs text-muted-foreground mt-1.5 font-light">{kpi.sub}</p>
                   </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+                  <div className={`p-2.5 rounded-xl ${kpi.accent}`}>{kpi.icon}</div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                          <p className="text-2xl font-bold">$336,000</p>
-                          <p className="text-xs text-success mt-1">+12.5% from last period</p>
-                        </div>
-                        <TrendingUp className="h-8 w-8 text-success" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                          <p className="text-2xl font-bold">2,440</p>
-                          <p className="text-xs text-success mt-1">+8.2% from last period</p>
-                        </div>
-                        <FileText className="h-8 w-8 text-primary" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Avg Order Value</p>
-                          <p className="text-2xl font-bold">$137.70</p>
-                          <p className="text-xs text-success mt-1">+4.1% from last period</p>
-                        </div>
-                        <BarChart3 className="h-8 w-8 text-warning" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
-                          <p className="text-2xl font-bold">3.2%</p>
-                          <p className="text-xs text-warning mt-1">-0.5% from last period</p>
-                        </div>
-                        <Calendar className="h-8 w-8 text-info" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" className="text-muted-foreground" />
-                    <YAxis className="text-muted-foreground" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="var(--primary)" 
-                      strokeWidth={2}
-                      name="Revenue"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="orders" 
-                      stroke="var(--chart-2)" 
-                      strokeWidth={2}
-                      name="Orders"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
               </CardContent>
             </Card>
-          </TabsContent>
+          ))}
+        </div>
 
-          <TabsContent value="customers">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Customer Report</CardTitle>
-                    <CardDescription>Customer acquisition and retention</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Customer Distribution</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={customerData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {customerData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        {/* Tabs Panel */}
+        <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
+          <CardContent className="p-6">
+            <Tabs defaultValue="sales">
+              <TabsList className="mb-6 bg-muted/40 p-1 border border-border/20 rounded-xl flex overflow-x-auto w-full lg:w-fit justify-start h-auto gap-0.5">
+                {[
+                  { value: 'sales', color: 'bg-[#14b8a6]', label: 'Sales' },
+                  { value: 'customers', color: 'bg-blue-500', label: 'Customers' },
+                  { value: 'products', color: 'bg-purple-500', label: 'Products' },
+                  { value: 'inventory', color: 'bg-amber-500', label: 'Inventory' },
+                  { value: 'orders', color: 'bg-indigo-500', label: 'Orders' },
+                  { value: 'payments', color: 'bg-emerald-500', label: 'Payments' },
+                  { value: 'returns', color: 'bg-rose-500', label: 'Returns' },
+                ].map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} className="rounded-lg py-2 px-4 text-xs font-semibold flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${t.color}`} /> {t.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {/* SALES */}
+              <TabsContent value="sales" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <MetricCard label="Total Revenue" value={fmtCurrency(d?.summary.totalRevenue ?? 0)} up />
+                      <MetricCard label="Total Orders" value={fmt(d?.summary.totalOrders ?? 0)} up />
+                      <MetricCard label="Avg Order Value" value={fmtCurrency(d?.summary.avgOrderValue ?? 0)} up />
+                      <MetricCard label="Conversion Rate" value={fmtPct(d?.summary.conversionRate ?? 0)} />
+                    </div>
+                    <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                      <h3 className="text-sm font-bold text-foreground mb-4">Revenue & Orders — Last 6 Months</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={d?.monthlyTrend ?? []}>
+                          <defs>
+                            <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Area type="monotone" dataKey="revenue" stroke="#14b8a6" strokeWidth={2} fill="url(#revGrad)" name="Revenue (₹)" />
+                          <Line type="monotone" dataKey="orders" stroke="#6366f1" strokeWidth={2} dot={false} name="Orders" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* CUSTOMERS */}
+              <TabsContent value="customers" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <MetricCard label="Total Customers" value={fmt(d?.users.total ?? 0)} up />
+                      <MetricCard label="Active" value={fmt(d?.users.active ?? 0)} colorClass="text-emerald-500" up />
+                      <MetricCard label="New (This Period)" value={fmt(d?.users.new ?? 0)} up />
+                      <MetricCard label="Inactive" value={fmt(d?.users.inactive ?? 0)} colorClass="text-rose-500" up={false} />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                        <h3 className="text-sm font-bold text-foreground mb-4">Customer Segmentation</h3>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <PieChart>
+                            <Pie data={customerPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value">
+                              {customerPieData.map((entry, index) => (
+                                <Cell key={index} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="flex justify-center gap-5 mt-2">
+                          {customerPieData.map((d) => (
+                            <div key={d.name} className="flex items-center gap-1.5">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
+                              <span className="text-xs text-muted-foreground">{d.name} ({d.value})</span>
+                            </div>
                           ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'var(--card)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '0.5rem',
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="grid grid-cols-3 gap-2">
-                      {customerData.map((item, index) => (
-                        <div key={item.name} className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                          />
-                          <span className="text-sm text-muted-foreground">{item.name}</span>
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                        <h3 className="text-sm font-bold text-foreground mb-4">Key Breakdown</h3>
+                        <div className="space-y-2.5">
+                          {[
+                            { label: 'Total Customers', value: fmt(d?.users.total ?? 0), bar: 'bg-[#14b8a6]' },
+                            { label: 'Active Customers', value: fmt(d?.users.active ?? 0), bar: 'bg-emerald-500' },
+                            { label: 'New This Period', value: fmt(d?.users.new ?? 0), bar: 'bg-blue-500' },
+                            { label: 'Inactive Customers', value: fmt(d?.users.inactive ?? 0), bar: 'bg-rose-500' },
+                          ].map((m) => (
+                            <div key={m.label} className="flex items-center justify-between p-3 rounded-lg border border-border/30 bg-muted/10">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-2 h-5 rounded-sm ${m.bar}`} />
+                                <span className="text-sm font-medium text-foreground">{m.label}</span>
+                              </div>
+                              <span className="text-sm font-black text-foreground">{m.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* PRODUCTS */}
+              <TabsContent value="products" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <MetricCard label="Total Published" value={fmt(d?.products.total ?? 0)} up />
+                      <MetricCard label="Top Seller" value={d?.products.topProducts?.[0]?.name ?? '—'} note={`${d?.products.topProducts?.[0]?.sales ?? 0} units`} />
+                      <MetricCard label="Low Stock SKUs" value={fmt(d?.inventory.lowStock ?? 0)} up={false} colorClass="text-amber-500" />
+                    </div>
+                    {(d?.products.topProducts?.length ?? 0) > 0 && (
+                      <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                        <h3 className="text-sm font-bold text-foreground mb-4">Top Selling Products</h3>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={d?.products.topProducts ?? []} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} horizontal={false} />
+                            <XAxis type="number" tick={{ fontSize: 11 }} />
+                            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="sales" fill="#14b8a6" radius={[0, 4, 4, 0]} name="Units Sold" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                    {(d?.products.topProducts?.length ?? 0) === 0 && (
+                      <div className="p-8 rounded-xl border border-border/30 bg-muted/5 text-center text-muted-foreground text-sm">No order data yet for this period</div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+
+              {/* INVENTORY */}
+              <TabsContent value="inventory" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[
+                        { label: 'Total SKUs', value: fmt(d?.inventory.total ?? 0), note: 'All inventory items', Icon: Package, cls: 'bg-primary/10 text-primary' },
+                        { label: 'Low Stock', value: fmt(d?.inventory.lowStock ?? 0), note: '≤ 5 units remaining', Icon: AlertTriangle, cls: 'bg-amber-500/10 text-amber-500' },
+                        { label: 'Out of Stock', value: fmt(d?.inventory.outOfStock ?? 0), note: '0 units — needs restock', Icon: TrendingDown, cls: 'bg-rose-500/10 text-rose-500' },
+                      ].map((m) => (
+                        <div key={m.label} className="p-5 rounded-xl border border-border/30 bg-muted/10 flex items-center gap-4">
+                          <div className={`p-3 rounded-xl ${m.cls}`}><m.Icon className="h-5 w-5" /></div>
+                          <div>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{m.label}</p>
+                            <p className="text-2xl font-black text-foreground mt-0.5">{m.value}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 font-medium">{m.note}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </div>
+                    {(d?.inventory.lowStockProducts?.length ?? 0) > 0 && (
+                      <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                        <h3 className="text-sm font-bold text-foreground mb-3">⚠ Low Stock Alerts</h3>
+                        <div className="space-y-2">
+                          {d?.inventory.lowStockProducts.map((product, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                              <span className="text-sm font-medium text-foreground">{product}</span>
+                              <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">Low Stock</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
 
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Customer Metrics</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 border rounded-lg">
-                        <span className="text-sm">New Customers</span>
-                        <span className="font-semibold">450</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 border rounded-lg">
-                        <span className="text-sm">Returning Customers</span>
-                        <span className="font-semibold">320</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 border rounded-lg">
-                        <span className="text-sm">Inactive Customers</span>
-                        <span className="font-semibold">180</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 border rounded-lg">
-                        <span className="text-sm">Customer Lifetime Value</span>
-                        <span className="font-semibold">$485.20</span>
-                      </div>
+              {/* ORDERS */}
+              <TabsContent value="orders" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                      <MetricCard label="Total Orders" value={fmt(d?.orders.total ?? 0)} up />
+                      <MetricCard label="Pending" value={fmt(d?.orders.pending ?? 0)} up={false} colorClass="text-amber-500" note="Awaiting action" />
+                      <MetricCard label="Confirmed" value={fmt(d?.orders.confirmed ?? 0)} up colorClass="text-blue-500" />
+                      <MetricCard label="Processing" value={fmt(d?.orders.processing ?? 0)} up colorClass="text-indigo-500" />
+                      <MetricCard label="Delivered" value={fmt(d?.orders.delivered ?? 0)} up colorClass="text-emerald-500" />
+                      <MetricCard label="Cancelled" value={fmt(d?.orders.cancelled ?? 0)} up={false} colorClass="text-rose-500" />
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="products">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Product Report</CardTitle>
-                    <CardDescription>Product performance and sales</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={productData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" className="text-muted-foreground" />
-                    <YAxis className="text-muted-foreground" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-                    <Bar dataKey="sales" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="inventory">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Inventory Report</CardTitle>
-                    <CardDescription>Stock levels and inventory status</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Products</p>
-                          <p className="text-2xl font-bold">892</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Low Stock</p>
-                          <p className="text-2xl font-bold text-warning">12</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Out of Stock</p>
-                          <p className="text-2xl font-bold text-destructive">3</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <h3 className="font-semibold">Low Stock Alerts</h3>
-                  {['Summer Floral Dress', 'Classic White Blouse', 'High-Waist Jeans'].map((product, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                      <span className="text-sm">{product}</span>
-                      <Badge variant="outline" className="text-warning">Low Stock</Badge>
+                    <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                      <h3 className="text-sm font-bold text-foreground mb-4">Monthly Orders Trend</h3>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={d?.monthlyTrend ?? []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="orders" fill="#6366f1" radius={[4, 4, 0, 0]} name="Orders" />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </>
+                )}
+              </TabsContent>
 
-          <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Order Report</CardTitle>
-                    <CardDescription>Order volume and fulfillment metrics</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                      <p className="text-2xl font-bold">2,440</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold text-warning">142</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Delivered</p>
-                      <p className="text-2xl font-bold text-success">2,120</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
-                      <p className="text-2xl font-bold text-destructive">178</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              {/* PAYMENTS */}
+              <TabsContent value="payments" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <MetricCard label="Payment Revenue" value={fmtCurrency(d?.payments.totalRevenue ?? 0)} up />
+                      <MetricCard label="Successful" value={fmt(d?.payments.paid ?? 0)} up colorClass="text-emerald-500" />
+                      <MetricCard label="Failed" value={fmt(d?.payments.failed ?? 0)} up={false} colorClass="text-rose-500" />
+                      <MetricCard label="Refunded" value={fmt(d?.payments.refunded ?? 0)} up={false} colorClass="text-amber-500" />
+                    </div>
+                    <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                      <h3 className="text-sm font-bold text-foreground mb-4">Revenue Trend</h3>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={d?.monthlyTrend ?? []}>
+                          <defs>
+                            <linearGradient id="payGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#payGrad)" name="Revenue (₹)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
 
-          <TabsContent value="shipping">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Shipping Report</CardTitle>
-                    <CardDescription>Shipping performance and delivery metrics</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Shipments</p>
-                      <p className="text-2xl font-bold">4,821</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Avg Delivery Time</p>
-                      <p className="text-2xl font-bold">3.2 days</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">On-Time Delivery</p>
-                      <p className="text-2xl font-bold text-success">94.5%</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Returns</p>
-                      <p className="text-2xl font-bold">2.1%</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Payment Report</CardTitle>
-                    <CardDescription>Payment transactions and revenue</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                      <p className="text-2xl font-bold">$336,000</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Successful</p>
-                      <p className="text-2xl font-bold text-success">8,241</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Failed</p>
-                      <p className="text-2xl font-bold text-destructive">48</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Refunded</p>
-                      <p className="text-2xl font-bold text-warning">67</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="refunds">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Refund Report</CardTitle>
-                    <CardDescription>Refund requests and processing</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Refunds</p>
-                      <p className="text-2xl font-bold">67</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold text-warning">12</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                      <p className="text-2xl font-bold text-success">45</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                      <p className="text-2xl font-bold">$12,450</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="returns">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Return Report</CardTitle>
-                    <CardDescription>Return requests and processing</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Total Returns</p>
-                      <p className="text-2xl font-bold">98</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
-                      <p className="text-2xl font-bold text-warning">15</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                      <p className="text-2xl font-bold text-success">58</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Rejected</p>
-                      <p className="text-2xl font-bold text-destructive">25</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="courier">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Courier Report</CardTitle>
-                    <CardDescription>Courier partner performance</CardDescription>
-                  </div>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Delhivery</p>
-                      <p className="text-2xl font-bold">1,820</p>
-                      <p className="text-xs text-success mt-1">96.5% delivery rate</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">Blue Dart</p>
-                      <p className="text-2xl font-bold">980</p>
-                      <p className="text-xs text-success mt-1">94.8% delivery rate</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <p className="text-sm font-medium text-muted-foreground">DTDC</p>
-                      <p className="text-2xl font-bold">640</p>
-                      <p className="text-xs text-warning mt-1">91.2% delivery rate</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              {/* RETURNS */}
+              <TabsContent value="returns" className="mt-0 space-y-6">
+                {loading ? <LoadingSkeleton /> : (
+                  <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <MetricCard label="Total Returns" value={fmt(d?.returns.total ?? 0)} />
+                      <MetricCard label="Pending Review" value={fmt(d?.returns.pending ?? 0)} up={false} colorClass="text-amber-500" note="Needs action" />
+                      <MetricCard label="Approved" value={fmt(d?.returns.approved ?? 0)} up colorClass="text-emerald-500" />
+                      <MetricCard label="Rejected" value={fmt(d?.returns.rejected ?? 0)} up={false} colorClass="text-rose-500" />
+                    </div>
+                    <div className="p-4 rounded-xl border border-border/30 bg-muted/5">
+                      <h3 className="text-sm font-bold text-foreground mb-4">Returns vs Orders — Last 6 Months</h3>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={d?.monthlyTrend ?? []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Line type="monotone" dataKey="orders" stroke="#6366f1" strokeWidth={2} dot={false} name="Orders" />
+                          <Line type="monotone" dataKey="returns" stroke="#f43f5e" strokeWidth={2} dot={false} name="Returns" strokeDasharray="4 2" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );

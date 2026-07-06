@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/toast';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
@@ -39,20 +40,6 @@ const DEFAULT_STATS = [
   { label: 'Customers', value: '—', icon: Users },
   { label: 'Revenue', value: '—', icon: TrendingUp },
   { label: 'Score', value: '—', icon: Star },
-];
-
-const DEFAULT_SESSIONS = [
-  { id: '1', device: 'MacBook Pro', browser: 'Chrome', os: 'macOS', location: 'Mumbai, India', ip: '192.168.1.1', current: true, lastActive: 'Now' },
-  { id: '2', device: 'iPhone 14 Pro', browser: 'Safari', os: 'iOS', location: 'Mumbai, India', ip: '192.168.1.2', current: false, lastActive: '2 hours ago' },
-  { id: '3', device: 'Windows PC', browser: 'Firefox', os: 'Windows 11', location: 'Delhi, India', ip: '192.168.1.3', current: false, lastActive: '1 day ago' },
-];
-
-const DEFAULT_ACTIVITY = [
-  { action: 'Updated product pricing', time: '5 min ago', icon: TrendingUp, color: 'bg-[#14b8a6]/15 text-[#14b8a6]' },
-  { action: 'Approved 3 refund requests', time: '1 hour ago', icon: CheckCircle2, color: 'bg-emerald-500/15 text-emerald-500' },
-  { action: 'Added new shipping zone', time: '3 hours ago', icon: MapPin, color: 'bg-blue-500/15 text-blue-500' },
-  { action: 'Published flash sale banner', time: '6 hours ago', icon: Star, color: 'bg-amber-500/15 text-amber-500' },
-  { action: 'Reviewed 12 new orders', time: '1 day ago', icon: ShoppingBag, color: 'bg-violet-500/15 text-violet-500' },
 ];
 
 const DEFAULT_NOTIFS = [
@@ -95,6 +82,7 @@ function FieldRow({ id, label, icon: Icon, children }: { id: string; label: stri
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -102,6 +90,12 @@ export default function ProfilePage() {
   const [showCurrentPwd, setShowCurrentPwd] = useState(false);
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [notifs, setNotifs] = useState(DEFAULT_NOTIFS);
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const [profileData, setProfileData] = useState({
     firstName: '', lastName: '', email: '', phone: '',
@@ -117,7 +111,18 @@ export default function ProfilePage() {
     if (stored) {
       try {
         const p = JSON.parse(stored);
-        setProfileData(prev => ({ ...prev, ...p }));
+        setProfileData(prev => ({
+          ...prev,
+          firstName: p.firstName || '',
+          lastName: p.lastName || '',
+          email: p.email || '',
+          phone: p.phone || '',
+          location: p.location || 'Mumbai, India',
+          bio: p.bio || '',
+          avatarUrl: p.avatarUrl || '',
+          role: p.role || 'ADMIN',
+          createdAt: p.createdAt || '',
+        }));
       } catch { }
     }
     const token = localStorage.getItem('auth_token');
@@ -130,12 +135,42 @@ export default function ProfilePage() {
         );
         const json = await res.json();
         if (res.ok && json.data) {
-          setProfileData(prev => ({ ...prev, ...json.data }));
+          setProfileData(prev => ({
+            ...prev,
+            firstName: json.data.firstName || '',
+            lastName: json.data.lastName || '',
+            email: json.data.email || '',
+            phone: json.data.phone || '',
+            location: json.data.location || 'Mumbai, India',
+            bio: json.data.bio || '',
+            avatarUrl: json.data.avatarUrl || '',
+            role: json.data.role || 'ADMIN',
+            createdAt: json.data.createdAt || '',
+          }));
           localStorage.setItem('user', JSON.stringify(json.data));
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        // Error occurred
+      }
     };
+
+    const fetchSessions = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/admin/sessions`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const json = await res.json();
+        if (res.ok && json.data) {
+          setSessions(json.data);
+        }
+      } catch (e) {
+        // Error occurred
+      }
+    };
+
     fetchProfile();
+    fetchSessions();
   }, []);
 
   const handleSave = async () => {
@@ -166,6 +201,65 @@ export default function ProfilePage() {
       toast.error(err.message || 'Unable to save changes.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!currentPassword) {
+      toast.error('Current password is required!');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long!');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and Confirm password do not match!');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error('Session expired. Please log in.');
+      setIsUpdatingPassword(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/change-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword,
+            newPassword,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || 'Failed to update password');
+      }
+
+      toast.success('Password updated successfully! Please re-login with your new credentials.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+      setTimeout(() => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+      }, 2500);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update password.');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -295,7 +389,16 @@ export default function ProfilePage() {
                 <Button variant="outline" size="sm" className="rounded-xl h-9 px-3.5 text-xs font-semibold gap-1.5 border-border/40">
                   <Zap className="h-3.5 w-3.5 text-[#14b8a6]" /> Activity
                 </Button>
-                <Button variant="outline" size="sm" className="rounded-xl h-9 px-3.5 text-xs font-semibold gap-1.5 border-rose-500/20 text-rose-500 hover:bg-rose-500/10">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl h-9 px-3.5 text-xs font-semibold gap-1.5 border-rose-500/20 text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                  onClick={() => {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user');
+                    router.push('/login');
+                  }}
+                >
                   <LogOut className="h-3.5 w-3.5" /> Sign Out
                 </Button>
               </div>
@@ -384,7 +487,7 @@ export default function ProfilePage() {
                           value={profileData.email}
                           onChange={e => setProfileData(p => ({ ...p, email: e.target.value }))}
                           className="h-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all"
-                          placeholder="admin@example.com"
+                          placeholder="Enter your email"
                         />
                       </FieldRow>
 
@@ -454,7 +557,13 @@ export default function ProfilePage() {
                       <div className="space-y-2">
                         <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Lock className="h-3 w-3" /> Current Password</Label>
                         <div className="relative">
-                          <Input type={showCurrentPwd ? 'text' : 'password'} className="h-10 pr-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all" placeholder="Enter current password" />
+                          <Input
+                            type={showCurrentPwd ? 'text' : 'password'}
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className="h-10 pr-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all"
+                            placeholder="Enter current password"
+                          />
                           <button onClick={() => setShowCurrentPwd(p => !p)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                             {showCurrentPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -465,7 +574,13 @@ export default function ProfilePage() {
                         <div className="space-y-2">
                           <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Key className="h-3 w-3" /> New Password</Label>
                           <div className="relative">
-                            <Input type={showNewPwd ? 'text' : 'password'} className="h-10 pr-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all" placeholder="Min 8 characters" />
+                            <Input
+                              type={showNewPwd ? 'text' : 'password'}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              className="h-10 pr-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all"
+                              placeholder="Min 8 characters"
+                            />
                             <button onClick={() => setShowNewPwd(p => !p)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                               {showNewPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -473,13 +588,24 @@ export default function ProfilePage() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Key className="h-3 w-3" /> Confirm Password</Label>
-                          <Input type="password" className="h-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all" placeholder="Re-enter new password" />
+                          <Input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="h-10 rounded-xl border-border/50 bg-muted/5 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/25 transition-all"
+                            placeholder="Re-enter new password"
+                          />
                         </div>
                       </div>
 
                       <div className="flex justify-end">
-                        <Button className="rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0f766e] hover:from-[#2dd4bf] hover:to-[#0d9488] text-white shadow-md shadow-[#14b8a6]/15 h-10 px-6 text-xs font-bold gap-2">
-                          <Lock className="h-4 w-4" /> Update Password
+                        <Button
+                          disabled={isUpdatingPassword}
+                          onClick={handleUpdatePassword}
+                          className="rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0f766e] hover:from-[#2dd4bf] hover:to-[#0d9488] text-white shadow-md shadow-[#14b8a6]/15 h-10 px-6 text-xs font-bold gap-2 cursor-pointer"
+                        >
+                          <Lock className="h-4 w-4" />
+                          {isUpdatingPassword ? 'Updating...' : 'Update Password'}
                         </Button>
                       </div>
                     </CardContent>
@@ -499,13 +625,13 @@ export default function ProfilePage() {
                           <p className="text-xs text-muted-foreground mt-0.5">Devices currently logged into your account.</p>
                         </div>
                         <Badge className="bg-[#14b8a6]/10 text-[#14b8a6] border border-[#14b8a6]/20 rounded-lg px-2.5 text-xs font-bold">
-                          {DEFAULT_SESSIONS.length} Active
+                          {sessions.length} Active
                         </Badge>
                       </div>
                       <Divider />
 
                       <div className="space-y-3">
-                        {DEFAULT_SESSIONS.map((s) => (
+                        {sessions.map((s: any) => (
                           <div key={s.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all
                             ${s.current ? 'border-[#14b8a6]/30 bg-[#14b8a6]/5' : 'border-border/30 bg-muted/5 hover:bg-muted/10'}`}
                           >
@@ -629,18 +755,7 @@ export default function ProfilePage() {
                 <div className="h-px bg-gradient-to-r from-border/50 via-border/10 to-transparent" />
 
                 <div className="space-y-3">
-                  {DEFAULT_ACTIVITY.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
-                        <item.icon className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <p className="text-xs font-semibold text-foreground leading-snug">{item.action}</p>
-                        <p className="text-[9px] text-muted-foreground mt-0.5">{item.time}</p>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0 mt-1" />
-                    </div>
-                  ))}
+                  <p className="text-xs text-muted-foreground text-center py-4">No recent activity to display</p>
                 </div>
               </CardContent>
             </Card>

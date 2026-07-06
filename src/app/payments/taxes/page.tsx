@@ -2,17 +2,27 @@
 
 import { useState } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, Receipt, Percent } from 'lucide-react';
+import { Plus, Edit, Trash2, Percent } from 'lucide-react';
 import { AppDrawer } from '@/components/ui/app-drawer';
 import { PageHeader } from '@/components/layout/page-header';
 
-const taxRules = [
+interface TaxRule {
+  id: string;
+  name: string;
+  category: string;
+  rate: number;
+  type: string;
+  hsn: string;
+  active: boolean;
+}
+
+const taxRules: TaxRule[] = [
   { id: '1', name: 'GST 5% — Apparel (≤₹999)', category: 'Apparel', rate: 5, type: 'inclusive', hsn: '6101', active: true },
   { id: '2', name: 'GST 12% — Apparel (>₹999)', category: 'Apparel', rate: 12, type: 'inclusive', hsn: '6101', active: true },
   { id: '3', name: 'GST 18% — Accessories', category: 'Accessories', rate: 18, type: 'exclusive', hsn: '6217', active: true },
@@ -27,15 +37,61 @@ const gstStats = [
 ];
 
 export default function TaxesPage() {
-  const [rules, setRules] = useState(taxRules);
+  const [rules, setRules] = useState<TaxRule[]>(taxRules);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', rate: '', type: 'inclusive', hsn: '' });
+  const [editingRule, setEditingRule] = useState<TaxRule | null>(null);
+  const [form, setForm] = useState({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleOpenAdd = () => {
+    setEditingRule(null);
+    setForm({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
+    setOpen(true);
+  };
+
+  const handleOpenEdit = (rule: TaxRule) => {
+    setEditingRule(rule);
+    setForm({
+      name: rule.name,
+      category: rule.category,
+      rate: String(rule.rate),
+      type: rule.type,
+      hsn: rule.hsn,
+      active: rule.active,
+    });
+    setOpen(true);
+  };
+
+  const handleAddOrUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    setRules(rs => [...rs, { id: String(rs.length + 1), ...form, rate: Number(form.rate), active: true }]);
-    setForm({ name: '', category: '', rate: '', type: 'inclusive', hsn: '' });
+    if (editingRule) {
+      setRules(rs =>
+        rs.map(r =>
+          r.id === editingRule.id
+            ? { ...r, name: form.name, category: form.category, rate: Number(form.rate) || 0, type: form.type, hsn: form.hsn, active: form.active }
+            : r
+        )
+      );
+    } else {
+      setRules(rs => [
+        ...rs,
+        {
+          id: String(Date.now() + Math.floor(Math.random() * 1000)),
+          name: form.name,
+          category: form.category,
+          rate: Number(form.rate) || 0,
+          type: form.type,
+          hsn: form.hsn,
+          active: form.active,
+        },
+      ]);
+    }
+    setForm({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
     setOpen(false);
+    setEditingRule(null);
+  };
+
+  const handleDelete = (id: string) => {
+    setRules(rs => rs.filter(r => r.id !== id));
   };
 
   return (
@@ -46,20 +102,19 @@ export default function TaxesPage() {
           titlePart2="Tax Rules"
           badgeText="Finance Command Center"
           subtitle="Configure GST rates and tax rules for your products."
-
           actions={
-            <Button onClick={() => setOpen(true)} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
+            <Button onClick={handleOpenAdd} className="rounded-md gap-2 bg-primary text-white hover:bg-primary/95 shadow-sm shadow-[#14b8a6]/10 cursor-pointer">
               <Plus className="h-4 w-4" /> Add Tax Rule
             </Button>
           }
         />
 
         <AppDrawer
-          title="Add Tax Rule"
-          subtitle="Create a new GST/tax configuration."
+          title={editingRule ? 'Edit Tax Rule' : 'Add Tax Rule'}
+          subtitle={editingRule ? 'Update the selected GST/tax configuration.' : 'Create a new GST/tax configuration.'}
           open={open}
           onClose={setOpen}
-          onSubmit={handleAdd}
+          onSubmit={handleAddOrUpdate}
         >
           <div className="space-y-6">
             <div className="space-y-3">
@@ -73,7 +128,7 @@ export default function TaxesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-3">
                 <Label className="text-sm font-semibold">Tax Rate (%)</Label>
-                <Input type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-11 rounded-lg" />
+                <Input type="number" required value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} placeholder="e.g. 12" className="h-11 rounded-lg" />
               </div>
               <div className="space-y-3">
                 <Label className="text-sm font-semibold">HSN Code</Label>
@@ -90,6 +145,13 @@ export default function TaxesPage() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-border/30 pt-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Active Status</Label>
+                <p className="text-xs text-muted-foreground">Enable or disable this tax rule</p>
+              </div>
+              <Switch checked={form.active} onCheckedChange={checked => setForm({ ...form, active: checked })} />
             </div>
           </div>
         </AppDrawer>
@@ -131,8 +193,12 @@ export default function TaxesPage() {
                     <Badge className="text-[10px] rounded-full px-2 border-transparent bg-muted text-muted-foreground capitalize">{r.type}</Badge>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60"><Edit className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => setRules(rs => rs.filter(x => x.id !== r.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-muted/60" onClick={() => handleOpenEdit(r)}>
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-rose-500/10 text-rose-500" onClick={() => handleDelete(r.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>

@@ -500,7 +500,7 @@ export default function BannersPage() {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Festival Season Sale" 
+                    placeholder="Enter banner title" 
                     className="h-11 rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
                   />
                 </div>
