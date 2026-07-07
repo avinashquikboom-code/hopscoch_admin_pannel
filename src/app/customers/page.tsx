@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/currency-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,6 @@ import {
   Phone,
   MapPin,
   ShoppingBag,
-  Plus,
   Sparkles,
   Info,
   Calendar,
@@ -54,6 +54,7 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -87,6 +88,7 @@ const customerGradients = [
 ];
 
 export default function CustomersPage() {
+  const { fmt: fmtPrice } = useCurrency();
   const [customersList, setCustomersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,14 +163,23 @@ export default function CustomersPage() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    setCustomersList(prev => prev.filter(c => c.id !== id));
-    setSelectedCustomer(null);
     try {
-      await fetch(`${API_BASE}/api/admin/customers/${id}`, {
+      const res = await fetch(`${API_BASE}/api/admin/customers/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
       });
-    } catch {}
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete customer');
+      }
+      
+      setCustomersList(prev => prev.filter(c => c.id !== id));
+      setSelectedCustomer(null);
+      
+      toast.success('Customer deleted successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete customer');
+    }
   };
 
   const handleUpdateCustomer = async (id: string, data: any) => {
@@ -212,11 +223,7 @@ export default function CustomersPage() {
           titlePart2="Profiles"
           badgeText="Customers Command Center"
           subtitle="Manage customer accounts, view transaction histories, and analyze user spending profiles."
-          actions={
-            <Button onClick={() => setIsAddOpen(true)} className="rounded-lg bg-primary hover:bg-primary/95 text-white flex items-center gap-2 cursor-pointer h-10 shadow-sm">
-              <Plus className="h-4 w-4" /> Add Customer
-            </Button>
-          }
+          actions={null}
         />
 
         {/* Premium KPI Summary Grid */}
@@ -271,7 +278,7 @@ export default function CustomersPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-muted-foreground uppercase">Average Order Value</p>
-                  <p className="text-2xl font-bold text-foreground mt-2">${stats.avgAOV.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{fmtPrice(stats.avgAOV)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Average ticket spend per order</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-500">
@@ -364,12 +371,12 @@ export default function CustomersPage() {
 
                         {/* Total Spent */}
                         <TableCell className="py-4 text-sm font-black text-foreground">
-                          ${customer.totalSpent.toFixed(2)}
+                          {fmtPrice(customer.totalSpent)}
                         </TableCell>
 
                         {/* Avg order ticket */}
                         <TableCell className="py-4 text-sm text-foreground">
-                          ${customer.averageOrderValue.toFixed(2)}
+                          {fmtPrice(customer.averageOrderValue)}
                         </TableCell>
 
                         {/* Status */}
@@ -598,7 +605,7 @@ export default function CustomersPage() {
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
                           <DollarSign className="h-3.5 w-3.5 text-primary" /> Total Spend
                         </span>
-                        <h4 className="text-2xl font-black text-foreground mt-1.5">${selectedCustomer.totalSpent.toFixed(2)}</h4>
+                        <h4 className="text-2xl font-black text-foreground mt-1.5">{fmtPrice(selectedCustomer.totalSpent)}</h4>
                       </CardContent>
                     </Card>
 
@@ -607,7 +614,7 @@ export default function CustomersPage() {
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
                           <TrendingUp className="h-3.5 w-3.5 text-primary" /> Ticket AOV
                         </span>
-                        <h4 className="text-xl font-black text-foreground mt-2">${selectedCustomer.averageOrderValue.toFixed(2)}</h4>
+                        <h4 className="text-xl font-black text-foreground mt-2">{fmtPrice(selectedCustomer.averageOrderValue)}</h4>
                       </CardContent>
                     </Card>
                   </div>

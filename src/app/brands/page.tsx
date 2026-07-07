@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/components/ui/toast';
 import {
   Table,
   TableBody,
@@ -55,7 +56,8 @@ import {
   Info,
   Globe,
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -74,6 +76,8 @@ function normalizeBrand(raw: any) {
     isFeatured: raw.isFeatured ?? false,
     order: Number(raw.order || raw.displayOrder || 1),
     productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
+    logoUrl: raw.logoUrl || raw.logo_url || '',
+    bannerUrl: raw.bannerUrl || raw.banner_url || '',
   };
 }
 
@@ -91,6 +95,8 @@ export default function BrandsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<any | null>(null);
 
   const fetchBrands = useCallback(async () => {
@@ -108,6 +114,45 @@ export default function BrandsPage() {
 
   const handleCreateBrand = async (e: React.FormEvent) => {
     e.preventDefault();
+    let logoUrl = '';
+    let bannerUrl = '';
+
+    try {
+      if (logoFile) {
+        const logoFormData = new FormData();
+        logoFormData.append('file', logoFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const logoRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: logoFormData,
+        });
+        if (logoRes.ok) {
+          const logoJson = await logoRes.json();
+          logoUrl = logoJson.data?.url || logoJson.url || '';
+        }
+      }
+
+      if (bannerFile) {
+        const bannerFormData = new FormData();
+        bannerFormData.append('file', bannerFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const bannerRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: bannerFormData,
+        });
+        if (bannerRes.ok) {
+          const bannerJson = await bannerRes.json();
+          bannerUrl = bannerJson.data?.url || bannerJson.url || '';
+        }
+      }
+    } catch (err) {
+      console.error('Error uploading brand files:', err);
+    }
+
     const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
@@ -115,13 +160,20 @@ export default function BrandsPage() {
       isFeatured: formData.isFeatured,
       order: parseInt(formData.order) || 1,
       status: 'active',
+      logoUrl,
+      bannerUrl,
     };
     try {
       const res = await fetch(`${API_BASE}/api/brands`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-      if (res.ok) { await fetchBrands(); }
-      else { setBrandsList(prev => [...prev, normalizeBrand({ ...body, id: String(Date.now()), productCount: 0 })]); }
-    } catch { setBrandsList(prev => [...prev, normalizeBrand({ ...body, id: String(Date.now()), productCount: 0 })]); }
+      if (res.ok) { 
+        await fetchBrands();
+      }
+    } catch (err: any) { 
+      console.error(err);
+    }
     setFormData({ name: '', slug: '', description: '', isFeatured: false, order: '1' });
+    setLogoFile(null);
+    setBannerFile(null);
     setIsAddOpen(false);
   };
 
@@ -284,9 +336,17 @@ export default function BrandsPage() {
                       {/* Name & Avatar */}
                       <TableCell className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg bg-gradient-to-tr ${brandColors[idx % brandColors.length]} flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm`}>
-                            {brand.name.substring(0, 2).toUpperCase()}
-                          </div>
+                          {brand.logoUrl ? (
+                            <img 
+                              src={brand.logoUrl.startsWith('http') ? brand.logoUrl : `${API_BASE}/${brand.logoUrl}`} 
+                              alt={brand.name} 
+                              className="h-10 w-10 rounded-lg object-cover flex-shrink-0 shadow-sm"
+                            />
+                          ) : (
+                            <div className={`h-10 w-10 rounded-lg bg-gradient-to-tr ${brandColors[idx % brandColors.length]} flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm`}>
+                              {brand.name.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
                           <div className="flex flex-col min-w-0">
                             <p className="text-sm font-semibold text-foreground truncate">{brand.name}</p>
                             <p className="text-xs text-muted-foreground truncate font-normal">{brand.description}</p>
@@ -454,6 +514,74 @@ export default function BrandsPage() {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="logo" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brand Logo</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="logo"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setLogoFile(e.target.files[0]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {logoFile && (
+                        <div className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                          <img 
+                            src={URL.createObjectURL(logoFile)} 
+                            alt="logo preview" 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setLogoFile(null)}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="banner" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brand Banner</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="banner"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setBannerFile(e.target.files[0]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {bannerFile && (
+                        <div className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                          <img 
+                            src={URL.createObjectURL(bannerFile)} 
+                            alt="banner preview" 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setBannerFile(null)}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2 pt-2">
                   <input 
                     type="checkbox" 
@@ -527,8 +655,32 @@ export default function BrandsPage() {
                   </div>
                 </div>
 
-                {/* Content */}
-                <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                 {/* Content */}
+                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  {/* Brand Banner/Logo Preview */}
+                  {selectedBrand.bannerUrl ? (
+                    <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4">
+                      <img 
+                        src={selectedBrand.bannerUrl.startsWith('http') ? selectedBrand.bannerUrl : `${API_BASE}/${selectedBrand.bannerUrl}`} 
+                        alt={selectedBrand.name} 
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                        Brand Banner
+                      </span>
+                    </div>
+                  ) : selectedBrand.logoUrl ? (
+                    <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
+                      <img 
+                        src={selectedBrand.logoUrl.startsWith('http') ? selectedBrand.logoUrl : `${API_BASE}/${selectedBrand.logoUrl}`} 
+                        alt={selectedBrand.name} 
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                        Brand Logo
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
                       <CardContent className="p-4">

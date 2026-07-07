@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/components/ui/toast';
 import {
   Table,
   TableBody,
@@ -55,7 +56,8 @@ import {
   Info,
   Sparkles,
   ListCollapse,
-  EyeOff
+  EyeOff,
+  X
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -70,9 +72,11 @@ function normalizeCategory(raw: any) {
     name: raw.name || 'Unnamed Category',
     slug: raw.slug || raw.name?.toLowerCase().replace(/\s+/g, '-') || '',
     description: raw.description || '',
-    order: Number(raw.order || raw.displayOrder || 1),
+    order: Number(raw.order || raw.sortOrder || raw.displayOrder || 1),
     isVisible: raw.isVisible ?? raw.isActive ?? true,
     productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
+    iconUrl: raw.iconUrl || raw.icon_url || '',
+    bannerUrl: raw.bannerUrl || raw.banner_url || '',
     children: Array.isArray(raw.children) ? raw.children.map((c: any) => ({
       id: c.id || c._id,
       name: c.name || '',
@@ -90,6 +94,8 @@ export default function CategoriesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({ name: '', slug: '', description: '', order: '1', isVisible: true });
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [bannerFiles, setBannerFiles] = useState<File[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -122,45 +128,124 @@ export default function CategoriesPage() {
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    let iconUrl = '';
+    let bannerUrl = '';
+
+    try {
+      if (iconFile) {
+        const iconFormData = new FormData();
+        iconFormData.append('file', iconFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const iconRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: iconFormData,
+        });
+        if (iconRes.ok) {
+          const iconJson = await iconRes.json();
+          iconUrl = iconJson.data?.url || iconJson.url || '';
+        }
+      }
+
+      if (bannerFiles.length > 0) {
+        const uploadedUrls: string[] = [];
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+        for (const file of bannerFiles) {
+          const bannerFormData = new FormData();
+          bannerFormData.append('file', file);
+          const bannerRes = await fetch(`${API_BASE}/api/admin/upload`, {
+            method: 'POST',
+            headers: uploadHeaders,
+            body: bannerFormData,
+          });
+          if (bannerRes.ok) {
+            const bannerJson = await bannerRes.json();
+            const url = bannerJson.data?.url || bannerJson.url || '';
+            if (url) uploadedUrls.push(url);
+          }
+        }
+        bannerUrl = uploadedUrls.join(',');
+      }
+    } catch (err) {
+      console.error('Error uploading category files:', err);
+    }
+
     const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       description: formData.description,
       order: parseInt(formData.order) || 1,
       isVisible: formData.isVisible,
+      iconUrl,
+      bannerUrl,
     };
     try {
       const res = await fetch(`${API_BASE}/api/categories`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-      if (res.ok) { await fetchCategories(); }
-      else { setCategoriesList(prev => [...prev, normalizeCategory({ ...body, id: String(Date.now()), productCount: 0, children: [] })]); }
-    } catch { setCategoriesList(prev => [...prev, normalizeCategory({ ...body, id: String(Date.now()), productCount: 0, children: [] })]); }
-    setIsAddOpen(false);
-    setFormData({ name: '', slug: '', description: '', order: '1', isVisible: true });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to create category');
+      }
+      
+      toast.success('Category added successfully');
+      
+      await fetchCategories();
+      setIsAddOpen(false);
+      setIconFile(null);
+      setBannerFiles([]);
+      setFormData({ name: '', slug: '', description: '', order: '1', isVisible: true });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create category');
+    }
   };
 
   const handleToggleVisibility = async (catId: string) => {
+    const target = categoriesList.find(c => c.id === catId);
+    if (!target) return;
+    
+    const newVisibility = !target.isVisible;
     setCategoriesList(prev => 
-      prev.map(c => c.id === catId ? { ...c, isVisible: !c.isVisible } : c)
+      prev.map(c => c.id === catId ? { ...c, isVisible: newVisibility } : c)
     );
-    setSelectedCategory((prev: any) => prev && prev.id === catId ? { ...prev, isVisible: !prev.isVisible } : prev);
+    setSelectedCategory((prev: any) => prev && prev.id === catId ? { ...prev, isVisible: newVisibility } : prev);
     try {
-      const target = categoriesList.find(c => c.id === catId);
-      if (target) {
-        await fetch(`${API_BASE}/api/categories/${catId}`, {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: JSON.stringify({ isVisible: !target.isVisible })
-        });
+      const res = await fetch(`${API_BASE}/api/categories/${catId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ isVisible: newVisibility })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to update visibility');
       }
-    } catch {}
+      
+      toast.success(`Category ${newVisibility ? 'made visible' : 'hidden'} successfully`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update visibility');
+      // Revert on error
+      setCategoriesList(prev => 
+        prev.map(c => c.id === catId ? { ...c, isVisible: target.isVisible } : c)
+      );
+    }
   };
 
   const handleDeleteCategory = async (catId: string) => {
-    setCategoriesList(prev => prev.filter(c => c.id !== catId));
-    setSelectedCategory(null);
     try {
-      await fetch(`${API_BASE}/api/categories/${catId}`, { method: 'DELETE', headers: authHeaders() });
-    } catch {}
+      const res = await fetch(`${API_BASE}/api/categories/${catId}`, { method: 'DELETE', headers: authHeaders() });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete category');
+      }
+      
+      setCategoriesList(prev => prev.filter(c => c.id !== catId));
+      setSelectedCategory(null);
+      
+      toast.success('Category deleted successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete category');
+    }
   };
 
   const handleSaveCategory = async () => {
@@ -172,13 +257,9 @@ export default function CategoriesPage() {
       order: parseInt(editOrder) || 1,
       description: editDesc,
     };
-    
-    setCategoriesList(prev => prev.map(c => c.id === selectedCategory.id ? updated : c));
-    setSelectedCategory(updated);
-    setIsEditing(false);
 
     try {
-      await fetch(`${API_BASE}/api/categories/${selectedCategory.id}`, {
+      const res = await fetch(`${API_BASE}/api/categories/${selectedCategory.id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -188,7 +269,19 @@ export default function CategoriesPage() {
           description: editDesc,
         }),
       });
-    } catch {}
+      
+      if (!res.ok) {
+        throw new Error('Failed to update category');
+      }
+      
+      setCategoriesList(prev => prev.map(c => c.id === selectedCategory.id ? updated : c));
+      setSelectedCategory(updated);
+      setIsEditing(false);
+      
+      toast.success('Category updated successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update category');
+    }
   };
 
   const filteredCategories = useMemo(() => {
@@ -334,7 +427,15 @@ export default function CategoriesPage() {
                         
                         {/* Category Name */}
                         <TableCell className="py-4 font-semibold text-sm text-foreground flex items-center gap-2">
-                          <Layers className="h-4 w-4 text-[#14b8a6]" />
+                          {category.iconUrl ? (
+                            <img 
+                              src={category.iconUrl.startsWith('http') ? category.iconUrl : `${API_BASE}/${category.iconUrl}`} 
+                              alt={category.name} 
+                              className="w-7 h-7 rounded-md object-cover shadow-sm flex-shrink-0"
+                            />
+                          ) : (
+                            <Layers className="h-4 w-4 text-[#14b8a6]" />
+                          )}
                           {category.name}
                         </TableCell>
 
@@ -523,6 +624,80 @@ export default function CategoriesPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="icon" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category Icon</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="icon"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setIconFile(e.target.files[0]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {iconFile && (
+                        <div className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                          <img 
+                            src={URL.createObjectURL(iconFile)} 
+                            alt="icon preview" 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIconFile(null)}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="banner" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category Banners / Images (Multiple)</Label>
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        id="banner"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            const selectedFiles = Array.from(e.target.files);
+                            setBannerFiles(prev => [...prev, ...selectedFiles]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {bannerFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {bannerFiles.map((file, index) => (
+                            <div key={index} className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                              <img 
+                                src={URL.createObjectURL(file)} 
+                                alt={`banner preview ${index}`} 
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setBannerFiles(prev => prev.filter((_, i) => i !== index))}
+                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2 pt-2">
                   <Checkbox 
                     id="isVisible" 
@@ -636,6 +811,48 @@ export default function CategoriesPage() {
 
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                   {/* Category Banner Preview */}
+                   {selectedCategory.bannerUrl ? (() => {
+                      const banners = selectedCategory.bannerUrl.split(',').filter(Boolean);
+                      return (
+                        <div className="space-y-2 mb-4">
+                          <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group">
+                            <img 
+                              src={banners[0].startsWith('http') ? banners[0] : `${API_BASE}/${banners[0]}`} 
+                              alt={selectedCategory.name} 
+                              className="w-full h-full object-cover"
+                            />
+                            <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                              Main Banner
+                            </span>
+                          </div>
+                          {banners.length > 1 && (
+                            <div className="grid grid-cols-4 gap-2">
+                              {banners.slice(1).map((bUrl: string, bIdx: number) => (
+                                <div key={bIdx} className="h-16 rounded-lg border border-border/20 overflow-hidden relative">
+                                  <img 
+                                    src={bUrl.startsWith('http') ? bUrl : `${API_BASE}/${bUrl}`} 
+                                    alt={`Banner ${bIdx + 2}`} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })() : selectedCategory.iconUrl ? (
+                      <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
+                        <img 
+                          src={selectedCategory.iconUrl.startsWith('http') ? selectedCategory.iconUrl : `${API_BASE}/${selectedCategory.iconUrl}`} 
+                          alt={selectedCategory.name} 
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                        <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                          Department Icon
+                        </span>
+                      </div>
+                    ) : null}
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
                       <CardContent className="p-4">

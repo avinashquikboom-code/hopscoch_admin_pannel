@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/currency-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -134,6 +135,7 @@ const getAvatarColor = (name: string) => {
 };
 
 export default function OrdersPage() {
+  const { fmt: fmtPrice } = useCurrency();
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +170,15 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  // Auto-refresh orders every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
 
   // Status transitions — calls API then refreshes
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -603,7 +614,7 @@ export default function OrdersPage() {
                               
                               {/* Total Price */}
                               <TableCell className="py-4 text-sm font-black text-foreground">
-                                ${order.amount.toFixed(2)}
+                                {fmtPrice(order.amount)}
                               </TableCell>
                               
                               {/* Payment status badge */}
@@ -877,7 +888,7 @@ export default function OrdersPage() {
                           </div>
                           <div className="flex items-center gap-6">
                             <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
-                            <span className="text-sm font-bold text-foreground">₹{(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="text-sm font-bold text-foreground">{fmtPrice(item.price * item.quantity)}</span>
                           </div>
                         </div>
                       ))}
@@ -886,18 +897,18 @@ export default function OrdersPage() {
                       <div className="p-4 bg-muted/20 space-y-2 text-xs">
                         <div className="flex justify-between text-muted-foreground">
                           <span>Subtotal</span>
-                          <span>₹{Math.max(0, selectedOrder.amount - (selectedOrder.shippingFee || 0)).toFixed(2)}</span>
+                          <span>{fmtPrice(Math.max(0, selectedOrder.amount - (selectedOrder.shippingFee || 0)))}</span>
                         </div>
                         {(selectedOrder.shippingFee || selectedOrder.taxAmount) > 0 && (
                           <div className="flex justify-between text-muted-foreground">
                             <span>Shipping & Taxes</span>
-                            <span>₹{((selectedOrder.shippingFee || 0) + (selectedOrder.taxAmount || 0)).toFixed(2)}</span>
+                            <span>{fmtPrice((selectedOrder.shippingFee || 0) + (selectedOrder.taxAmount || 0))}</span>
                           </div>
                         )}
                         <Separator className="my-2 border-border/20" />
                         <div className="flex justify-between text-sm font-black text-foreground">
                           <span>Grand Total</span>
-                          <span>₹{selectedOrder.amount.toFixed(2)}</span>
+                          <span>{fmtPrice(selectedOrder.amount)}</span>
                         </div>
                       </div>
                     </div>

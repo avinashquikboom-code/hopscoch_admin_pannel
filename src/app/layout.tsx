@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
+import { CurrencyProvider } from "@/context/currency-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <CurrencyProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

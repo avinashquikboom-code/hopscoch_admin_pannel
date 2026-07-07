@@ -41,8 +41,11 @@ import {
   Sliders,
   Eye,
   Settings,
-  Trash2
+  Trash2,
+  Edit,
+  Save
 } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -53,6 +56,8 @@ function authHeaders(): HeadersInit {
 function normalizeInventory(raw: any) {
   return {
     id: raw.id || raw._id || String(Math.random()),
+    variantId: raw.variantId || raw.variant?.id,
+    warehouseId: raw.warehouseId || raw.warehouse?.id,
     sku: raw.sku || raw.variant?.sku || `INV-${raw.id?.slice(0, 6) || '000'}`,
     name: raw.name || raw.productName || raw.variant?.name || raw.product?.name || 'Item',
     category: raw.category || raw.product?.category?.name || 'General',
@@ -72,6 +77,13 @@ export default function InventoryPage() {
   const [formData, setFormData] = useState({ sku: '', name: '', category: 'Dresses', stock: '10', minStock: '5', location: 'Shelf A1', description: '' });
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [qtyInput, setQtyInput] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editSku, setEditSku] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editStock, setEditStock] = useState('');
+  const [editMinStock, setEditMinStock] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   const fetchInventory = useCallback(async () => {
     setLoading(true); setError(null);
@@ -96,34 +108,78 @@ export default function InventoryPage() {
     };
     try {
       const res = await fetch(`${API_BASE}/api/inventory`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-      if (res.ok) { await fetchInventory(); }
-      else { setInventoryList(prev => [...prev, normalizeInventory({ ...body, id: String(Date.now()) })]); }
-    } catch { setInventoryList(prev => [...prev, normalizeInventory({ ...body, id: String(Date.now()) })]); }
-    setFormData({ sku: '', name: '', category: 'Dresses', stock: '10', minStock: '5', location: 'Shelf A1', description: '' });
-    setIsAddOpen(false);
+      if (res.ok) { 
+        toast.success('Inventory item added successfully');
+        await fetchInventory();
+      } else {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to create inventory item');
+      }
+      setFormData({ sku: '', name: '', category: 'Dresses', stock: '10', minStock: '5', location: 'Shelf A1', description: '' });
+      setIsAddOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create inventory item');
+    }
   };
 
-  const handleAdjustStock = (itemId: string, quantity: number) => {
+  const handleAdjustStock = async (itemId: string, quantity: number) => {
+    const item = inventoryList.find(i => i.id === itemId);
+    if (!item) return;
+
+    const newStock = Math.max(0, item.stock + quantity);
+
+    // Optimistic update
     setInventoryList(prev =>
-      prev.map(item => {
-        if (item.id === itemId) {
-          const newStock = Math.max(0, item.stock + quantity);
-          return { ...item, stock: newStock };
-        }
-        return item;
-      })
+      prev.map(i => i.id === itemId ? { ...i, stock: newStock } : i)
     );
     setSelectedItem((prev: any) => {
       if (prev && prev.id === itemId) {
-        return { ...prev, stock: Math.max(0, prev.stock + quantity) };
+        return { ...prev, stock: newStock };
       }
       return prev;
     });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory/movements`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          variantId: Number(item.variantId),
+          warehouseId: Number(item.warehouseId),
+          type: 'ADJUSTMENT',
+          quantityChange: quantity,
+          reason: 'Manual adjustment from admin panel',
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to adjust stock');
+      }
+      toast.success('Stock adjusted successfully');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to adjust stock');
+      // Revert on error
+      setInventoryList(prev =>
+        prev.map(i => i.id === itemId ? { ...i, stock: item.stock } : i)
+      );
+      setSelectedItem((prev: any) => {
+        if (prev && prev.id === itemId) {
+          return { ...prev, stock: item.stock };
+        }
+        return prev;
+      });
+    }
   };
 
-  const handleSaveThreshold = (itemId: string, newMin: number) => {
+  const handleSaveThreshold = async (itemId: string, newMin: number) => {
+    const item = inventoryList.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Optimistic update
     setInventoryList(prev =>
-      prev.map(item => item.id === itemId ? { ...item, minStock: Math.max(0, newMin) } : item)
+      prev.map(i => i.id === itemId ? { ...i, minStock: Math.max(0, newMin) } : i)
     );
     setSelectedItem((prev: any) => {
       if (prev && prev.id === itemId) {
@@ -131,12 +187,89 @@ export default function InventoryPage() {
       }
       return prev;
     });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory/threshold`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          inventoryItemId: Number(itemId),
+          lowStockThreshold: Math.max(0, newMin),
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to update threshold');
+      }
+      toast.success('Threshold updated successfully');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to update threshold');
+      // Revert on error
+      setInventoryList(prev =>
+        prev.map(i => i.id === itemId ? { ...i, minStock: item.minStock } : i)
+      );
+      setSelectedItem((prev: any) => {
+        if (prev && prev.id === itemId) {
+          return { ...prev, minStock: item.minStock };
+        }
+        return prev;
+      });
+    }
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    setInventoryList(prev => prev.filter(i => i.id !== itemId));
-    setSelectedItem(null);
-    try { await fetch(`${API_BASE}/api/inventory/${itemId}`, { method: 'DELETE', headers: authHeaders() }); } catch { }
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory/${itemId}`, { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) {
+        throw new Error('Failed to delete inventory item');
+      }
+      setInventoryList(prev => prev.filter(i => i.id !== itemId));
+      setSelectedItem(null);
+      toast.success('Inventory item deleted successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete inventory item');
+    }
+  };
+
+  const handleSaveItem = async () => {
+    if (!selectedItem) return;
+    const updated = {
+      ...selectedItem,
+      name: editName,
+      sku: editSku,
+      location: editLocation,
+      stock: parseInt(editStock) || 0,
+      minStock: parseInt(editMinStock) || 0,
+      description: editDesc,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/inventory/${selectedItem.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: editName,
+          sku: editSku,
+          location: editLocation,
+          stock: parseInt(editStock) || 0,
+          minStock: parseInt(editMinStock) || 0,
+          description: editDesc,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update inventory item');
+      }
+
+      setInventoryList(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
+      setSelectedItem(updated);
+      setIsEditing(false);
+      toast.success('Inventory item updated successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update inventory item');
+    }
   };
 
   const filteredInventory = useMemo(() => {
@@ -463,7 +596,7 @@ export default function InventoryPage() {
         </Sheet>
 
         {/* Quick View Details Drawer */}
-        <Sheet open={selectedItem !== null} onOpenChange={(open) => { if (!open) setSelectedItem(null); }}>
+        <Sheet open={selectedItem !== null} onOpenChange={(open) => { if (!open) { setSelectedItem(null); setIsEditing(false); } }}>
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedItem && (
               <>
@@ -472,29 +605,105 @@ export default function InventoryPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
-                        {selectedItem.sku}
+                        {isEditing ? editSku : selectedItem.sku}
                       </span>
-                      {getStockBadge(selectedItem.stock, selectedItem.minStock)}
+                      {!isEditing && getStockBadge(selectedItem.stock, selectedItem.minStock)}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
-                      onClick={() => handleDeleteItem(selectedItem.id)}
-                      title="Delete Record"
-                    >
-                      <Trash2 className="h-4.5 w-4.5" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={`h-9 w-9 rounded-lg transition-colors ${isEditing ? 'text-primary border-primary/40 bg-primary/5' : ''}`} 
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveItem();
+                          } else {
+                            setEditName(selectedItem.name);
+                            setEditSku(selectedItem.sku);
+                            setEditLocation(selectedItem.location);
+                            setEditStock(String(selectedItem.stock));
+                            setEditMinStock(String(selectedItem.minStock));
+                            setEditDesc(selectedItem.description || '');
+                            setIsEditing(true);
+                          }
+                        }}
+                        title={isEditing ? "Save Item Details" : "Edit Item Details"}
+                      >
+                        {isEditing ? <Save className="h-4.5 w-4.5" /> : <Edit className="h-4.5 w-4.5" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-lg text-rose-500 hover:bg-rose-500/10" 
+                        onClick={() => handleDeleteItem(selectedItem.id)}
+                        title="Delete Record"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">{selectedItem.name}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Bin Location: {selectedItem.location}</p>
+                    {isEditing ? (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Item Name</Label>
+                          <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-10 rounded-lg border-border/50 focus:border-primary" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-bold text-foreground">{selectedItem.name}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-light">Bin Location: {selectedItem.location}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
-                  <div className="grid grid-cols-2 gap-4">
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">SKU Code</Label>
+                          <Input value={editSku} onChange={e => setEditSku(e.target.value)} className="h-11 rounded-lg border-border/50" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Bin Location</Label>
+                          <Input value={editLocation} onChange={e => setEditLocation(e.target.value)} className="h-11 rounded-lg border-border/50" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Current Stock</Label>
+                          <Input type="number" value={editStock} onChange={e => setEditStock(e.target.value)} className="h-11 rounded-lg border-border/50" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Min Stock Threshold</Label>
+                          <Input type="number" value={editMinStock} onChange={e => setEditMinStock(e.target.value)} className="h-11 rounded-lg border-border/50" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Description</Label>
+                        <textarea
+                          rows={4}
+                          value={editDesc}
+                          onChange={e => setEditDesc(e.target.value)}
+                          className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
+                        />
+                      </div>
+                      <div className="flex gap-3 justify-end pt-4">
+                        <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="rounded-lg h-11 px-6">
+                          Cancel
+                        </Button>
+                        <Button type="button" onClick={handleSaveItem} className="rounded-lg h-11 px-6 bg-primary text-white hover:bg-primary/95">
+                          Save Details
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
                       <CardContent className="p-4">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
@@ -585,6 +794,8 @@ export default function InventoryPage() {
                       {selectedItem.description}
                     </p>
                   </div>
+                    </>
+                  )}
                 </ScrollArea>
               </>
             )}

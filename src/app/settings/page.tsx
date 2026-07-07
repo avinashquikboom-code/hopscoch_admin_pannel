@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/currency-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ function authHeaders(): HeadersInit {
 }
 
 export default function SettingsPage() {
+  const { setCurrencyCode } = useCurrency();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [config, setConfig] = useState({
@@ -75,6 +77,7 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setIsSaved(true);
+        setCurrencyCode(config.currency); // update global context instantly
         setTimeout(() => setIsSaved(false), 2500);
       }
     } catch {} finally {

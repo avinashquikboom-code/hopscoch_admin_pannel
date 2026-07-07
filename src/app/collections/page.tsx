@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@/components/ui/toast';
 import {
   Table,
   TableBody,
@@ -55,7 +56,8 @@ import {
   Globe,
   Info,
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -76,6 +78,7 @@ function normalizeCollection(raw: any) {
     productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
     startDate: raw.startDate ? new Date(raw.startDate).toLocaleDateString('en-CA') : '',
     endDate: raw.endDate ? new Date(raw.endDate).toLocaleDateString('en-CA') : '',
+    imageUrl: raw.imageUrl || raw.image_url || '',
   };
 }
 
@@ -102,6 +105,7 @@ export default function CollectionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<any | null>(null);
 
   const fetchCollections = useCallback(async () => {
@@ -119,6 +123,28 @@ export default function CollectionsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    let imageUrl = '';
+
+    try {
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', imageFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const uploadRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: uploadFormData,
+        });
+        if (uploadRes.ok) {
+          const uploadJson = await uploadRes.json();
+          imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        }
+      }
+    } catch (err) {
+      console.error('Error uploading collection file:', err);
+    }
+
     const body = {
       name: formData.name,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
@@ -128,13 +154,18 @@ export default function CollectionsPage() {
       startDate: formData.startDate || '',
       endDate: formData.endDate || '',
       order: parseInt(formData.order) || 1,
+      imageUrl,
     };
     try {
       const res = await fetch(`${API_BASE}/api/collections`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-      if (res.ok) { await fetchCollections(); }
-      else { setCollectionsList(prev => [...prev, normalizeCollection({ ...body, id: String(Date.now()), productCount: 0 })]); }
-    } catch { setCollectionsList(prev => [...prev, normalizeCollection({ ...body, id: String(Date.now()), productCount: 0 })]); }
+      if (res.ok) { 
+        await fetchCollections();
+      }
+    } catch (err: any) { 
+      console.error(err);
+    }
     setFormData({ name: '', slug: '', type: 'summer', description: '', isActive: true, startDate: '', endDate: '', order: '1' });
+    setImageFile(null);
     setIsAddOpen(false);
   };
 
@@ -281,9 +312,17 @@ export default function CollectionsPage() {
                         {/* Name and thumbnail */}
                         <TableCell className="py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-14 h-10 rounded-lg bg-gradient-to-br ${collectionGradients[idx % collectionGradients.length]} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                              <Layers className="h-4.5 w-4.5 text-white" />
-                            </div>
+                            {collection.imageUrl ? (
+                              <img 
+                                src={collection.imageUrl.startsWith('http') ? collection.imageUrl : `${API_BASE}/${collection.imageUrl}`} 
+                                alt={collection.name} 
+                                className="w-14 h-10 rounded-lg object-cover flex-shrink-0 shadow-sm border border-border/20"
+                              />
+                            ) : (
+                              <div className={`w-14 h-10 rounded-lg bg-gradient-to-br ${collectionGradients[idx % collectionGradients.length]} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                                <Layers className="h-4.5 w-4.5 text-white" />
+                              </div>
+                            )}
                             <div className="flex flex-col min-w-0">
                               <p className="text-sm font-semibold text-foreground truncate">{collection.name}</p>
                               <p className="text-xs text-muted-foreground truncate font-normal">{collection.slug}</p>
@@ -477,6 +516,39 @@ export default function CollectionsPage() {
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label htmlFor="image" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">Collection Image</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setImageFile(e.target.files[0]);
+                        }
+                      }}
+                      className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                    />
+                    {imageFile && (
+                      <div className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                        <img 
+                          src={URL.createObjectURL(imageFile)} 
+                          alt="collection preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setImageFile(null)}
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2 pt-2">
                   <input 
                     type="checkbox" 
@@ -552,6 +624,19 @@ export default function CollectionsPage() {
 
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                  {/* Collection Banner/Image Preview */}
+                  {selectedCollection.imageUrl && (
+                    <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4">
+                      <img 
+                        src={selectedCollection.imageUrl.startsWith('http') ? selectedCollection.imageUrl : `${API_BASE}/${selectedCollection.imageUrl}`} 
+                        alt={selectedCollection.name} 
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                        Collection Image
+                      </span>
+                    </div>
+                  )}
                   {/* Grid cards */}
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">

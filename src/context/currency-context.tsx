@@ -1,0 +1,109 @@
+'use client';
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  INR: '₹',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CAD: 'CA$',
+  AUD: 'A$',
+  SGD: 'S$',
+  AED: 'AED ',
+  SAR: 'SAR ',
+};
+
+const CURRENCY_LOCALES: Record<string, string> = {
+  USD: 'en-US',
+  INR: 'en-IN',
+  EUR: 'de-DE',
+  GBP: 'en-GB',
+  JPY: 'ja-JP',
+  CAD: 'en-CA',
+  AUD: 'en-AU',
+  SGD: 'en-SG',
+  AED: 'ar-AE',
+  SAR: 'ar-SA',
+};
+
+interface CurrencyContextValue {
+  currencyCode: string;
+  currencySymbol: string;
+  fmt: (value: number) => string;
+  setCurrencyCode: (code: string) => void;
+}
+
+const CurrencyContext = createContext<CurrencyContextValue>({
+  currencyCode: 'USD',
+  currencySymbol: '$',
+  fmt: (v) => `$${v.toFixed(2)}`,
+  setCurrencyCode: () => {},
+});
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const LS_KEY = 'admin_currency';
+
+export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const [currencyCode, setCurrencyCodeState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(LS_KEY) || 'USD';
+    }
+    return 'USD';
+  });
+
+  // Fetch currency from settings API on mount
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(`${API_BASE}/api/settings`, { headers });
+        if (res.ok) {
+          const json = await res.json();
+          const code: string = json?.data?.currency || json?.currency;
+          if (code) {
+            setCurrencyCodeState(code);
+            localStorage.setItem(LS_KEY, code);
+          }
+        }
+      } catch {}
+    };
+    load();
+  }, []);
+
+  const setCurrencyCode = useCallback((code: string) => {
+    setCurrencyCodeState(code);
+    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, code);
+  }, []);
+
+  const currencySymbol = CURRENCY_SYMBOLS[currencyCode] ?? currencyCode + ' ';
+
+  const fmt = useCallback(
+    (value: number): string => {
+      const locale = CURRENCY_LOCALES[currencyCode] ?? 'en-US';
+      try {
+        return new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: currencyCode,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value || 0);
+      } catch {
+        return `${currencySymbol}${(value || 0).toFixed(2)}`;
+      }
+    },
+    [currencyCode, currencySymbol],
+  );
+
+  return (
+    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, fmt, setCurrencyCode }}>
+      {children}
+    </CurrencyContext.Provider>
+  );
+}
+
+export function useCurrency() {
+  return useContext(CurrencyContext);
+}

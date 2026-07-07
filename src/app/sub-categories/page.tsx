@@ -51,8 +51,12 @@ import {
   EyeOff, 
   AlertTriangle,
   Filter,
-  Download
+  Download,
+  CheckCircle,
+  XCircle,
+  X
 } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -70,16 +74,21 @@ function normalizeSubCategory(c: any, parentName: string) {
     count: Number(c.productCount ?? c._count?.products ?? 0),
     isVisible: c.isVisible ?? c.isActive ?? true,
     description: c.description || '',
+    iconUrl: c.iconUrl || c.icon_url || '',
+    bannerUrl: c.bannerUrl || c.banner_url || '',
   };
 }
 
 export default function SubCategoriesPage() {
   const [subCategoriesList, setSubCategoriesList] = useState<any[]>([]);
+  const [parentCategories, setParentCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
+  const [formData, setFormData] = useState({ name: '', parentId: '', slug: '', isVisible: true, description: '' });
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [bannerFiles, setBannerFiles] = useState<File[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [parentFilter, setParentFilter] = useState('all');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
@@ -97,6 +106,7 @@ export default function SubCategoriesPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load categories');
       const raw = json.data ?? json.categories ?? json ?? [];
+      setParentCategories(raw);
       const list: any[] = [];
       raw.forEach((parent: any) => {
         if (Array.isArray(parent.children)) {
@@ -113,57 +123,133 @@ export default function SubCategoriesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.parentId) {
+      toast.error('Please select a parent category');
+      return;
+    }
+    
+    let iconUrl = '';
+    let bannerUrl = '';
+
+    try {
+      if (iconFile) {
+        const iconFormData = new FormData();
+        iconFormData.append('file', iconFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const iconRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: iconFormData,
+        });
+        if (iconRes.ok) {
+          const iconJson = await iconRes.json();
+          iconUrl = iconJson.data?.url || iconJson.url || '';
+        }
+      }
+
+      if (bannerFiles.length > 0) {
+        const uploadedUrls: string[] = [];
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+        for (const file of bannerFiles) {
+          const bannerFormData = new FormData();
+          bannerFormData.append('file', file);
+          const bannerRes = await fetch(`${API_BASE}/api/admin/upload`, {
+            method: 'POST',
+            headers: uploadHeaders,
+            body: bannerFormData,
+          });
+          if (bannerRes.ok) {
+            const bannerJson = await bannerRes.json();
+            const url = bannerJson.data?.url || bannerJson.url || '';
+            if (url) uploadedUrls.push(url);
+          }
+        }
+        bannerUrl = uploadedUrls.join(',');
+      }
+    } catch (err) {
+      console.error('Error uploading subcategory files:', err);
+    }
+
     const body = {
       name: formData.name,
-      parentName: formData.parentName,
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       isVisible: formData.isVisible,
       description: formData.description,
+      iconUrl,
+      bannerUrl,
     };
     try {
-      // Find parent ID to post under
-      const resParent = await fetch(`${API_BASE}/api/categories`, { headers: authHeaders() });
-      const jsonParent = await resParent.json();
-      const parentList = jsonParent.data ?? jsonParent.categories ?? jsonParent ?? [];
-      const parentObj = parentList.find((p: any) => p.name === formData.parentName);
-      if (parentObj) {
-        await fetch(`${API_BASE}/api/categories/${parentObj.id || parentObj._id}/children`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify(body),
-        });
+      const res = await fetch(`${API_BASE}/api/categories/${formData.parentId}/children`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to create subcategory');
       }
+      
+      toast.success('Subcategory added successfully');
+      
       await fetchSubCategories();
-    } catch {
-      setSubCategoriesList(prev => [...prev, { ...body, id: String(Date.now()), count: 0 }]);
+      setFormData({ name: '', parentId: '', slug: '', isVisible: true, description: '' });
+      setIconFile(null);
+      setBannerFiles([]);
+      setIsAddOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create subcategory');
     }
-    setFormData({ name: '', parentName: 'Dresses', slug: '', isVisible: true, description: '' });
-    setIsAddOpen(false);
   };
 
   const handleToggleVisibility = async (id: string) => {
+    const target = subCategoriesList.find(sc => sc.id === id);
+    if (!target) return;
+    
+    const newVisibility = !target.isVisible;
     setSubCategoriesList(prev =>
-      prev.map(sc => sc.id === id ? { ...sc, isVisible: !sc.isVisible } : sc)
+      prev.map(sc => sc.id === id ? { ...sc, isVisible: newVisibility } : sc)
     );
-    setSelectedSubCategory((prev: any) => prev && prev.id === id ? { ...prev, isVisible: !prev.isVisible } : prev);
+    setSelectedSubCategory((prev: any) => prev && prev.id === id ? { ...prev, isVisible: newVisibility } : prev);
     try {
-      const target = subCategoriesList.find(sc => sc.id === id);
-      if (target) {
-        await fetch(`${API_BASE}/api/categories/${id}`, {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: JSON.stringify({ isVisible: !target.isVisible })
-        });
+      const res = await fetch(`${API_BASE}/api/categories/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ isVisible: newVisibility })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to update visibility');
       }
-    } catch {}
+      
+      toast.success(`Subcategory ${newVisibility ? 'made visible' : 'hidden'} successfully`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update visibility');
+      // Revert on error
+      setSubCategoriesList(prev =>
+        prev.map(sc => sc.id === id ? { ...sc, isVisible: target.isVisible } : sc)
+      );
+    }
   };
 
   const handleDeleteItem = async (id: string) => {
-    setSubCategoriesList(prev => prev.filter(sc => sc.id !== id));
-    setSelectedSubCategory(null);
     try {
-      await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
-    } catch {}
+      const res = await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete subcategory');
+      }
+      
+      setSubCategoriesList(prev => prev.filter(sc => sc.id !== id));
+      setSelectedSubCategory(null);
+      
+      toast.success('Subcategory deleted successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete subcategory');
+    }
   };
 
   const handleSaveSubCategory = async () => {
@@ -175,12 +261,8 @@ export default function SubCategoriesPage() {
       description: editDesc,
     };
 
-    setSubCategoriesList(prev => prev.map(sc => sc.id === selectedSubCategory.id ? updated : sc));
-    setSelectedSubCategory(updated);
-    setIsEditing(false);
-
     try {
-      await fetch(`${API_BASE}/api/categories/${selectedSubCategory.id}`, {
+      const res = await fetch(`${API_BASE}/api/categories/${selectedSubCategory.id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -189,7 +271,19 @@ export default function SubCategoriesPage() {
           description: editDesc,
         }),
       });
-    } catch {}
+      
+      if (!res.ok) {
+        throw new Error('Failed to update subcategory');
+      }
+      
+      setSubCategoriesList(prev => prev.map(sc => sc.id === selectedSubCategory.id ? updated : sc));
+      setSelectedSubCategory(updated);
+      setIsEditing(false);
+      
+      toast.success('Subcategory updated successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update subcategory');
+    }
   };
 
   const filteredSubCategories = useMemo(() => {
@@ -421,7 +515,15 @@ export default function SubCategoriesPage() {
                       >
                         {/* Sub Category name */}
                         <TableCell className="py-4 font-semibold text-sm text-foreground flex items-center gap-2">
-                          <FolderTree className="h-4 w-4 text-[#14b8a6]" />
+                          {sc.iconUrl ? (
+                            <img 
+                              src={sc.iconUrl.startsWith('http') ? sc.iconUrl : `${API_BASE}/${sc.iconUrl}`} 
+                              alt={sc.name} 
+                              className="w-7 h-7 rounded-md object-cover shadow-sm flex-shrink-0"
+                            />
+                          ) : (
+                            <FolderTree className="h-4 w-4 text-[#14b8a6]" />
+                          )}
                           {sc.name}
                         </TableCell>
 
@@ -544,14 +646,14 @@ export default function SubCategoriesPage() {
                     <Label htmlFor="parent" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Parent Department</Label>
                     <select
                       id="parent"
-                      value={formData.parentName}
-                      onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                      value={formData.parentId}
+                      onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
                       className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                     >
-                      <option value="Dresses">Dresses</option>
-                      <option value="Tops">Tops</option>
-                      <option value="Bottoms">Bottoms</option>
-                      <option value="Accessories">Accessories</option>
+                      <option value="">Select Parent Category</option>
+                      {parentCategories.map((parent: any) => (
+                        <option key={parent.id} value={parent.id}>{parent.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -566,6 +668,80 @@ export default function SubCategoriesPage() {
                     placeholder="Describe this subcategory department details..."
                     className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="icon" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub Category Icon</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="icon"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setIconFile(e.target.files[0]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {iconFile && (
+                        <div className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                          <img 
+                            src={URL.createObjectURL(iconFile)} 
+                            alt="icon preview" 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIconFile(null)}
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="banner" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub Category Banners (Multiple)</Label>
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        id="banner"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            const selectedFiles = Array.from(e.target.files);
+                            setBannerFiles(prev => [...prev, ...selectedFiles]);
+                          }
+                        }}
+                        className="rounded-lg border-border/50 focus:border-primary cursor-pointer pt-2 text-xs"
+                      />
+                      {bannerFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {bannerFiles.map((file, index) => (
+                            <div key={index} className="w-10 h-10 rounded-lg border border-border/40 overflow-hidden flex-shrink-0 relative group">
+                              <img 
+                                src={URL.createObjectURL(file)} 
+                                alt={`banner preview ${index}`} 
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setBannerFiles(prev => prev.filter((_, i) => i !== index))}
+                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2 pt-2">
@@ -677,6 +853,49 @@ export default function SubCategoriesPage() {
 
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
+                   {/* Subcategory Banner Preview */}
+                   {selectedSubCategory.bannerUrl ? (() => {
+                      const banners = selectedSubCategory.bannerUrl.split(',').filter(Boolean);
+                      return (
+                        <div className="space-y-2 mb-4">
+                          <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group">
+                            <img 
+                              src={banners[0].startsWith('http') ? banners[0] : `${API_BASE}/${banners[0]}`} 
+                              alt={selectedSubCategory.name} 
+                              className="w-full h-full object-cover"
+                            />
+                            <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                              Main Banner
+                            </span>
+                          </div>
+                          {banners.length > 1 && (
+                            <div className="grid grid-cols-4 gap-2">
+                              {banners.slice(1).map((bUrl: string, bIdx: number) => (
+                                <div key={bIdx} className="h-16 rounded-lg border border-border/20 overflow-hidden relative">
+                                  <img 
+                                    src={bUrl.startsWith('http') ? bUrl : `${API_BASE}/${bUrl}`} 
+                                    alt={`Banner ${bIdx + 2}`} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })() : selectedSubCategory.iconUrl ? (
+                      <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
+                        <img 
+                          src={selectedSubCategory.iconUrl.startsWith('http') ? selectedSubCategory.iconUrl : `${API_BASE}/${selectedSubCategory.iconUrl}`} 
+                          alt={selectedSubCategory.name} 
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                        <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                          Subcategory Icon
+                        </span>
+                      </div>
+                    ) : null}
+
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
                       <CardContent className="p-4">

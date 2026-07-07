@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/currency-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -47,8 +48,7 @@ function authHeaders(): HeadersInit {
 
 const COLORS = ['#14b8a6', '#0d9488', '#2dd4bf', '#6366f1', '#f59e0b', '#f43f5e'];
 
-const fmt = (n: number) => n?.toLocaleString('en-IN') ?? '0';
-const fmtCurrency = (n: number) => `₹${fmt(Math.round(n))}`;
+const fmt = (n: number) => n?.toLocaleString() ?? '0';
 const fmtPct = (n: number) => `${(n ?? 0).toFixed(1)}%`;
 
 interface AnalyticsData {
@@ -62,14 +62,14 @@ interface AnalyticsData {
   products: { total: number; topProducts: { name: string; sales: number }[] };
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, fmtCurrency: fmt2 }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-border/40 rounded-xl p-3 shadow-xl text-sm">
         <p className="font-bold text-foreground mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color }} className="font-medium">
-            {p.name}: {typeof p.value === 'number' && p.name?.includes('Revenue') ? fmtCurrency(p.value) : fmt(p.value)}
+            {p.name}: {typeof p.value === 'number' && p.name?.includes('Revenue') ? fmt2(p.value) : fmt(p.value)}
           </p>
         ))}
       </div>
@@ -106,6 +106,7 @@ function LoadingSkeleton() {
 }
 
 export default function ReportsPage() {
+  const { fmt: fmtCurrency } = useCurrency();
   const [dateRange, setDateRange] = useState('30days');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -239,7 +240,7 @@ export default function ReportsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                           <Legend />
                           <Area type="monotone" dataKey="revenue" stroke="#14b8a6" strokeWidth={2} fill="url(#revGrad)" name="Revenue (₹)" />
                           <Line type="monotone" dataKey="orders" stroke="#6366f1" strokeWidth={2} dot={false} name="Orders" />
@@ -270,7 +271,7 @@ export default function ReportsPage() {
                                 <Cell key={index} fill={entry.color} />
                               ))}
                             </Pie>
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="flex justify-center gap-5 mt-2">
@@ -323,7 +324,7 @@ export default function ReportsPage() {
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} horizontal={false} />
                             <XAxis type="number" tick={{ fontSize: 11 }} />
                             <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                             <Bar dataKey="sales" fill="#14b8a6" radius={[0, 4, 4, 0]} name="Units Sold" />
                           </BarChart>
                         </ResponsiveContainer>
@@ -392,7 +393,7 @@ export default function ReportsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                           <Bar dataKey="orders" fill="#6366f1" radius={[4, 4, 0, 0]} name="Orders" />
                         </BarChart>
                       </ResponsiveContainer>
@@ -424,7 +425,7 @@ export default function ReportsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                           <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#payGrad)" name="Revenue (₹)" />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -450,7 +451,7 @@ export default function ReportsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip fmtCurrency={fmtCurrency} />} />
                           <Legend />
                           <Line type="monotone" dataKey="orders" stroke="#6366f1" strokeWidth={2} dot={false} name="Orders" />
                           <Line type="monotone" dataKey="returns" stroke="#f43f5e" strokeWidth={2} dot={false} name="Returns" strokeDasharray="4 2" />

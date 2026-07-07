@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useCurrency } from '@/context/currency-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
@@ -182,8 +183,7 @@ export default function DashboardPage() {
     }
   };
 
-  const formatCurrency = (val: number) =>
-    `₹${Number(val || 0).toLocaleString('en-IN')}`;
+  const { fmt: formatCurrency } = useCurrency();
 
   const formatDate = (d: string) => {
     if (!d) return '';

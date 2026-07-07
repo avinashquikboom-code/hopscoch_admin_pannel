@@ -109,11 +109,8 @@ export const toast = Object.assign(toastFn, {
       return;
     }
 
-    // If request is GET, don't show success toasts
+    // If request is GET, never show a toast — pages handle their own error states
     if (m === "GET") {
-      if (!isSuccess) {
-        toast.error("API Failed");
-      }
       return;
     }
 
@@ -626,7 +623,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         if (loadingToastId) {
           toast.dismiss(loadingToastId);
         }
-        toast.handleApiResponse(method, url, 0, reqData, null);
+        // Only show network error toast for mutations, not background GETs
+        if (method !== 'GET') {
+          toast.handleApiResponse(method, url, 0, reqData, null);
+        }
         throw error;
       }
     };

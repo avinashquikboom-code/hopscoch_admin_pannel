@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/currency-context';
+import { toast } from '@/components/ui/toast';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -66,7 +68,7 @@ function normalizeProduct(raw: any) {
   return {
     id: raw.id || raw._id || String(Math.random()),
     name: raw.name || raw.title || 'Unnamed Product',
-    sku: raw.sku || raw.code || `SKU-${raw.id?.slice(0, 6) || '000'}`,
+    sku: raw.sku || raw.code || `SKU-${raw.id ? String(raw.id).slice(0, 6) : '000'}`,
     price: Number(raw.price || raw.sellingPrice || raw.mrp || 0),
     stock: Number(raw.stock ?? raw.stockQuantity ?? raw.inventory?.quantity ?? 0),
     category: raw.category?.name || raw.categoryName || raw.category || 'General',
@@ -76,7 +78,10 @@ function normalizeProduct(raw: any) {
     isTrending: raw.isTrending ?? false,
     isBestSeller: raw.isBestSeller ?? false,
     description: raw.description || raw.shortDescription || '',
-    images: raw.images || [],
+    images: Array.isArray(raw.images) ? raw.images.map((img: any) => {
+      if (typeof img === 'string') return { url: img };
+      return { url: img?.url || img?.image_url || img?.imageUrl || '' };
+    }).filter((img: any) => img.url) : [],
   };
 }
 
@@ -84,10 +89,52 @@ export default function ProductsPage() {
   const [productsList, setProductsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fmt: fmtPrice } = useCurrency();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
+  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: '', brand: '', description: '', status: 'PUBLISHED' });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`);
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json.data ?? json ?? [];
+        setCategories(Array.isArray(raw) ? raw : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          setFormData(prev => ({ ...prev, category: raw[0].name }));
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching categories in products page:', e);
+    }
+  }, []);
+
+  const fetchBrands = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/brands`);
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json.data ?? json ?? [];
+        setBrands(Array.isArray(raw) ? raw : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          setFormData(prev => ({ ...prev, brand: raw[0].name }));
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching brands in products page:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchBrands();
+  }, [fetchCategories, fetchBrands]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -103,6 +150,7 @@ export default function ProductsPage() {
   const [editPrice, setEditPrice] = useState('');
   const [editBrand, setEditBrand] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editStatus, setEditStatus] = useState('PUBLISHED');
 
   const fetchProducts = useCallback(async () => {
     setLoading(true); setError(null);
@@ -115,7 +163,9 @@ export default function ProductsPage() {
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { 
+    fetchProducts(); 
+  }, [fetchProducts]);
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,26 +175,76 @@ export default function ProductsPage() {
       stock: parseInt(formData.stock) || 0,
       category: formData.category, brand: formData.brand,
       description: formData.description,
-      status: 'active', isFeatured: false, isTrending: false, isBestSeller: false,
+      status: formData.status, isFeatured: false, isTrending: false, isBestSeller: false,
     };
     try {
       const res = await fetch(`${API_BASE}/api/catalog/products`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
       const json = await res.json();
-      if (res.ok) { await fetchProducts(); }
-      else { setProductsList(prev => [normalizeProduct({ ...body, id: String(Date.now()) }), ...prev]); }
-    } catch { setProductsList(prev => [normalizeProduct({ ...body, id: String(Date.now()) }), ...prev]); }
-    setAddSheetOpen(false);
-    setFormData({ name: '', sku: '', price: '', stock: '', category: 'Dresses', brand: 'Aura Original', description: '' });
+      if (res.ok) {
+        if (imageFiles.length > 0) {
+          const productId = json.data?.id || json.id;
+          if (productId) {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+            const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+            await Promise.all(
+              imageFiles.map(async (file) => {
+                const uploadFormData = new FormData();
+                uploadFormData.append('image', file);
+                uploadFormData.append('productId', String(productId));
+
+                await fetch(`${API_BASE}/api/admin/images`, {
+                  method: 'POST',
+                  headers: uploadHeaders,
+                  body: uploadFormData,
+                });
+              })
+            );
+          }
+        }
+
+        const createdProduct = json.data || json;
+        const optimisticProduct = {
+          ...normalizeProduct(createdProduct),
+          stock: body.stock,
+          price: body.price,
+          category: body.category,
+          brand: body.brand,
+          images: imageFiles.map(file => ({ url: URL.createObjectURL(file) })),
+        };
+        setProductsList(prev => [optimisticProduct, ...prev]);
+
+        setAddSheetOpen(false);
+        setImageFiles([]);
+        setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', description: '', status: 'PUBLISHED' });
+        
+        fetchProducts();
+        fetchCategories();
+      }
+    } catch (err: any) {
+      console.error(err);
+    }
   };
 
   const handleSaveProduct = async () => {
     if (!selectedProduct) return;
+
+    let updatedImages = [...(selectedProduct.images || [])];
+    if (editImageFiles.length > 0) {
+      updatedImages = [
+        ...updatedImages,
+        ...editImageFiles.map(file => ({ url: URL.createObjectURL(file) }))
+      ];
+    }
+
     const updated = {
       ...selectedProduct,
       name: editName,
       price: parseFloat(editPrice) || 0,
       brand: editBrand,
       description: editDesc,
+      status: editStatus.toLowerCase(),
+      images: updatedImages,
     };
     
     setProductsList(prev => prev.map(p => p.id === selectedProduct.id ? updated : p));
@@ -160,16 +260,44 @@ export default function ProductsPage() {
           price: parseFloat(editPrice) || 0,
           brand: editBrand,
           description: editDesc,
+          status: editStatus,
         }),
       });
-    } catch {}
+
+      if (editImageFiles.length > 0) {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+        await Promise.all(
+          editImageFiles.map(async (file) => {
+            const uploadFormData = new FormData();
+            uploadFormData.append('image', file);
+            uploadFormData.append('productId', String(selectedProduct.id));
+
+            await fetch(`${API_BASE}/api/admin/images`, {
+              method: 'POST',
+              headers: uploadHeaders,
+              body: uploadFormData,
+            });
+          })
+        );
+        setEditImageFiles([]);
+        fetchProducts();
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleUpdateStock = (productId: string, quantity: number) => {
+  const handleUpdateStock = async (productId: string, quantity: number) => {
+    const product = productsList.find(p => p.id === productId);
+    if (!product) return;
+    const newStock = Math.max(0, product.stock + quantity);
+
+    // Optimistic update
     setProductsList(prev => 
       prev.map(p => {
         if (p.id === productId) {
-          const newStock = Math.max(0, p.stock + quantity);
           return { ...p, stock: newStock };
         }
         return p;
@@ -177,10 +305,37 @@ export default function ProductsPage() {
     );
     setSelectedProduct((prev: any) => {
       if (prev && prev.id === productId) {
-        return { ...prev, stock: Math.max(0, prev.stock + quantity) };
+        return { ...prev, stock: newStock };
       }
       return prev;
     });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/catalog/products/${productId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ stock: newStock }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to update stock');
+      }
+      toast.success('Stock updated successfully');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to update stock');
+      // Revert on error
+      setProductsList(prev => 
+        prev.map(p => p.id === productId ? { ...p, stock: product.stock } : p)
+      );
+      setSelectedProduct((prev: any) => {
+        if (prev && prev.id === productId) {
+          return { ...prev, stock: product.stock };
+        }
+        return prev;
+      });
+    }
   };
 
   const handleToggleFeatured = (productId: string) => {
@@ -200,6 +355,25 @@ export default function ProductsPage() {
     });
   };
 
+  const handleToggleStatus = async (productId: string, currentStatus: string) => {
+    const next = currentStatus.toUpperCase() === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    // optimistic update
+    setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: next.toLowerCase() } : p));
+    setSelectedProduct((prev: any) => prev && prev.id === productId ? { ...prev, status: next.toLowerCase() } : prev);
+    try {
+      await fetch(`${API_BASE}/api/catalog/products/${productId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ status: next }),
+      });
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      // revert on error
+      setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: currentStatus.toLowerCase() } : p));
+      setSelectedProduct((prev: any) => prev && prev.id === productId ? { ...prev, status: currentStatus.toLowerCase() } : prev);
+    }
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     setProductsList(prev => prev.filter(p => p.id !== productId));
     setSelectedProduct(null);
@@ -215,7 +389,11 @@ export default function ProductsPage() {
 
       const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
       const matchesBrand = brandFilter === 'all' || product.brand === brandFilter;
-      const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active'
+          ? (product.status === 'published' || product.status === 'active')
+          : product.status === statusFilter);
       
       let matchesStock = true;
       if (stockLevelFilter !== 'all') {
@@ -230,7 +408,7 @@ export default function ProductsPage() {
 
   const stats = useMemo(() => {
     const totalCount = productsList.length;
-    const activeCount = productsList.filter(p => p.status === 'active').length;
+    const activeCount = productsList.filter(p => p.status === 'published' || p.status === 'active').length;
     const lowStockCount = productsList.filter(p => p.stock < 20).length;
     const featuredCount = productsList.filter(p => p.isFeatured).length;
 
@@ -365,6 +543,66 @@ export default function ProductsPage() {
 
                 {/* Filter and Export buttons */}
                 <div className="flex items-center gap-2">
+                  {selectedProducts.length > 0 && (
+                    <div className="flex items-center gap-2 animate-fade-in mr-2">
+                      <span className="text-xs text-muted-foreground font-medium bg-muted/60 border border-border/40 px-2 py-1.5 rounded-lg select-all">
+                        {selectedProducts.length} selected
+                      </span>
+                      {selectedProducts.length === 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg h-10 px-3 flex items-center gap-1.5 border-[#14b8a6]/40 hover:border-[#14b8a6] hover:bg-[#14b8a6]/5 text-[#0d9488]"
+                          onClick={() => {
+                            const selectedId = selectedProducts[0];
+                            const product = productsList.find(p => p.id === selectedId);
+                            if (product) {
+                              setSelectedProduct(product);
+                              setIsEditing(true);
+                              setEditName(product.name);
+                              setEditPrice(String(product.price));
+                              setEditBrand(product.brand);
+                              setEditDesc(product.description || '');
+                            }
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-lg h-10 px-3 flex items-center gap-1.5"
+                        onClick={async () => {
+                          try {
+                            const idsToDelete = [...selectedProducts];
+                            setProductsList(prev => prev.filter(p => !idsToDelete.includes(p.id)));
+                            setSelectedProducts([]);
+                            
+                            await Promise.all(
+                              idsToDelete.map(id =>
+                                fetch(`${API_BASE}/api/catalog/products/${id}`, {
+                                  method: 'DELETE',
+                                  headers: authHeaders(),
+                                })
+                              )
+                            );
+                            toast.success('Selected products deleted successfully!');
+                            fetchProducts();
+                          } catch (err: any) {
+                            console.error(err);
+                            toast.error('Failed to delete some products');
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                      <div className="h-6 w-[1px] bg-border/30 mx-1" />
+                    </div>
+                  )}
+
                   <Button 
                     variant={showFilters ? 'default' : 'outline'} 
                     size="sm"
@@ -406,10 +644,9 @@ export default function ProductsPage() {
                           className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
                         >
                           <option value="all">All Categories</option>
-                          <option value="Dresses">Dresses</option>
-                          <option value="Tops">Tops</option>
-                          <option value="Bottoms">Bottoms</option>
-                          <option value="Accessories">Accessories</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -424,10 +661,9 @@ export default function ProductsPage() {
                           className="w-full h-10 rounded-lg border border-border/40 bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[#14b8a6]/30 cursor-pointer"
                         >
                           <option value="all">All Brands</option>
-                          <option value="Aura Original">Aura Original</option>
-                          <option value="Aura Denim">Aura Denim</option>
-                          <option value="Aura Accessories">Aura Accessories</option>
-                          <option value="Aura Luxury">Aura Luxury</option>
+                          {brands.map((b) => (
+                            <option key={b.id} value={b.name}>{b.name}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -551,9 +787,17 @@ export default function ProductsPage() {
                           {/* Image and product info */}
                           <TableCell className="py-4">
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-lg bg-gradient-to-tr ${gradientColor} flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0`}>
-                                {product.name.slice(0, 2).toUpperCase()}
-                              </div>
+                              {product.images && product.images.length > 0 ? (
+                                <img 
+                                  src={product.images[0].url ? (product.images[0].url.startsWith('http') ? product.images[0].url : `${API_BASE}/${product.images[0].url}`) : (product.images[0].startsWith('http') ? product.images[0] : `${API_BASE}/${product.images[0]}`)} 
+                                  alt={product.name} 
+                                  className="w-11 h-11 rounded-lg object-cover shadow-sm flex-shrink-0"
+                                />
+                              ) : (
+                                <div className={`w-11 h-11 rounded-lg bg-gradient-to-tr ${gradientColor} flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0 text-white`}>
+                                  {product.name.slice(0, 2).toUpperCase()}
+                                </div>
+                              )}
                               <div className="flex flex-col min-w-0">
                                 <p className="font-semibold text-sm text-foreground truncate">{product.name}</p>
                                 <p className="text-xs text-muted-foreground truncate font-normal">{product.brand}</p>
@@ -570,7 +814,7 @@ export default function ProductsPage() {
 
                           {/* Price */}
                           <TableCell className="py-4 text-sm font-black text-foreground">
-                            ${product.price.toFixed(2)}
+                            {fmtPrice(product.price)}
                           </TableCell>
 
                           {/* Stock Level */}
@@ -607,15 +851,22 @@ export default function ProductsPage() {
 
                           {/* Status Badge */}
                           <TableCell className="py-4">
-                            <Badge 
-                              className={`rounded-md px-2 py-0.5 text-xs font-semibold border ${
-                                product.status === 'active'
-                                  ? 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20'
-                                  : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-                              }`}
-                            >
-                              {product.status}
-                            </Badge>
+                            {(() => {
+                              const s = (product.status || '').toLowerCase();
+                              const isPublished = s === 'published' || s === 'active';
+                              const isDraft = s === 'draft';
+                              const cfg = isPublished
+                                ? { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/25', label: 'Published' }
+                                : isDraft
+                                ? { dot: 'bg-amber-400', bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/25', label: 'Draft' }
+                                : { dot: 'bg-gray-400', bg: 'bg-gray-500/10', text: 'text-gray-500 dark:text-gray-400', border: 'border-gray-500/20', label: 'Archived' };
+                              return (
+                                <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${isPublished ? 'animate-pulse' : ''}`} />
+                                  {cfg.label}
+                                </span>
+                              );
+                            })()}
                           </TableCell>
 
                           {/* Tags / Featured */}
@@ -653,6 +904,14 @@ export default function ProductsPage() {
                                   <Star className="mr-2 h-4 w-4 text-amber-500" />
                                   {product.isFeatured ? 'Unfeature' : 'Feature Product'}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleStatus(product.id, product.status)}
+                                  className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium"
+                                >
+                                  {['published', 'active'].includes(product.status?.toLowerCase())
+                                    ? <><span className="mr-2 text-base leading-none">◌</span>Unpublish</>
+                                    : <><span className="mr-2 text-base leading-none text-emerald-500">✓</span>Publish</>}
+                                </DropdownMenuItem>
                                 <div className="my-1 border-t border-border/10 mx-2" />
                                 <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
                                   <Trash2 className="mr-2 h-4 w-4 text-rose-500" />
@@ -669,27 +928,7 @@ export default function ProductsPage() {
               </Table>
             </div>
 
-            {selectedProducts.length > 0 && (
-              <div className="mt-4 flex items-center justify-between p-4 bg-muted/40 border border-border/20 rounded-xl">
-                <p className="text-sm text-muted-foreground font-normal">
-                  {selectedProducts.length} products selected
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="rounded-lg h-9">Export Selected</Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="rounded-lg h-9"
-                    onClick={() => {
-                      setProductsList(prev => prev.filter(p => !selectedProducts.includes(p.id)));
-                      setSelectedProducts([]);
-                    }}
-                  >
-                    Delete Selected
-                  </Button>
-                </div>
-              </div>
-            )}
+
           </CardContent>
         </Card>
 
@@ -733,13 +972,20 @@ export default function ProductsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="brand" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brand Label</Label>
-                    <Input
+                    <select
                       id="brand"
                       value={formData.brand}
                       onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                      placeholder="e.g. Aura Denim"
-                      className="rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 h-11"
-                    />
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      {brands.length > 0 ? (
+                        brands.map((b) => (
+                          <option key={b.id} value={b.name}>{b.name}</option>
+                        ))
+                      ) : (
+                        <option value="">No Brands Available</option>
+                      )}
+                    </select>
                   </div>
                 </div>
 
@@ -779,11 +1025,38 @@ export default function ProductsPage() {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                   >
-                    <option value="Dresses">Dresses</option>
-                    <option value="Tops">Tops</option>
-                    <option value="Bottoms">Bottoms</option>
-                    <option value="Accessories">Accessories</option>
+                    {categories.length > 0 ? (
+                      categories.map((c) => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))
+                    ) : (
+                      <option value="">No Categories Available</option>
+                    )}
                   </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="status" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Publishing Status</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'PUBLISHED', label: 'Published', color: 'text-emerald-600', bg: 'bg-emerald-500/10 border-emerald-500/40' },
+                      { value: 'DRAFT',     label: 'Draft',     color: 'text-amber-600',   bg: 'bg-amber-500/10 border-amber-500/40' },
+                      { value: 'ARCHIVED',  label: 'Archived',  color: 'text-gray-500',     bg: 'bg-gray-500/10 border-gray-400/40' },
+                    ].map(({ value, label, color, bg }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, status: value })}
+                        className={`h-10 rounded-lg border text-xs font-bold transition-all ${
+                          formData.status === value
+                            ? `${bg} ${color}`
+                            : 'border-border/40 text-muted-foreground hover:border-border/70'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -796,6 +1069,46 @@ export default function ProductsPage() {
                     placeholder="Describe this product for your storefront catalog..."
                     className="w-full p-3 rounded-lg border border-border/50 bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="images" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Product Images (Add 1 or more)</Label>
+                  <div className="space-y-3">
+                    <Input
+                      id="images"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          setImageFiles(Array.from(e.target.files));
+                        }
+                      }}
+                      className="rounded-lg border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/20 h-11 cursor-pointer pt-2"
+                    />
+                    {imageFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {imageFiles.map((file, idx) => (
+                          <div key={idx} className="w-12 h-12 rounded-lg border border-border/40 overflow-hidden relative group flex-shrink-0">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`preview-${idx}`} 
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImageFiles(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -824,13 +1137,20 @@ export default function ProductsPage() {
                       <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
                         {selectedProduct.sku}
                       </span>
-                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
-                        selectedProduct.status === 'active'
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-                      }`}>
-                        {selectedProduct.status}
-                      </Badge>
+                      <button
+                        type="button"
+                        title="Click to toggle Published / Draft"
+                        onClick={() => handleToggleStatus(selectedProduct.id, selectedProduct.status)}
+                        className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition-all hover:opacity-80 active:scale-95 cursor-pointer ${
+                          ['published', 'active'].includes(selectedProduct.status?.toLowerCase())
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
+                            : selectedProduct.status?.toLowerCase() === 'archived'
+                              ? 'bg-gray-500/10 text-gray-400 border-gray-500/20 hover:bg-gray-500/20'
+                              : 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
+                        }`}
+                      >
+                        {['published', 'active'].includes(selectedProduct.status?.toLowerCase()) ? '✓ Published' : selectedProduct.status?.toLowerCase() === 'archived' ? 'Archived' : '◌ Draft'}
+                      </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button 
@@ -845,6 +1165,7 @@ export default function ProductsPage() {
                             setEditPrice(String(selectedProduct.price));
                             setEditBrand(selectedProduct.brand);
                             setEditDesc(selectedProduct.description);
+                            setEditStatus(selectedProduct.status?.toUpperCase() || 'PUBLISHED');
                             setIsEditing(true);
                           }
                         }}
@@ -895,14 +1216,93 @@ export default function ProductsPage() {
 
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
-                  {/* Visual Product card placeholder with soft gradients */}
-                  <div className={`w-full h-44 rounded-xl bg-gradient-to-tr ${getProductGradient(selectedProduct.name)} flex items-center justify-center shadow-inner relative overflow-hidden group`}>
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Package className="h-16 w-16 opacity-30 group-hover:scale-110 transition-transform duration-300" />
-                    <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
-                      Catalog Preview Placeholder
-                    </span>
-                  </div>
+                  {/* Visual Product card image/placeholder */}
+                  {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                    <div className="w-full h-44 rounded-xl border border-border/30 overflow-hidden relative group">
+                      <img 
+                        src={selectedProduct.images[0].url ? (selectedProduct.images[0].url.startsWith('http') ? selectedProduct.images[0].url : `${API_BASE}/${selectedProduct.images[0].url}`) : (selectedProduct.images[0].startsWith('http') ? selectedProduct.images[0] : `${API_BASE}/${selectedProduct.images[0]}`)} 
+                        alt={selectedProduct.name} 
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                        Product Photo
+                      </span>
+                    </div>
+                  ) : (
+                    <div className={`w-full h-44 rounded-xl bg-gradient-to-tr ${getProductGradient(selectedProduct.name)} flex items-center justify-center shadow-inner relative overflow-hidden group`}>
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Package className="h-16 w-16 opacity-30 group-hover:scale-110 transition-transform duration-300" />
+                      <span className="absolute bottom-3 right-3 text-xs font-bold bg-background/80 px-2 py-0.5 rounded-md backdrop-blur border border-border/20">
+                        Catalog Preview Placeholder
+                      </span>
+                    </div>
+                  )}
+
+                  {isEditing && (
+                    <div className="space-y-4 mt-4">
+                      <Label htmlFor="edit-images" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Upload New Images</Label>
+                      <div className="space-y-3">
+                        <Input
+                          id="edit-images"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setEditImageFiles(Array.from(e.target.files));
+                            }
+                          }}
+                          className="h-11 rounded-lg border-border/50 focus:border-primary pt-2 cursor-pointer"
+                        />
+                        {editImageFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {editImageFiles.map((file, idx) => (
+                              <div key={idx} className="w-12 h-12 rounded-lg border border-border/40 overflow-hidden relative group flex-shrink-0">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`edit-preview-${idx}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditImageFiles(prev => prev.filter((_, i) => i !== idx));
+                                  }}
+                                  className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Publishing Status</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { value: 'PUBLISHED', label: '✓ Published', color: 'text-emerald-600', bg: 'bg-emerald-500/10 border-emerald-500/40' },
+                            { value: 'DRAFT',     label: '◌ Draft',     color: 'text-amber-600',   bg: 'bg-amber-500/10 border-amber-500/40' },
+                            { value: 'ARCHIVED',  label: 'Archived',    color: 'text-gray-500',    bg: 'bg-gray-500/10 border-gray-400/40' },
+                          ].map(({ value, label, color, bg }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setEditStatus(value)}
+                              className={`h-9 rounded-lg border text-xs font-bold transition-all ${
+                                editStatus === value
+                                  ? `${bg} ${color}`
+                                  : 'border-border/40 text-muted-foreground hover:border-border/70'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
@@ -913,7 +1313,7 @@ export default function ProductsPage() {
                         {isEditing ? (
                           <Input type="number" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="h-9 rounded-md border-border/50 mt-1.5 font-mono text-sm focus:border-primary" />
                         ) : (
-                          <h4 className="text-2xl font-black text-foreground mt-1.5">${selectedProduct.price.toFixed(2)}</h4>
+                          <h4 className="text-2xl font-black text-foreground mt-1.5">{fmtPrice(selectedProduct.price)}</h4>
                         )}
                       </CardContent>
                     </Card>
