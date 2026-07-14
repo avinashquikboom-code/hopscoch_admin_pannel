@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +108,9 @@ const timeline = [
   },
 ];
 
-export default function ReturnDetailsPage({ params }: { params: { id: string } }) {
+export default function ReturnDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = use(params);
+  const id = unwrappedParams.id;
   const [adminNotes, setAdminNotes] = useState(returnDetails.adminNotes);
   const statusInfo = statusConfig[returnDetails.status as keyof typeof statusConfig];
 

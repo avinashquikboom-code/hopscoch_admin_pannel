@@ -133,7 +133,10 @@ export function Header({ onMenuClick }: HeaderProps) {
               </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator className="my-1 border-border/20" />
-            <DropdownMenuItem className="text-center text-xs font-semibold text-[#14b8a6] hover:text-[#2dd4bf] cursor-pointer py-2 justify-center rounded-md">
+            <DropdownMenuItem 
+              onClick={() => router.push('/notifications')}
+              className="text-center text-xs font-semibold text-[#14b8a6] hover:text-[#2dd4bf] cursor-pointer py-2 justify-center rounded-md"
+            >
               View all notifications
             </DropdownMenuItem>
           </DropdownMenuContent>

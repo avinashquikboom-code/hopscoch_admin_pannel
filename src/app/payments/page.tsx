@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -24,42 +25,44 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import {
-  DollarSign, TrendingUp, CheckCircle2, Clock, XCircle, RefreshCcw,
+  DollarSign, TrendingUp, CheckCircle2, Clock, XCircle, RefreshCw,
   ArrowUpRight, CreditCard, BarChart2, Search, ArrowUp, ArrowDown, Sparkles,
-  Info, Eye, Trash2, Calendar, User, Shield
+  Info, Eye, Trash2, Calendar, User, Shield, AlertCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/components/ui/toast';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
 function normalizePayment(raw: any) {
+  const order = raw.order || {};
   return {
-    id: raw.id || raw._id || raw.transactionId || `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
-    order: raw.orderId || raw.order?.id || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-    customer: raw.customerName || `${raw.user?.firstName || ''} ${raw.user?.lastName || ''}`.trim() || 'Customer',
+    id: raw.id,
+    orderId: raw.orderId,
+    orderNumber: order.orderNumber || `ORD-${raw.orderId}`,
+    customer: order.user ? `${order.user.firstName} ${order.user.lastName || ''}`.trim() : 'Customer',
+    email: order.user?.email || 'customer@email.com',
     amount: raw.amount ? `₹${Number(raw.amount).toLocaleString('en-IN')}` : '₹0',
-    method: raw.method || raw.paymentMethod || 'UPI',
-    status: (raw.status || 'Pending').charAt(0).toUpperCase() + (raw.status || 'Pending').slice(1).toLowerCase(),
-    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-CA') : raw.date || '',
-    gateway: raw.gateway || raw.paymentGateway || 'Razorpay',
-    email: raw.email || raw.user?.email || 'customer@email.com',
+    amountNum: Number(raw.amount) || 0,
+    refundedAmount: Number(raw.refundedAmount) || 0,
+    method: raw.method || 'UPI',
+    status: raw.status || 'PENDING',
+    date: new Date(raw.createdAt).toLocaleDateString('en-CA'),
+    gateway: raw.providerRef ? 'Razorpay' : 'Manual',
+    razorpayOrderId: raw.razorpayOrderId || '',
+    razorpayPaymentId: raw.razorpayPaymentId || '',
+    refundId: raw.refundId || '',
   };
 }
-
-const initialStats = [
-  { label: 'Total Revenue', value: '₹48.2L', icon: DollarSign, color: 'text-[#14b8a6]', bg: 'bg-[#14b8a6]/10', change: '+18%' },
-  { label: "Today's Revenue", value: '₹1.8L', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', change: '+9%' },
-  { label: 'Successful txns', value: '8,241', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10', change: '+12%' },
-  { label: 'Average order ticket', value: '₹3,842', icon: CreditCard, color: 'text-violet-500', bg: 'bg-violet-500/10', change: '+6%' },
-];
 
 const revenueData = [
   { day: 'Mon', revenue: 182000 }, { day: 'Tue', revenue: 215000 }, { day: 'Wed', revenue: 194000 },
@@ -75,24 +78,11 @@ const paymentMethodData = [
 ];
 
 const txnStatusStyle: Record<string, string> = {
-  Success: 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-500/20',
-  Pending: 'bg-amber-500/10 text-amber-500 dark:bg-amber-500/5 dark:text-amber-400 border-amber-500/20',
-  Failed:  'bg-rose-500/10 text-rose-500 dark:bg-rose-500/5 dark:text-rose-400 border-rose-500/20',
-};
-
-const getAvatarColor = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const gradients = [
-    'from-pink-400 to-rose-500 text-white shadow-pink-500/10',
-    'from-purple-400 to-indigo-500 text-white shadow-purple-500/10',
-    'from-blue-400 to-cyan-500 text-white shadow-blue-500/10',
-    'from-emerald-400 to-teal-500 text-white shadow-emerald-500/10',
-    'from-amber-400 to-orange-500 text-white shadow-amber-500/10',
-  ];
-  return gradients[Math.abs(hash) % gradients.length];
+  PAID: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  PENDING: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  FAILED:  'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  REFUNDED: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20',
+  PARTIALLY_REFUNDED: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
 };
 
 export default function PaymentsDashboardPage() {
@@ -101,15 +91,38 @@ export default function PaymentsDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTxn, setSelectedTxn] = useState<any | null>(null);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refunding, setRefunding] = useState(false);
+
+  const [stats, setStats] = useState({
+    captured: 0,
+    failed: 0,
+    refunded: 0,
+    total: 0
+  });
+
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/admin/payments/dashboard`, { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setStats(json.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
 
   const fetchPayments = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/payments/admin/all`, { headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/api/v1/admin/payments`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load payments');
-      const raw = json.data ?? json.payments ?? json ?? [];
-      setTxnList(Array.isArray(raw) ? raw.map(normalizePayment) : []);
+      const raw = json.data?.payments || [];
+      setTxnList(raw.map(normalizePayment));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -117,16 +130,63 @@ export default function PaymentsDashboardPage() {
     }
   }, []);
 
-  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+  useEffect(() => {
+    fetchDashboardStats();
+    fetchPayments();
+  }, [fetchDashboardStats, fetchPayments]);
 
   const filteredTxns = useMemo(() => {
     return txnList.filter(t =>
       t.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.order.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.method.toLowerCase().includes(searchQuery.toLowerCase())
+      t.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.method.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.status.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [txnList, searchQuery]);
+
+  const handleRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTxn) return;
+    
+    const amt = parseFloat(refundAmount);
+    if (isNaN(amt) || amt <= 0 || amt > (selectedTxn.amountNum - selectedTxn.refundedAmount)) {
+      toast.error('Invalid refund amount.');
+      return;
+    }
+
+    if (refundReason.length < 10) {
+      toast.error('Refund reason must be at least 10 characters.');
+      return;
+    }
+
+    setRefunding(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/admin/payments/${selectedTxn.id}/refund`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          refundAmount: amt,
+          refundReason,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Refund processed successfully.');
+        setRefundAmount('');
+        setRefundReason('');
+        setSelectedTxn(null);
+        fetchPayments();
+        fetchDashboardStats();
+      } else {
+        toast.error(data.message || 'Failed to initiate refund.');
+      }
+    } catch (err: any) {
+      toast.error(`Error processing refund: ${err.message}`);
+    } finally {
+      setRefunding(false);
+    }
+  };
 
   return (
     <AdminLayout>
@@ -140,72 +200,59 @@ export default function PaymentsDashboardPage() {
 
         {/* Premium KPI Summary Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {initialStats.map((s) => {
-            const Icon = s.icon;
-            const isPos = s.change.startsWith('+');
-            return (
-              <Card key={s.label} className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-                <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-gradient-to-br from-[#14b8a6]/5 to-[#0d9488]/5 blur-xl opacity-50 group-hover:scale-150 transition-all" />
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{s.label}</span>
-                    <div className={`p-2 rounded-lg ${s.bg} ${s.color}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <h3 className="text-2xl font-black text-foreground tracking-tight">{s.value}</h3>
-                    <div className="flex items-center gap-1 mt-1">
-                      <ArrowUpRight className={`h-3 w-3 ${isPos ? 'text-emerald-500' : 'text-rose-500 rotate-180'}`} />
-                      <span className={`text-[10px] font-bold ${isPos ? 'text-emerald-500' : 'text-rose-500'}`}>{s.change}</span>
-                      <span className="text-[10px] text-muted-foreground font-light ml-1">vs last week</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
-            <div className="p-6 pb-2">
-              <h3 className="font-bold text-sm text-foreground">Weekly Revenue Streams</h3>
-            </div>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={revenueData} margin={{ left: -5, right: 10, top: 10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.12} />
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border/20" />
-                  <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="currentColor" className="text-muted-foreground/60" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="currentColor" className="text-muted-foreground/60" tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: any) => [`₹${(Number(v)/1000).toFixed(1)}k`, 'Revenue']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border)/0.2)', borderRadius: 8, fontSize: 11 }} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#14b8a6" fill="url(#revGrad)" strokeWidth={2.5} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md relative overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Settle Volume</span>
+                <div className="p-2 rounded-lg bg-[#14b8a6]/10 text-[#14b8a6]">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">₹{stats.captured.toLocaleString('en-IN')}</h3>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
-            <div className="p-6 pb-2">
-              <h3 className="font-bold text-sm text-foreground">Payment Methods Breakdown</h3>
-            </div>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={paymentMethodData} cx="50%" cy="50%" innerRadius={55} outerRadius={78} paddingAngle={4} dataKey="value">
-                    {paymentMethodData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: any) => [`${v}%`]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border)/0.2)', borderRadius: 8, fontSize: 11 }} />
-                  <Legend wrapperStyle={{ fontSize: 10 }} />
-                </PieChart>
-              </ResponsiveContainer>
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md relative overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Failed Transactions</span>
+                <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+                  <XCircle className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">₹{stats.failed.toLocaleString('en-IN')}</h3>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md relative overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Refunded</span>
+                <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+                  <RefreshCw className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">₹{stats.refunded.toLocaleString('en-IN')}</h3>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md relative overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Transactions</span>
+                <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">{stats.total}</h3>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -213,14 +260,13 @@ export default function PaymentsDashboardPage() {
         {/* Recent Transactions Panel */}
         <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
           <CardContent className="p-6 space-y-6">
-            
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <span className="text-sm font-bold text-foreground">Transactions Log Ledger</span>
               <div className="relative max-w-sm flex-1 group">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary" />
                 <Input
                   placeholder="Search transactions..."
-                  className="pl-11 bg-muted/20 border-border/40 hover:border-border/60 focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]/20 h-10 rounded-lg transition-all"
+                  className="pl-11 bg-muted/20 border-border/40 focus:border-[#14b8a6] h-10 rounded-lg"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -248,46 +294,19 @@ export default function PaymentsDashboardPage() {
                       onClick={() => setSelectedTxn(t)}
                       className="hover:bg-muted/20 border-b border-border/20 transition-colors cursor-pointer group/row"
                     >
-                      {/* ID */}
-                      <TableCell className="py-4">
-                        <span className="font-mono font-bold text-xs bg-muted/60 border border-border/40 text-foreground px-2.5 py-1 rounded-md select-all group-hover/row:border-[#14b8a6]/25 transition-all">
-                          {t.id}
-                        </span>
-                      </TableCell>
-
-                      {/* Order reference */}
-                      <TableCell className="py-4">
-                        <span className="font-mono font-bold text-xs text-muted-foreground">
-                          {t.order}
-                        </span>
-                      </TableCell>
-
-                      {/* Customer Name */}
-                      <TableCell className="py-4 font-semibold text-sm text-foreground">
-                        {t.customer}
-                      </TableCell>
-
-                      {/* Amount */}
-                      <TableCell className="py-4 text-sm font-black text-foreground">
-                        {t.amount}
-                      </TableCell>
-
-                      {/* Method */}
-                      <TableCell className="py-4 text-sm text-muted-foreground font-normal">
-                        {t.method}
-                      </TableCell>
-
-                      {/* Date */}
+                      <TableCell className="py-4 font-mono font-bold text-xs">{t.id}</TableCell>
+                      <TableCell className="py-4 font-mono text-xs text-muted-foreground">{t.orderNumber}</TableCell>
+                      <TableCell className="py-4 font-semibold text-sm text-foreground">{t.customer}</TableCell>
+                      <TableCell className="py-4 text-sm font-black text-foreground">{t.amount}</TableCell>
+                      <TableCell className="py-4 text-sm text-muted-foreground font-normal">{t.method}</TableCell>
                       <TableCell className="py-4 text-sm text-muted-foreground font-normal">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
                           <span>{t.date}</span>
                         </div>
                       </TableCell>
-
-                      {/* Status */}
                       <TableCell className="py-4 text-center">
-                        <Badge className={`text-xs font-semibold rounded-md px-2.5 py-1 border border-transparent select-none ${txnStatusStyle[t.status] || ''}`}>
+                        <Badge className={`text-xs font-semibold rounded-md px-2.5 py-1 border border-transparent select-none ${txnStatusStyle[t.status.toUpperCase()] || 'bg-zinc-500/10 text-zinc-500'}`}>
                           {t.status}
                         </Badge>
                       </TableCell>
@@ -298,7 +317,7 @@ export default function PaymentsDashboardPage() {
                       <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
                         <div className="flex flex-col items-center justify-center space-y-3">
                           <Info className="h-8 w-8 text-muted-foreground/60" />
-                          <p className="text-sm font-semibold text-muted-foreground">No matching transactions found</p>
+                          <p className="text-sm font-semibold text-muted-foreground">No transactions found</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -314,25 +333,23 @@ export default function PaymentsDashboardPage() {
           <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col h-full bg-card border-l border-border/30 backdrop-blur-xl">
             {selectedTxn && (
               <>
-                {/* Header */}
                 <div className="p-6 border-b border-border/20 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg select-all">
-                        {selectedTxn.id}
+                      <span className="font-mono font-black text-sm bg-muted/60 border border-border/40 px-3 py-1 rounded-lg">
+                        TXN-{selectedTxn.id}
                       </span>
-                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${txnStatusStyle[selectedTxn.status]}`}>
+                      <Badge className={`rounded-md border px-2.5 py-0.5 text-xs font-semibold ${txnStatusStyle[selectedTxn.status.toUpperCase()] || 'bg-zinc-500/10 text-zinc-500'}`}>
                         {selectedTxn.status}
                       </Badge>
                     </div>
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-foreground">Transaction Receipt</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Order reference ID: {selectedTxn.order}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-light">Order Number: {selectedTxn.orderNumber}</p>
                   </div>
                 </div>
 
-                {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">
@@ -356,12 +373,12 @@ export default function PaymentsDashboardPage() {
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Customer Details</h3>
-                    <div className="p-4 rounded-xl border border-border/30 bg-muted/15 space-y-2.5 text-sm font-semibold">
+                    <div className="p-4 rounded-xl border border-border/30 bg-muted/15 space-y-2 text-sm font-semibold">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-[#14b8a6]" />
                         <span>{selectedTxn.customer}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground font-normal">
+                      <div className="text-xs text-muted-foreground font-normal">
                         <span>{selectedTxn.email}</span>
                       </div>
                     </div>
@@ -375,13 +392,61 @@ export default function PaymentsDashboardPage() {
                         <span>{selectedTxn.gateway}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground font-normal">Security Check</span>
-                        <span className="text-emerald-500 flex items-center gap-1">
-                          <Shield className="h-3.5 w-3.5" /> SECURE
-                        </span>
+                        <span className="text-muted-foreground font-normal">Razorpay Order ID</span>
+                        <span className="font-mono text-xs">{selectedTxn.razorpayOrderId || 'None'}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground font-normal">Razorpay Payment ID</span>
+                        <span className="font-mono text-xs">{selectedTxn.razorpayPaymentId || 'None'}</span>
+                      </div>
+                      {selectedTxn.refundedAmount > 0 && (
+                        <div className="flex justify-between text-orange-500">
+                          <span className="text-muted-foreground font-normal">Refunded Amount</span>
+                          <span>₹{selectedTxn.refundedAmount.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Refund Forms if eligible */}
+                  {selectedTxn.status.toUpperCase() === 'PAID' && (selectedTxn.amountNum - selectedTxn.refundedAmount) > 0 && (
+                    <div className="p-4 border border-border/30 rounded-xl bg-card">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Process Online Refund</h3>
+                      <form onSubmit={handleRefund} className="space-y-4">
+                        <div className="space-y-1">
+                          <Label htmlFor="refAmt" className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Refund Amount (Max ₹{(selectedTxn.amountNum - selectedTxn.refundedAmount).toLocaleString('en-IN')})</Label>
+                          <Input
+                            id="refAmt"
+                            type="number"
+                            step="0.01"
+                            placeholder="Amount in ₹"
+                            value={refundAmount}
+                            onChange={e => setRefundAmount(e.target.value)}
+                            required
+                            className="h-10 rounded-lg border-border/50 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="refReason" className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Refund Reason (Min 10 characters)</Label>
+                          <Input
+                            id="refReason"
+                            placeholder="Reason for refund..."
+                            value={refundReason}
+                            onChange={e => setRefundReason(e.target.value)}
+                            required
+                            className="h-10 rounded-lg border-border/50 text-sm"
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={refunding}
+                          className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold h-10 rounded-lg text-xs"
+                        >
+                          {refunding ? 'Processing Refund...' : 'Initiate Razorpay Refund'}
+                        </Button>
+                      </form>
+                    </div>
+                  )}
 
                 </ScrollArea>
               </>

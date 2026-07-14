@@ -164,6 +164,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       icon: Settings,
       items: [
         { name: 'Languages & Currency', href: '/settings/languages', icon: Languages },
+        { name: 'Integrations', href: '/settings/integrations', icon: SlidersHorizontal },
       ],
     },
   ];
