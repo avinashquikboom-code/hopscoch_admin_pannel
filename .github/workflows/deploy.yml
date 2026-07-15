@@ -35,9 +35,12 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # No build args: backend URL is resolved at runtime via BACKEND_API_URL
-          # (set in frontend.env on the VPS), not baked into the image.
+          # NEXT_PUBLIC_API_URL is inlined into the client bundle at build time,
+          # so it must be a build arg — setting it in admin.env at container start
+          # would be too late. No /api suffix: the admin appends /api to its own
+          # request paths and uses this as the image origin.
           docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.fciseller.com \
             -t "$IMAGE_URI:$IMAGE_TAG" \
             -t "$IMAGE_URI:latest" \
             .
