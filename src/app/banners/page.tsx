@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,7 @@ function normalizeBanner(raw: any) {
   return {
     id: raw.id || raw._id || String(Math.random()),
     title: raw.title || 'Ad Banner',
+    imageUrl: raw.imageUrl || raw.image_url || raw.image || '',
     type: raw.type || 'home',
     link: raw.link || raw.targetUrl || '/',
     position: Number(raw.position || raw.order || 1),
@@ -107,6 +108,11 @@ export default function BannersPage() {
   const [editPosition, setEditPosition] = useState('');
   const [editDesc, setEditDesc] = useState('');
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchBanners = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -122,15 +128,38 @@ export default function BannersPage() {
 
   const handleCreateBanner = async (e: React.FormEvent) => {
     e.preventDefault();
+    let imageUrl = '';
+
+    try {
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', imageFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const uploadRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: uploadFormData,
+        });
+        if (uploadRes.ok) {
+          const uploadJson = await uploadRes.json();
+          imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        }
+      }
+    } catch (err) {
+      console.error('Error uploading banner file:', err);
+    }
+
     const body = {
       title: formData.title,
       type: formData.type,
       link: formData.link || '/',
-      position: parseInt(formData.position) || 1,
+      position: String(formData.position || '1'),
       startDate: formData.startDate || '2026-01-01',
       endDate: formData.endDate || '2026-12-31',
       isActive: formData.isActive,
       description: formData.description,
+      imageUrl,
     };
     try {
       const res = await fetch(`${API_BASE}/api/settings/banners`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
@@ -138,6 +167,7 @@ export default function BannersPage() {
       else { setBannersList(prev => [...prev, normalizeBanner({ ...body, id: String(Date.now()) })]); }
     } catch { setBannersList(prev => [...prev, normalizeBanner({ ...body, id: String(Date.now()) })]); }
     setFormData({ title: '', type: 'home', link: '', position: '1', startDate: '', endDate: '', isActive: true, description: '' });
+    setImageFile(null);
     setIsAddOpen(false);
   };
 
@@ -168,17 +198,41 @@ export default function BannersPage() {
 
   const handleSaveBanner = async () => {
     if (!selectedBanner) return;
+    let imageUrl = selectedBanner.imageUrl;
+
+    try {
+      if (editImageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', editImageFile);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const uploadRes = await fetch(`${API_BASE}/api/admin/upload`, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: uploadFormData,
+        });
+        if (uploadRes.ok) {
+          const uploadJson = await uploadRes.json();
+          imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        }
+      }
+    } catch (err) {
+      console.error('Error uploading banner edit file:', err);
+    }
+
     const updated = {
       ...selectedBanner,
       title: editTitle,
       link: editLink,
       position: parseInt(editPosition) || 1,
       description: editDesc,
+      imageUrl,
     };
 
     setBannersList(prev => prev.map(b => b.id === selectedBanner.id ? updated : b));
     setSelectedBanner(updated);
     setIsEditing(false);
+    setEditImageFile(null);
 
     try {
       await fetch(`${API_BASE}/api/settings/banners/${selectedBanner.id}`, {
@@ -187,8 +241,9 @@ export default function BannersPage() {
         body: JSON.stringify({
           title: editTitle,
           link: editLink,
-          position: parseInt(editPosition) || 1,
+          position: String(editPosition || '1'),
           description: editDesc,
+          imageUrl,
         }),
       });
     } catch {}
@@ -357,9 +412,17 @@ export default function BannersPage() {
                       >
                         {/* Visual Mock thumbnail */}
                         <TableCell className="py-4">
-                          <div className={`w-28 h-14 rounded-lg bg-gradient-to-tr ${bannerGradients[idx % bannerGradients.length]} flex items-center justify-center flex-shrink-0 shadow-inner relative overflow-hidden`}>
-                            <ImageIcon className="h-5 w-5 text-white/50" />
-                          </div>
+                          {banner.imageUrl ? (
+                            <img 
+                              src={banner.imageUrl} 
+                              alt={banner.title} 
+                              className="w-28 h-14 rounded-lg object-cover shadow-inner border border-border/20"
+                            />
+                          ) : (
+                            <div className={`w-28 h-14 rounded-lg bg-gradient-to-tr ${bannerGradients[idx % bannerGradients.length]} flex items-center justify-center flex-shrink-0 shadow-inner relative overflow-hidden`}>
+                              <ImageIcon className="h-5 w-5 text-white/50" />
+                            </div>
+                          )}
                         </TableCell>
 
                         {/* Title and URL link */}
@@ -588,10 +651,50 @@ export default function BannersPage() {
                 {/* Upload image card */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ad Graphic Files Upload</Label>
-                  <div className="border-2 border-dashed border-border/50 rounded-xl p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
-                    <Upload className="h-8 w-8 mx-auto text-muted-foreground/75 mb-2" />
-                    <p className="text-sm font-semibold text-foreground">Click to upload banner assets</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Recommended size 1920x600px, PNG/WebP up to 5MB</p>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setImageFile(e.target.files[0]);
+                      }
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-border/50 rounded-xl p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  >
+                    {imageFile ? (
+                      <div className="space-y-2">
+                        <img 
+                          src={URL.createObjectURL(imageFile)} 
+                          alt="Preview" 
+                          className="max-h-24 mx-auto object-cover rounded-lg"
+                        />
+                        <p className="text-xs font-semibold text-foreground truncate">{imageFile.name}</p>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-xs text-rose-500 hover:bg-rose-500/10 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setImageFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                        >
+                          Remove Image
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground/75 mb-2" />
+                        <p className="text-sm font-semibold text-foreground">Click to upload banner assets</p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">Recommended size 1920x600px, PNG/WebP up to 5MB</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -702,17 +805,55 @@ export default function BannersPage() {
                 {/* Content */}
                 <ScrollArea className="flex-1 p-6 space-y-6 h-full overflow-y-auto">
                   {/* Mock mockup representation card */}
-                  <div className={`w-full h-40 rounded-xl bg-gradient-to-tr ${bannerGradients[selectedBanner.position % bannerGradients.length]} flex flex-col justify-between p-5 shadow-inner relative overflow-hidden`}>
-                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest bg-black/20 self-start px-2 py-0.5 rounded backdrop-blur">
-                      {selectedBanner.type.toUpperCase()} MOCKUP PREVIEW
-                    </span>
-                    <h4 className="text-lg font-black text-white leading-tight drop-shadow-md">
-                      {isEditing ? editTitle : selectedBanner.title}
-                    </h4>
-                    <span className="text-[10px] text-white/80 border border-white/20 px-2 py-0.5 rounded bg-white/10 backdrop-blur self-end font-mono">
-                      {isEditing ? editLink : selectedBanner.link}
-                    </span>
-                  </div>
+                  {selectedBanner.imageUrl ? (
+                    <div className="w-full h-40 rounded-xl overflow-hidden shadow-md relative border border-border/20">
+                      <img 
+                        src={editImageFile ? URL.createObjectURL(editImageFile) : selectedBanner.imageUrl} 
+                        alt={selectedBanner.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-3 left-3 bg-black/40 px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-widest backdrop-blur">
+                        {selectedBanner.type.toUpperCase()} PREVIEW
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`w-full h-40 rounded-xl bg-gradient-to-tr ${bannerGradients[selectedBanner.position % bannerGradients.length]} flex flex-col justify-between p-5 shadow-inner relative overflow-hidden`}>
+                      <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest bg-black/20 self-start px-2 py-0.5 rounded backdrop-blur">
+                        {selectedBanner.type.toUpperCase()} MOCKUP PREVIEW
+                      </span>
+                      <h4 className="text-lg font-black text-white leading-tight drop-shadow-md">
+                        {isEditing ? editTitle : selectedBanner.title}
+                      </h4>
+                      <span className="text-[10px] text-white/80 border border-white/20 px-2 py-0.5 rounded bg-white/10 backdrop-blur self-end font-mono">
+                        {isEditing ? editLink : selectedBanner.link}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Edit image file selector */}
+                  {isEditing && (
+                    <div className="space-y-1.5 mt-2">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Update Banner Graphic</Label>
+                      <input
+                        type="file"
+                        ref={editFileInputRef}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setEditImageFile(e.target.files[0]);
+                          }
+                        }}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <div 
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="border border-dashed border-border/60 hover:border-primary rounded-lg p-3 text-center cursor-pointer hover:bg-primary/5 transition-all text-xs flex items-center justify-center gap-2 text-muted-foreground"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {editImageFile ? `Change Image: ${editImageFile.name}` : "Click to select a new banner graphic file"}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="border-border/30 bg-muted/10 shadow-sm rounded-lg">

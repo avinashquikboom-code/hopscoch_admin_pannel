@@ -3,7 +3,7 @@
  * All API calls use this helper — never hardcode data in pages.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
