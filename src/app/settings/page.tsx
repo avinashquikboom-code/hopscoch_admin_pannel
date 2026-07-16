@@ -92,7 +92,7 @@ export default function SettingsPage() {
           titlePart1="System"
           titlePart2="Settings"
           badgeText="System Configuration"
-          subtitle="Configure core store metadata, language preferences, notification alerts, and theme configurations."
+          subtitle="Configure core store metadata, language preferences, and notification alerts."
         />
 
         <Tabs defaultValue="general" className="space-y-6">
@@ -100,7 +100,6 @@ export default function SettingsPage() {
             <TabsTrigger value="general" className="rounded-lg py-2 px-4 text-xs font-semibold">General Settings</TabsTrigger>
             <TabsTrigger value="store" className="rounded-lg py-2 px-4 text-xs font-semibold">Store Branding</TabsTrigger>
             <TabsTrigger value="notification" className="rounded-lg py-2 px-4 text-xs font-semibold">Notifications</TabsTrigger>
-            <TabsTrigger value="theme" className="rounded-lg py-2 px-4 text-xs font-semibold">Theme Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-0">
@@ -317,76 +316,6 @@ export default function SettingsPage() {
                     className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
                   >
                     {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Preferences Saved</> : <><Save className="h-4 w-4" /> Save Preferences</>}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="theme" className="mt-0">
-            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-1">
-                  <h3 className="text-base font-bold text-foreground">Aesthetics & Palette Customizer</h3>
-                  <p className="text-xs text-muted-foreground font-light">Define UI parameters, branding color values, and fonts.</p>
-                </div>
-                <Separator className="border-border/10" />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="primaryColor" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Primary Brand HEX Color</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        id="primaryColor" 
-                        type="color" 
-                        defaultValue="#0d9488"
-                        className="w-12 h-10 p-1 rounded-lg border-border/50 shrink-0 cursor-pointer bg-background"
-                      />
-                      <Input defaultValue="#0d9488" className="h-10 rounded-lg border-border/50 font-mono font-semibold" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="accentColor" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Accent Brand HEX Color</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        id="accentColor" 
-                        type="color" 
-                        defaultValue="#14b8a6"
-                        className="w-12 h-10 p-1 rounded-lg border-border/50 shrink-0 cursor-pointer bg-background"
-                      />
-                      <Input defaultValue="#14b8a6" className="h-10 rounded-lg border-border/50 font-mono font-semibold" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="fontFamily" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default Typography Font Family</Label>
-                  <select
-                    id="fontFamily"
-                    defaultValue="inter"
-                    className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
-                  >
-                    <option value="inter">Inter (Default Sans)</option>
-                    <option value="roboto">Roboto</option>
-                    <option value="outfit">Outfit (Modern Rounded)</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center space-x-2.5 pt-2">
-                  <Checkbox id="darkMode" defaultChecked className="rounded border-border/60 text-primary accent-primary h-4.5 w-4.5" />
-                  <Label htmlFor="darkMode" className="text-sm font-medium text-foreground cursor-pointer select-none">
-                    Force system dark-mode appearance override
-                  </Label>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button 
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                  >
-                    {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Theme Saved</> : <><Save className="h-4 w-4" /> Save Theme Settings</>}
                   </Button>
                 </div>
               </CardContent>
