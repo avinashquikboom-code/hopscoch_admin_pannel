@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { CurrencyProvider } from "@/context/currency-context";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,11 +29,18 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        <CurrencyProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </CurrencyProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <CurrencyProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </CurrencyProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

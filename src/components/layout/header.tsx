@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Bell, User, Settings, LogOut, Sun, Moon, Menu } from 'lucide-react';
+import { Search, Bell, User, Settings, LogOut, Sun, Moon, Monitor, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -23,8 +24,14 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<{ firstName: string; lastName: string; email: string; avatarUrl?: string } | null>(null);
+
+  // Prevent hydration mismatch by only rendering theme icon after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,10 +53,27 @@ export function Header({ onMenuClick }: HeaderProps) {
     return `${f}${l}` || 'AD';
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
+  // Cycle: system → light → dark → system
+  const cycleTheme = () => {
+    if (theme === 'system') setTheme('light');
+    else if (theme === 'light') setTheme('dark');
+    else setTheme('system');
   };
+
+  const ThemeIcon = () => {
+    if (!mounted) return <Sun className="h-5 w-5" />;
+    if (theme === 'system') return <Monitor className="h-5 w-5" />;
+    if (resolvedTheme === 'dark') return <Moon className="h-5 w-5" />;
+    return <Sun className="h-5 w-5" />;
+  };
+
+  const themeLabel = () => {
+    if (!mounted) return 'Toggle theme';
+    if (theme === 'system') return 'System mode';
+    if (theme === 'dark') return 'Dark mode';
+    return 'Light mode';
+  };
+
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/20 bg-background/60 backdrop-blur-lg px-6 transition-all duration-300">
@@ -78,16 +102,16 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
-        {/* Dark Mode Toggle */}
+        {/* Theme Mode Toggle — cycles: System → Light → Dark */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={toggleDarkMode}
+          onClick={cycleTheme}
+          title={themeLabel()}
           className="relative rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <ThemeIcon />
+          <span className="sr-only">{themeLabel()}</span>
         </Button>
 
         {/* Notifications Dropdown */}
