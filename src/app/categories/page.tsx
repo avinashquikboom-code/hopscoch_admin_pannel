@@ -74,7 +74,7 @@ function normalizeCategory(raw: any) {
     slug: raw.slug || raw.name?.toLowerCase().replace(/\s+/g, '-') || '',
     description: raw.description || '',
     order: Number(raw.order || raw.sortOrder || raw.displayOrder || 1),
-    isVisible: raw.isVisible ?? raw.isActive ?? true,
+    isVisible: raw.isVisible ?? raw.isFeatured ?? raw.isActive ?? true,
     productCount: Number(raw.productCount ?? raw._count?.products ?? 0),
     iconUrl: raw.iconUrl || raw.icon_url || '',
     bannerUrl: raw.bannerUrl || raw.banner_url || '',

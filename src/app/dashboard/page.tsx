@@ -66,8 +66,14 @@ export default function DashboardPage() {
         api.reports.getDashboard(),
       ]);
 
-      if (dash.status === 'fulfilled') setDashData((dash as any).value?.data ?? (dash as any).value);
-      if (report.status === 'fulfilled') setReportData((report as any).value?.data ?? (report as any).value);
+      if (dash.status === 'fulfilled') {
+        const dashValue = (dash as any).value?.data ?? (dash as any).value ?? (dash as any).value?.stats ?? {};
+        setDashData(dashValue);
+      }
+      if (report.status === 'fulfilled') {
+        const reportValue = (report as any).value?.data ?? (report as any).value ?? (report as any).value?.metrics ?? {};
+        setReportData(reportValue);
+      }
       setLastUpdated(new Date());
     } catch (e: any) {
       setError(e.message || 'Failed to load dashboard data');
