@@ -190,7 +190,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 <Sparkles className="h-4 w-4" />
               </div>
               <span className="text-sm font-bold text-foreground tracking-tight">
-                AURA COUTURE
+                FCI SELLER
               </span>
             </motion.div>
           ) : (
@@ -352,7 +352,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 {user ? `${user.firstName} ${user.lastName}`.trim() || 'Admin User' : 'Admin User'}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {user?.email || 'admin@hopscotch.com'}
+                {user?.email || 'admin@fciseller.com'}
               </p>
             </div>
           </div>

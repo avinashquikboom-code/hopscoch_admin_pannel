@@ -101,7 +101,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     location: 'Mumbai, India',
-    bio: 'Fashion director and senior administrator at Hopscotch.',
+    bio: 'Fashion director and senior administrator at FCISeller.',
     avatarUrl: '', role: 'ADMIN', createdAt: '',
   });
 

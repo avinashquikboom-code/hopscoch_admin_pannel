@@ -1,5 +1,5 @@
 /**
- * Typography System for AURA COUTURE
+ * Typography System for FCI SELLER
  * Based on Google Fonts Inter
  */
 

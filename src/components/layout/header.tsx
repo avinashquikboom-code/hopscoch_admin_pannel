@@ -171,7 +171,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                     {user ? `${user.firstName} ${user.lastName}`.trim() || 'Admin User' : 'Admin User'}
                   </p>
                   <p className="text-xs text-muted-foreground font-light truncate">
-                    {user?.email || 'admin@hopscotch.com'}
+                    {user?.email || 'admin@fciseller.com'}
                   </p>
                 </div>
               </div>

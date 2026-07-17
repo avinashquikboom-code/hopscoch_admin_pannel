@@ -108,7 +108,7 @@ export default function LoginPage() {
             <Sparkles className="w-5 h-5 text-black" />
           </div>
           <span className="text-xl font-black tracking-[0.25em] text-white">
-            AURA COUTURE
+            FCI SELLER
           </span>
         </div>
 
@@ -162,7 +162,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="relative z-10 text-[10px] text-white/40 flex items-center justify-between">
-          <span>© 2026 AURA COUTURE. All rights reserved.</span>
+          <span>© 2026 FCI SELLER. All rights reserved.</span>
           <span className="flex items-center gap-1.5 font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-[#14b8a6]" />
             V2.4.0 Secure Connection
@@ -188,7 +188,7 @@ export default function LoginPage() {
               <Sparkles className="w-6 h-6 text-black" />
             </div>
             <h1 className="text-2xl font-black tracking-[0.25em] text-slate-800 dark:text-zinc-100">
-              AURA COUTURE
+              FCI SELLER
             </h1>
           </div>
 

@@ -1,4 +1,4 @@
-// Core Types for AURA COUTURE Admin Panel
+// Core Types for FCI SELLER Admin Panel
 
 export type UserRole = 'admin' | 'manager' | 'editor' | 'viewer';
 
