@@ -1,5 +1,6 @@
 'use client';
 
+import { API_BASE } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/toast';
@@ -130,7 +131,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/profile`,
+          `${API_BASE}/api/admin/profile`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
@@ -153,11 +154,11 @@ export default function ProfilePage() {
         // Error occurred
       }
     };
-
+ 
     const fetchSessions = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/sessions`,
+          `${API_BASE}/api/admin/sessions`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
@@ -179,7 +180,7 @@ export default function ProfilePage() {
     if (!token) { toast.error('Session expired. Please log in.'); setIsLoading(false); return; }
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/profile`,
+        `${API_BASE}/api/admin/profile`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -228,7 +229,7 @@ export default function ProfilePage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/auth/change-password`,
+        `${API_BASE}/api/auth/change-password`,
         {
           method: 'POST',
           headers: {

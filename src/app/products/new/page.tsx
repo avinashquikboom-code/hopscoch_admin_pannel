@@ -1,4 +1,5 @@
 'use client';
+import { API_BASE } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -30,7 +31,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
+
 
 export default function NewProductPage() {
   const router = useRouter();

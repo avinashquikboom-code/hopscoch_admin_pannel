@@ -1,4 +1,5 @@
 'use client';
+import { API_BASE } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurrency } from '@/context/currency-context';
@@ -53,7 +54,7 @@ import {
 } from 'lucide-react';
 
 // ── API helper ──────────────────────────────────────────────────────────────
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
+
 
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;

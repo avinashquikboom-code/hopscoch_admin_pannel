@@ -1,4 +1,5 @@
 'use client';
+import { API_BASE } from '@/lib/api';
 
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -34,7 +35,7 @@ function CustomSwitch({ checked, onChange }: GatewayToggleProps) {
   );
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
+
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
