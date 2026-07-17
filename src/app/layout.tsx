@@ -31,8 +31,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <CurrencyProvider>

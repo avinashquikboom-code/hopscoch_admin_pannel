@@ -1,7 +1,8 @@
 'use client';
 
-import { Search, Bell, User, Settings, LogOut, Menu } from 'lucide-react';
+import { Search, Bell, User, Settings, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,12 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
   const [user, setUser] = useState<{ firstName: string; lastName: string; email: string; avatarUrl?: string } | null>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -70,6 +77,21 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          aria-label="Toggle theme"
+        >
+          {mounted && theme === 'dark' ? (
+            <Sun className="h-5 w-5 text-amber-500 fill-amber-400" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Button>
+
         {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger render={
