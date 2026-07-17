@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
 export default function NewProductPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +39,102 @@ export default function NewProductPage() {
   const [variants, setVariants] = useState([
     { sku: '', price: '', stock: '', color: '', size: '', material: '' }
   ]);
+
+  // Dynamic lists and loading/error states
+  const [parentCategories, setParentCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
+
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
+  const [isSubcategoriesLoading, setIsSubcategoriesLoading] = useState(false);
+  const [isBrandsLoading, setIsBrandsLoading] = useState(false);
+
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [subcategoriesError, setSubcategoriesError] = useState<string | null>(null);
+  const [brandsError, setBrandsError] = useState<string | null>(null);
+
+  const authHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  // Fetch initial Category & Brand lists
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsCategoriesLoading(true);
+      setIsBrandsLoading(true);
+      setCategoriesError(null);
+      setBrandsError(null);
+
+      try {
+        const catRes = await fetch(`${API_BASE}/api/categories`);
+        if (!catRes.ok) throw new Error('Failed to load categories');
+        const catJson = await catRes.json();
+        const catData = catJson.data || catJson;
+        if (Array.isArray(catData)) {
+          // Parent categories are those where parentId is null
+          const parents = catData.filter((c: any) => c.parentId === null);
+          setParentCategories(parents);
+        }
+      } catch (err: any) {
+        setCategoriesError(err.message || 'Failed to load categories');
+      } finally {
+        setIsCategoriesLoading(false);
+      }
+
+      try {
+        const brandRes = await fetch(`${API_BASE}/api/brands`);
+        if (!brandRes.ok) throw new Error('Failed to load brands');
+        const brandJson = await brandRes.json();
+        const brandData = brandJson.data || brandJson;
+        if (Array.isArray(brandData)) {
+          setBrands(brandData);
+        }
+      } catch (err: any) {
+        setBrandsError(err.message || 'Failed to load brands');
+      } finally {
+        setIsBrandsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Fetch subcategories when parent category selection changes
+  useEffect(() => {
+    if (!selectedCategory) {
+      setSubcategories([]);
+      setSelectedSubCategory('');
+      return;
+    }
+
+    const loadSubcategories = async () => {
+      setIsSubcategoriesLoading(true);
+      setSubcategoriesError(null);
+      setSelectedSubCategory(''); // Reset selected subcategory
+
+      try {
+        const res = await fetch(`${API_BASE}/api/categories/${selectedCategory}/children`);
+        if (!res.ok) throw new Error('Failed to load subcategories');
+        const json = await res.json();
+        const data = json.data || json;
+        setSubcategories(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        setSubcategoriesError(err.message || 'Failed to load subcategories');
+      } finally {
+        setIsSubcategoriesLoading(false);
+      }
+    };
+
+    loadSubcategories();
+  }, [selectedCategory]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -57,14 +155,97 @@ export default function NewProductPage() {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+
+    const formDataObj = new FormData(e.currentTarget);
+
+    if (!selectedBrand) {
+      alert('Please select a Brand.');
       setIsLoading(false);
+      return;
+    }
+
+    if (!selectedCategory) {
+      alert('Please select a Category.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (subcategories.length > 0 && !selectedSubCategory) {
+      alert('Please select a Sub Category.');
+      setIsLoading(false);
+      return;
+    }
+
+    const price = parseFloat(formDataObj.get('price') as string) || 0;
+    const stock = parseInt(formDataObj.get('stock') as string) || 0;
+
+    const body = {
+      name: formDataObj.get('name') as string,
+      sku: formDataObj.get('sku') as string,
+      price: price,
+      basePrice: price,
+      stock: stock,
+      categoryId: Number(selectedSubCategory || selectedCategory),
+      brandId: Number(selectedBrand),
+      description: formDataObj.get('description') as string,
+      shortDescription: formDataObj.get('shortDescription') as string,
+      seoTitle: formDataObj.get('metaTitle') as string,
+      seoDescription: formDataObj.get('metaDescription') as string,
+      status: 'PUBLISHED',
+      gender: 'UNISEX',
+      ageGroup: 'ADULT',
+      variants: variants
+        .filter((v) => v.sku.trim() !== '')
+        .map((v) => ({
+          sku: v.sku.trim(),
+          price: parseFloat(v.price) || price,
+          stock: parseInt(v.stock) || 0,
+          color: v.color || null,
+          size: v.size || null,
+          material: v.material || null,
+        })),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/catalog/products`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to save product');
+
+      const productId = json.data?.id || json.id;
+
+      // Handle file uploads if there are any
+      if (productId && images.length > 0) {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const uploadHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+        await Promise.all(
+          images.map(async (file) => {
+            const uploadFormData = new FormData();
+            uploadFormData.append('image', file);
+            uploadFormData.append('productId', String(productId));
+
+            await fetch(`${API_BASE}/api/admin/images`, {
+              method: 'POST',
+              headers: uploadHeaders,
+              body: uploadFormData,
+            });
+          })
+        );
+      }
+
       router.push('/products');
-    }, 1000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save product');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,13 +264,14 @@ export default function NewProductPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" type="button">
               <Eye className="mr-2 h-4 w-4" />
               Preview
             </Button>
             <Button 
               className="bg-primary hover:bg-primary-dark"
-              onClick={handleSubmit}
+              type="submit"
+              form="new-product-form"
               disabled={isLoading}
             >
               <Save className="mr-2 h-4 w-4" />
@@ -98,7 +280,7 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form id="new-product-form" onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="space-y-6">
             <TabsList>
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -108,7 +290,7 @@ export default function NewProductPage() {
               <TabsTrigger value="seo">SEO</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="basic">
+            <TabsContent value="basic" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
@@ -118,52 +300,81 @@ export default function NewProductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="name">Product Name *</Label>
-                      <Input id="name" placeholder="Enter product name" required />
+                      <Input id="name" name="name" placeholder="Enter product name" required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="sku">SKU *</Label>
-                      <Input id="sku" placeholder="Enter SKU" required />
+                      <Input id="sku" name="sku" placeholder="Enter SKU" required />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="brand">Brand</Label>
-                      <Select>
+                      <Select value={selectedBrand} onValueChange={(val) => setSelectedBrand(val || '')}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select brand" />
+                          <SelectValue placeholder={isBrandsLoading ? "Loading..." : "Select brand"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="aura-original">Aura Original</SelectItem>
-                          <SelectItem value="aura-denim">Aura Denim</SelectItem>
-                          <SelectItem value="aura-luxury">Aura Luxury</SelectItem>
+                          {brandsError ? (
+                            <SelectItem value="error" disabled>{brandsError}</SelectItem>
+                          ) : brands.length === 0 ? (
+                            <SelectItem value="none" disabled>No brands found</SelectItem>
+                          ) : (
+                            brands.map((b) => (
+                              <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Category</Label>
-                      <Select>
+                      <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || '')}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder={isCategoriesLoading ? "Loading..." : "Select category"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="dresses">Dresses</SelectItem>
-                          <SelectItem value="tops">Tops</SelectItem>
-                          <SelectItem value="bottoms">Bottoms</SelectItem>
-                          <SelectItem value="accessories">Accessories</SelectItem>
+                          {categoriesError ? (
+                            <SelectItem value="error" disabled>{categoriesError}</SelectItem>
+                          ) : parentCategories.length === 0 ? (
+                            <SelectItem value="none" disabled>No categories found</SelectItem>
+                          ) : (
+                            parentCategories.map((c) => (
+                              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="subcategory">Sub Category</Label>
-                      <Select>
+                      <Select 
+                        value={selectedSubCategory} 
+                        onValueChange={(val) => setSelectedSubCategory(val || '')}
+                        disabled={!selectedCategory || isSubcategoriesLoading}
+                      >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select sub category" />
+                          <SelectValue placeholder={
+                            isSubcategoriesLoading 
+                              ? "Loading subcategories..." 
+                              : !selectedCategory 
+                                ? "Select a category first" 
+                                : subcategories.length === 0 
+                                  ? "No subcategories found" 
+                                  : "Select sub category"
+                          } />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="casual">Casual</SelectItem>
-                          <SelectItem value="formal">Formal</SelectItem>
-                          <SelectItem value="party">Party</SelectItem>
+                          {subcategoriesError ? (
+                            <SelectItem value="error" disabled>{subcategoriesError}</SelectItem>
+                          ) : subcategories.length === 0 ? (
+                            <SelectItem value="none" disabled>No subcategories found</SelectItem>
+                          ) : (
+                            subcategories.map((c) => (
+                              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -173,6 +384,7 @@ export default function NewProductPage() {
                     <Label htmlFor="description">Description *</Label>
                     <Textarea 
                       id="description" 
+                      name="description"
                       placeholder="Enter product description"
                       rows={6}
                       required
@@ -183,6 +395,7 @@ export default function NewProductPage() {
                     <Label htmlFor="shortDescription">Short Description</Label>
                     <Textarea 
                       id="shortDescription" 
+                      name="shortDescription"
                       placeholder="Enter short description for product cards"
                       rows={3}
                     />
@@ -225,7 +438,7 @@ export default function NewProductPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="pricing">
+            <TabsContent value="pricing" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Pricing & Inventory</CardTitle>
@@ -235,7 +448,7 @@ export default function NewProductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="price">Price *</Label>
-                      <Input id="price" type="number" placeholder="0.00" required />
+                      <Input id="price" name="price" type="number" placeholder="0.00" required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="mrp">MRP</Label>
@@ -250,7 +463,7 @@ export default function NewProductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="stock">Stock *</Label>
-                      <Input id="stock" type="number" placeholder="0" required />
+                      <Input id="stock" name="stock" type="number" placeholder="0" required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lowStock">Low Stock Threshold</Label>
@@ -285,7 +498,7 @@ export default function NewProductPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="images">
+            <TabsContent value="images" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Product Images</CardTitle>
@@ -308,11 +521,14 @@ export default function NewProductPage() {
                       className="hidden"
                       id="image-upload"
                     />
-                    <label htmlFor="image-upload">
-                      <Button variant="outline" className="mt-4">
-                        Choose Files
-                      </Button>
-                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                    >
+                      Choose Files
+                    </Button>
                   </div>
 
                   {images.length > 0 && (
@@ -345,7 +561,7 @@ export default function NewProductPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="variants">
+            <TabsContent value="variants" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Product Variants</CardTitle>
@@ -454,7 +670,7 @@ export default function NewProductPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="seo">
+            <TabsContent value="seo" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>SEO Settings</CardTitle>
@@ -468,13 +684,14 @@ export default function NewProductPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="metaTitle">Meta Title</Label>
-                    <Input id="metaTitle" placeholder="SEO title" />
+                    <Input id="metaTitle" name="metaTitle" placeholder="SEO title" />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="metaDescription">Meta Description</Label>
                     <Textarea 
                       id="metaDescription" 
+                      name="metaDescription"
                       placeholder="SEO description"
                       rows={4}
                     />
