@@ -37,7 +37,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 type RefundStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 type RefundType = 'full' | 'partial';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
 
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;

@@ -39,7 +39,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/auth/login';
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com') + '/api/auth/login';
 
       const response = await fetch(
         apiUrl,

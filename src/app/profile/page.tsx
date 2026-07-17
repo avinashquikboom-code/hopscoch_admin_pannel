@@ -130,7 +130,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/admin/profile`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/profile`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
@@ -157,7 +157,7 @@ export default function ProfilePage() {
     const fetchSessions = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/admin/sessions`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/sessions`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
@@ -179,7 +179,7 @@ export default function ProfilePage() {
     if (!token) { toast.error('Session expired. Please log in.'); setIsLoading(false); return; }
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/admin/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/admin/profile`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -228,7 +228,7 @@ export default function ProfilePage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/change-password`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com'}/api/auth/change-password`,
         {
           method: 'POST',
           headers: {

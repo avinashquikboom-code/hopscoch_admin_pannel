@@ -42,7 +42,7 @@ const CurrencyContext = createContext<CurrencyContextValue>({
   setCurrencyCode: () => {},
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
 const LS_KEY = 'admin_currency';
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
