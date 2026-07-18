@@ -58,6 +58,7 @@ import {
   Link as LinkIcon
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from '@/components/ui/toast';
 
 
 function authHeaders(): HeadersInit {
@@ -142,13 +143,19 @@ export default function BannersPage() {
           headers: uploadHeaders,
           body: uploadFormData,
         });
-        if (uploadRes.ok) {
-          const uploadJson = await uploadRes.json();
-          imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        if (!uploadRes.ok) {
+          throw new Error('Image upload failed');
+        }
+        const uploadJson = await uploadRes.json();
+        imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        if (!imageUrl) {
+          throw new Error('No URL returned from server');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading banner file:', err);
+      toast.error(`Image upload failed: ${err.message || 'Network Error'}`);
+      return; // Stop creation
     }
 
     const body = {
@@ -212,13 +219,19 @@ export default function BannersPage() {
           headers: uploadHeaders,
           body: uploadFormData,
         });
-        if (uploadRes.ok) {
-          const uploadJson = await uploadRes.json();
-          imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        if (!uploadRes.ok) {
+          throw new Error('Image upload failed');
+        }
+        const uploadJson = await uploadRes.json();
+        imageUrl = uploadJson.data?.url || uploadJson.url || '';
+        if (!imageUrl) {
+          throw new Error('No URL returned from server');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading banner edit file:', err);
+      toast.error(`Image upload failed: ${err.message || 'Network Error'}`);
+      return; // Stop update
     }
 
     const updated = {
