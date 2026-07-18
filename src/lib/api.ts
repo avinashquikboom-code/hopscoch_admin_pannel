@@ -4,16 +4,24 @@
  */
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciseller.com';
+export const APP_TYPE = 'admin'; // Admin panel specific app type
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth_token');
 }
 
+function getApiKey(): string {
+  return process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
+}
+
 function authHeaders(): HeadersInit {
   const token = getToken();
+  const apiKey = getApiKey();
   return {
     'Content-Type': 'application/json',
+    'X-API-Key': apiKey,
+    'X-App-Type': APP_TYPE,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -22,18 +30,38 @@ async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) },
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || `Request failed: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: { ...authHeaders(), ...(options.headers || {}) },
+    });
+  } catch {
+    // fetch only rejects on network-level failures (server down, DNS, CORS)
+    throw new Error('Cannot reach the server. Please check your connection and try again.');
   }
 
-  return data;
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Non-JSON body (proxy error page, empty response) — fall through to status handling
+  }
+
+  if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/')) {
+    // Session expired — clear stale token and send the user back to login
+    localStorage.removeItem('auth_token');
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login';
+    }
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.message || `Request failed: ${res.status}`);
+  }
+
+  return data as T;
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -117,9 +145,9 @@ export const api = {
       return apiRequest<any>(`/api/reviews${qs}`);
     },
     approve: (id: string) =>
-      apiRequest<any>(`/api/reviews/${id}/approve`, { method: 'PATCH' }),
+      apiRequest<any>(`/api/reviews/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'approved' }) }),
     reject: (id: string) =>
-      apiRequest<any>(`/api/reviews/${id}/reject`, { method: 'PATCH' }),
+      apiRequest<any>(`/api/reviews/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'reported' }) }),
   },
 
   // Coupons
@@ -160,7 +188,7 @@ export const api = {
   shipping: {
     getAll: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return apiRequest<any>(`/api/shipments${qs}`);
+      return apiRequest<any>(`/api/shipments/admin/all${qs}`);
     },
   },
 
@@ -174,10 +202,10 @@ export const api = {
   // Notifications
   notifications: {
     getAll: () => apiRequest<any>('/api/notifications'),
-    markRead: (id: string) =>
-      apiRequest<any>(`/api/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: () =>
-      apiRequest<any>('/api/notifications/read-all', { method: 'PATCH' }),
+    send: (id: string) =>
+      apiRequest<any>(`/api/notifications/${id}/send`, { method: 'POST' }),
+    delete: (id: string) =>
+      apiRequest<any>(`/api/notifications/${id}`, { method: 'DELETE' }),
   },
 
   // Activity logs
