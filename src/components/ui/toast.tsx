@@ -100,7 +100,18 @@ export const toast = Object.assign(toastFn, {
       if (path.includes("/auth/login") || path.includes("/admin/login")) {
         toast.error(resData?.message || "Invalid email or password.");
       } else {
-        toast.error("Session expired.");
+        if (typeof window !== 'undefined') {
+          const hasToken = !!localStorage.getItem('auth_token');
+          if (hasToken) {
+            toast.error("Session expired.");
+          }
+          localStorage.removeItem('auth_token');
+          if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login';
+          }
+        } else {
+          toast.error("Session expired.");
+        }
       }
       return;
     }

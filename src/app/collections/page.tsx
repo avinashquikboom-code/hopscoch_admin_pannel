@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import api, { API_BASE } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -112,9 +112,7 @@ export default function CollectionsPage() {
   const fetchCollections = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/collections`, { headers: authHeaders() });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to load collections');
+      const json = await api.collections.getAll();
       const raw = json.data ?? json.collections ?? json ?? [];
       setCollectionsList(Array.isArray(raw) ? raw.map(normalizeCollection) : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
@@ -158,10 +156,8 @@ export default function CollectionsPage() {
       imageUrl,
     };
     try {
-      const res = await fetch(`${API_BASE}/api/collections`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-      if (res.ok) { 
-        await fetchCollections();
-      }
+      await api.collections.create(body);
+      await fetchCollections();
     } catch (err: any) { 
       console.error(err);
     }
@@ -178,21 +174,21 @@ export default function CollectionsPage() {
     try {
       const target = collectionsList.find(c => c.id === id);
       if (target) {
-        await fetch(`${API_BASE}/api/collections/${id}`, {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: JSON.stringify({ isActive: !target.isActive })
-        });
+        await api.collections.update(id, { isActive: !target.isActive });
       }
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDeleteCollection = async (id: string) => {
     setCollectionsList(prev => prev.filter(c => c.id !== id));
     setSelectedCollection(null);
     try {
-      await fetch(`${API_BASE}/api/collections/${id}`, { method: 'DELETE', headers: authHeaders() });
-    } catch {}
+      await api.collections.delete(id);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filteredCollections = useMemo(() => {

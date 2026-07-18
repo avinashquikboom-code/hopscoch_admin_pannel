@@ -104,6 +104,17 @@ export const api = {
     getById: (id: string) => apiRequest<any>(`/api/categories/${id}`),
   },
 
+  // Collections
+  collections: {
+    getAll: () => apiRequest<any>('/api/collections'),
+    create: (body: Record<string, any>) =>
+      apiRequest<any>('/api/collections', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: Record<string, any>) =>
+      apiRequest<any>(`/api/collections/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (id: string) =>
+      apiRequest<any>(`/api/collections/${id}`, { method: 'DELETE' }),
+  },
+
   // Inventory
   inventory: {
     getAll: (params?: Record<string, string>) => {
