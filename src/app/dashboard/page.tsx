@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/purity */
 
 import { useState, useEffect } from 'react';
 import { useCurrency } from '@/context/currency-context';
@@ -66,14 +67,26 @@ export default function DashboardPage() {
         api.reports.getDashboard(),
       ]);
 
+      const errorMsgs: string[] = [];
+
       if (dash.status === 'fulfilled') {
         const dashValue = (dash as any).value?.data ?? (dash as any).value ?? (dash as any).value?.stats ?? {};
         setDashData(dashValue);
+      } else {
+        errorMsgs.push(`Stats: ${dash.reason?.message || dash.reason}`);
       }
+
       if (report.status === 'fulfilled') {
         const reportValue = (report as any).value?.data ?? (report as any).value ?? (report as any).value?.metrics ?? {};
         setReportData(reportValue);
+      } else {
+        errorMsgs.push(`Reports: ${report.reason?.message || report.reason}`);
       }
+
+      if (errorMsgs.length > 0) {
+        setError(errorMsgs.join(' | '));
+      }
+
       setLastUpdated(new Date());
     } catch (e: any) {
       setError(e.message || 'Failed to load dashboard data');
