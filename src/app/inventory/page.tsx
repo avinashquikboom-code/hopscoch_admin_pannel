@@ -55,16 +55,22 @@ function authHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 function normalizeInventory(raw: any) {
+  // Backend wraps warehouse inventory with nested variant → product → category
+  const variant = raw.variant;
+  const product = variant?.product;
+  const category = product?.category;
+  const warehouse = raw.warehouse;
+
   return {
     id: raw.id || raw._id || String(Math.random()),
-    variantId: raw.variantId || raw.variant?.id,
-    warehouseId: raw.warehouseId || raw.warehouse?.id,
-    sku: raw.sku || raw.variant?.sku || `INV-${String(raw.id).slice(0, 6) || '000'}`,
-    name: raw.name || raw.productName || raw.variant?.product?.name || raw.variant?.name || 'Item',
-    category: raw.category || raw.variant?.product?.category?.name || 'General',
+    variantId: raw.variantId || variant?.id,
+    warehouseId: raw.warehouseId || warehouse?.id,
+    sku: raw.sku || variant?.sku || `INV-${String(raw.id || '').slice(0, 6) || '000'}`,
+    name: raw.name || raw.productName || product?.name || variant?.name || 'Item',
+    category: raw.category || category?.name || 'General',
     stock: Number(raw.availableStock ?? raw.stock ?? raw.quantity ?? raw.quantityOnHand ?? 0),
     minStock: Number(raw.minimumStock ?? raw.minStock ?? raw.reorderPoint ?? raw.threshold ?? 5),
-    location: raw.location || raw.warehouseLocation || raw.warehouse?.name || 'Warehouse',
+    location: raw.location || warehouse?.name || raw.warehouseLocation || 'Warehouse',
     description: raw.description || raw.notes || '',
   };
 }
@@ -92,7 +98,8 @@ export default function InventoryPage() {
       const res = await fetch(`${API_BASE}/api/inventory`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load inventory');
-      const raw = json.data ?? json.items ?? json ?? [];
+      // Backend returns: { data: { inventoryItems: [...], pagination: {...} } }
+      const raw = json.data?.inventoryItems ?? json.data ?? json.items ?? json.inventoryItems ?? json ?? [];
       setInventoryList(Array.isArray(raw) ? raw.map(normalizeInventory) : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);
