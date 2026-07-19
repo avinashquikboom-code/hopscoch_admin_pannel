@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { API_BASE } from '@/lib/api';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,8 +79,70 @@ const initialCurrencies = [
 ];
 
 export default function LanguagesAndCurrencyPage() {
-  const [languages, setLanguages] = useState(initialLanguages);
-  const [currencies, setCurrencies] = useState(initialCurrencies);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [currencies, setCurrencies] = useState<any[]>([]);
+
+  // Fetch languages and currencies from API
+  useEffect(() => {
+    fetchLanguages();
+    fetchCurrencies();
+  }, []);
+
+  const fetchLanguages = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/languages`);
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setLanguages(json.data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch languages:', e);
+    }
+  };
+
+  const fetchCurrencies = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/currencies`);
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setCurrencies(json.data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch currencies:', e);
+    }
+  };
+
+  const saveLanguages = async (updatedLangs: any[]) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      await fetch(`${API_BASE}/api/settings/languages`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ languages: updatedLangs }),
+      });
+    } catch (e) {
+      console.error('Failed to save languages:', e);
+    }
+  };
+
+  const saveCurrencies = async (updatedCurrs: any[]) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      await fetch(`${API_BASE}/api/settings/currencies`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ currencies: updatedCurrs }),
+      });
+    } catch (e) {
+      console.error('Failed to save currencies:', e);
+    }
+  };
 
   // Dialog & Form states for Language
   const [isLangDialogOpen, setIsLangDialogOpen] = useState(false);
@@ -107,19 +170,23 @@ export default function LanguagesAndCurrencyPage() {
     if (newLang.isDefault) {
       updatedLangs = updatedLangs.map((l) => ({ ...l, isDefault: false }));
     }
-    setLanguages([...updatedLangs, newLang]);
+    const finalLangs = [...updatedLangs, newLang];
+    setLanguages(finalLangs);
+    saveLanguages(finalLangs);
     setLangForm({ name: '', code: '', flag: '🌐', isDefault: false });
     setIsLangDialogOpen(false);
   };
 
   const handleToggleLanguageStatus = (id: string) => {
-    setLanguages(
-      languages.map((l) => (l.id === id ? { ...l, isEnabled: !l.isEnabled } : l))
-    );
+    const finalLangs = languages.map((l) => (l.id === id ? { ...l, isEnabled: !l.isEnabled } : l));
+    setLanguages(finalLangs);
+    saveLanguages(finalLangs);
   };
 
   const handleDeleteLanguage = (id: string) => {
-    setLanguages(languages.filter((l) => l.id !== id));
+    const finalLangs = languages.filter((l) => l.id !== id);
+    setLanguages(finalLangs);
+    saveLanguages(finalLangs);
   };
 
   // Currency Handlers
@@ -141,19 +208,23 @@ export default function LanguagesAndCurrencyPage() {
     if (newCurr.isDefault) {
       updatedCurrs = updatedCurrs.map((c) => ({ ...c, isDefault: false }));
     }
-    setCurrencies([...updatedCurrs, newCurr]);
+    const finalCurrs = [...updatedCurrs, newCurr];
+    setCurrencies(finalCurrs);
+    saveCurrencies(finalCurrs);
     setCurrForm({ name: '', code: '', symbol: '$', exchangeRate: 1.0, isDefault: false });
     setIsCurrDialogOpen(false);
   };
 
   const handleToggleCurrencyStatus = (id: string) => {
-    setCurrencies(
-      currencies.map((c) => (c.id === id ? { ...c, isEnabled: !c.isEnabled } : c))
-    );
+    const finalCurrs = currencies.map((c) => (c.id === id ? { ...c, isEnabled: !c.isEnabled } : c));
+    setCurrencies(finalCurrs);
+    saveCurrencies(finalCurrs);
   };
 
   const handleDeleteCurrency = (id: string) => {
-    setCurrencies(currencies.filter((c) => c.id !== id));
+    const finalCurrs = currencies.filter((c) => c.id !== id);
+    setCurrencies(finalCurrs);
+    saveCurrencies(finalCurrs);
   };
 
   return (
