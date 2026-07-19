@@ -46,8 +46,18 @@ import { PageHeader } from '@/components/layout/page-header';
 const initialLanguages = [
   { id: '1', code: 'en', name: 'English', flag: '🇺🇸', isDefault: true, isEnabled: true },
   { id: '2', code: 'es', name: 'Spanish', flag: '🇪🇸', isDefault: false, isEnabled: true },
-  { id: '3', code: 'fr', name: 'French', flag: '🇫🇷', isDefault: false, isEnabled: false },
+  { id: '3', code: 'fr', name: 'French', flag: '🇫🇷', isDefault: false, isEnabled: true },
   { id: '4', code: 'de', name: 'German', flag: '🇩🇪', isDefault: false, isEnabled: false },
+  { id: '5', code: 'ar', name: 'Arabic', flag: '🇸🇦', isDefault: false, isEnabled: true },
+  { id: '6', code: 'ms', name: 'Bahasa Melayu', flag: '🇲🇾', isDefault: false, isEnabled: true },
+  { id: '7', code: 'nl', name: 'Nederlands', flag: '🇳🇱', isDefault: false, isEnabled: true },
+  { id: '8', code: 'en-MU', name: 'English (Mauritius)', flag: '🇲🇺', isDefault: false, isEnabled: true },
+  { id: '9', code: 'en-FJ', name: 'English (Fiji)', flag: '🇫🇯', isDefault: false, isEnabled: true },
+  { id: '10', code: 'en-GY', name: 'English (Guyana)', flag: '🇬🇾', isDefault: false, isEnabled: true },
+  { id: '11', code: 'nl-SR', name: 'Dutch (Suriname)', flag: '🇸🇷', isDefault: false, isEnabled: true },
+  { id: '12', code: 'en-TT', name: 'English (Trinidad & Tobago)', flag: '🇹🇹', isDefault: false, isEnabled: true },
+  { id: '13', code: 'ar-BH', name: 'Arabic (Bahrain)', flag: '🇧🇭', isDefault: false, isEnabled: true },
+  { id: '14', code: 'ar-AE', name: 'Arabic (UAE / Dubai)', flag: '🇦🇪', isDefault: false, isEnabled: true },
 ];
 
 // Currencies Initial Mock Data
@@ -55,7 +65,16 @@ const initialCurrencies = [
   { id: '1', code: 'USD', symbol: '$', name: 'US Dollar', exchangeRate: 1.00, isDefault: true, isEnabled: true },
   { id: '2', code: 'EUR', symbol: '€', name: 'Euro', exchangeRate: 0.92, isDefault: false, isEnabled: true },
   { id: '3', code: 'GBP', symbol: '£', name: 'British Pound', exchangeRate: 0.79, isDefault: false, isEnabled: true },
-  { id: '4', code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchangeRate: 149.50, isDefault: false, isEnabled: false },
+  { id: '4', code: 'INR', symbol: '₹', name: 'Indian Rupee', exchangeRate: 83.0, isDefault: false, isEnabled: true },
+  { id: '5', code: 'AED', symbol: 'AED', name: 'UAE Dirham (Dubai)', exchangeRate: 3.67, isDefault: false, isEnabled: true },
+  { id: '6', code: 'BHD', symbol: 'BD', name: 'Bahraini Dinar', exchangeRate: 0.38, isDefault: false, isEnabled: true },
+  { id: '7', code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit', exchangeRate: 4.72, isDefault: false, isEnabled: true },
+  { id: '8', code: 'MUR', symbol: '₨', name: 'Mauritian Rupee', exchangeRate: 45.0, isDefault: false, isEnabled: true },
+  { id: '9', code: 'FJD', symbol: 'FJ$', name: 'Fijian Dollar', exchangeRate: 2.22, isDefault: false, isEnabled: true },
+  { id: '10', code: 'GYD', symbol: 'G$', name: 'Guyanese Dollar', exchangeRate: 209.5, isDefault: false, isEnabled: true },
+  { id: '11', code: 'SRD', symbol: 'Sr$', name: 'Surinamese Dollar', exchangeRate: 32.5, isDefault: false, isEnabled: true },
+  { id: '12', code: 'TTD', symbol: 'TT$', name: 'Trinidad & Tobago Dollar', exchangeRate: 6.78, isDefault: false, isEnabled: true },
+  { id: '13', code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchangeRate: 149.50, isDefault: false, isEnabled: false },
 ];
 
 export default function LanguagesAndCurrencyPage() {

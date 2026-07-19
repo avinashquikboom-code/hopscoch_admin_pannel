@@ -199,15 +199,20 @@ export default function NewProductPage() {
       gender: 'UNISEX',
       ageGroup: 'ADULT',
       variants: variants
-        .filter((v) => v.sku.trim() !== '')
-        .map((v) => ({
-          sku: v.sku.trim(),
-          price: parseFloat(v.price) || price,
-          stock: parseInt(v.stock) || 0,
-          color: v.color || null,
-          size: v.size || null,
-          material: v.material || null,
-        })),
+        .filter((v) => v.sku.trim() !== '' || v.color.trim() !== '' || v.size.trim() !== '')
+        .map((v, idx) => {
+          const baseSku = (formDataObj.get('sku') as string || 'SKU').trim().toUpperCase();
+          const cleanColor = (v.color || 'DEFAULT').trim().toUpperCase().replace(/\s+/g, '-');
+          const cleanSize = (v.size || 'ONETIME').trim().toUpperCase().replace(/\s+/g, '-');
+          return {
+            sku: v.sku.trim() || `${baseSku}-${cleanColor}-${cleanSize}-${idx + 1}`,
+            price: parseFloat(v.price) || price,
+            stock: parseInt(v.stock) || 0,
+            color: v.color || null,
+            size: v.size || null,
+            material: v.material || null,
+          };
+        }),
     };
 
     try {

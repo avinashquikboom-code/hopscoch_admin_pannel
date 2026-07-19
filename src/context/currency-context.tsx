@@ -14,6 +14,13 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   SGD: 'S$',
   AED: 'AED ',
   SAR: 'SAR ',
+  BHD: 'BD ',
+  MYR: 'RM ',
+  MUR: '₨',
+  FJD: 'FJ$',
+  GYD: 'G$',
+  SRD: 'Sr$',
+  TTD: 'TT$',
 };
 
 const CURRENCY_LOCALES: Record<string, string> = {
@@ -27,6 +34,13 @@ const CURRENCY_LOCALES: Record<string, string> = {
   SGD: 'en-SG',
   AED: 'ar-AE',
   SAR: 'ar-SA',
+  BHD: 'ar-BH',
+  MYR: 'ms-MY',
+  MUR: 'en-MU',
+  FJD: 'en-FJ',
+  GYD: 'en-GY',
+  SRD: 'nl-SR',
+  TTD: 'en-TT',
 };
 
 interface CurrencyContextValue {
