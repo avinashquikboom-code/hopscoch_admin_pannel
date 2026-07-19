@@ -1,7 +1,7 @@
 'use client';
 import { API_BASE } from '@/lib/api';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,8 +148,97 @@ function authHeaders(): HeadersInit {
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
-  const [adminNotes, setAdminNotes] = useState(orderDetails.adminNotes);
-  const statusInfo = statusConfig[orderDetails.status as keyof typeof statusConfig];
+
+  // ── Real order data from API ──────────────────────────────────────────────
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any[]>([]);
+  const [loadingOrder, setLoadingOrder] = useState(true);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    const numericId = id.replace(/\D/g, '') || id;
+    setLoadingOrder(true);
+    setOrderError(null);
+
+    Promise.all([
+      fetch(`${API_BASE}/api/admin/orders/${numericId}`, { headers: authHeaders() }).then(r => r.json()),
+      fetch(`${API_BASE}/api/admin/orders/${numericId}/timeline`, { headers: authHeaders() }).then(r => r.json()),
+    ]).then(([orderJson, timelineJson]) => {
+      const rawOrder = orderJson.data ?? orderJson;
+      const addr = rawOrder.address || {};
+      const user = rawOrder.user || {};
+      const payment = rawOrder.payment || {};
+      // Shape the data into what the UI expects
+      setOrderDetails({
+        id: rawOrder.orderNumber || String(rawOrder.id),
+        invoiceNumber: `INV-${rawOrder.id}`,
+        customer: {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer',
+          email: user.email || '',
+          phone: user.phone || '',
+        },
+        deliveryAddress: {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          street: addr.line1 || addr.addressLine1 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          zipCode: addr.pincode || addr.zipCode || '',
+          country: addr.country || 'India',
+        },
+        billingAddress: {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          street: addr.line1 || addr.addressLine1 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          zipCode: addr.pincode || addr.zipCode || '',
+          country: addr.country || 'India',
+        },
+        status: (rawOrder.status || 'pending').toLowerCase(),
+        paymentStatus: payment.status?.toLowerCase() || 'pending',
+        paymentMethod: payment.method || 'N/A',
+        items: (rawOrder.items || []).map((item: any) => ({
+          id: item.variant?.sku || String(item.id),
+          name: item.product?.name || item.productNameSnapshot || 'Product',
+          size: item.variant?.size || item.variantSnapshot?.size || '—',
+          color: item.variant?.color || item.variantSnapshot?.color || '—',
+          quantity: item.quantity,
+          price: Number(item.priceSnapshot || 0),
+          discount: 0,
+          image: item.product?.images?.[0]?.url || item.product?.images?.[0] || '',
+        })),
+        subtotal: Number(rawOrder.subtotal || 0),
+        discount: Number(rawOrder.discountAmount || 0),
+        coupon: '',
+        shippingCharges: Number(rawOrder.shippingAmount || 0),
+        tax: Number(rawOrder.taxAmount || 0),
+        total: Number(rawOrder.totalAmount || 0),
+        orderDate: rawOrder.createdAt ? new Date(rawOrder.createdAt).toLocaleDateString('en-IN') : '',
+        expectedDelivery: '',
+        courierPartner: rawOrder.shipment?.courierName || '',
+        trackingNumber: rawOrder.shipment?.trackingId || '',
+        awbNumber: rawOrder.shipment?.awb || '',
+        adminNotes: '',
+      });
+      // Timeline
+      const rawTimeline: any[] = Array.isArray(timelineJson.data ?? timelineJson) ? (timelineJson.data ?? timelineJson) : [];
+      setTimeline(rawTimeline.map((t: any) => ({
+        status: t.status?.toLowerCase(),
+        label: (t.status || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        date: t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN') : '',
+        time: t.createdAt ? new Date(t.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
+        updatedBy: t.updatedBy || 'System',
+        remarks: t.note || '',
+      })));
+    }).catch((err) => {
+      setOrderError(err.message || 'Failed to load order');
+    }).finally(() => {
+      setLoadingOrder(false);
+    });
+  }, [id]);
+
+  const [adminNotes, setAdminNotes] = useState('');
+  const statusInfo = orderDetails ? statusConfig[orderDetails.status as keyof typeof statusConfig] || statusConfig['pending'] : statusConfig['pending'];
 
   const [shipmentStatus, setShipmentStatus] = useState<'NOT_CREATED' | 'CREATED' | 'AWB_ASSIGNED' | 'PICKUP_SCHEDULED' | 'CANCELLED'>('NOT_CREATED');
   const [awbCode, setAwbCode] = useState<string>('');
@@ -197,6 +286,18 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
   return (
     <AdminLayout>
+      {loadingOrder && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      )}
+      {orderError && !loadingOrder && (
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <p className="text-destructive font-semibold">{orderError}</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      )}
+      {!loadingOrder && !orderError && orderDetails && (
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -652,6 +753,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </div>
+      )}
     </AdminLayout>
   );
 }

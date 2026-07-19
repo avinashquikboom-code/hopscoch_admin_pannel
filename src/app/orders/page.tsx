@@ -64,13 +64,13 @@ function authHeaders(): HeadersInit {
   };
 }
 
-// Normalize a raw API order into the shape the UI expects
+// Normalize a raw API order (admin shape) into the shape the UI expects
 function normalizeOrder(raw: any) {
   const user = raw.user || {};
   const shippingAddress = raw.shippingAddress || raw.address || {};
   const addressStr = typeof shippingAddress === 'string'
     ? shippingAddress
-    : [shippingAddress.addressLine1, shippingAddress.city, shippingAddress.state, shippingAddress.pincode]
+    : [shippingAddress.addressLine1 || shippingAddress.line1, shippingAddress.city, shippingAddress.state, shippingAddress.pincode]
         .filter(Boolean).join(', ');
 
   return {
@@ -81,12 +81,12 @@ function normalizeOrder(raw: any) {
     phone: user.phone || raw.phone || '',
     amount: Number(raw.totalAmount || raw.total || 0),
     status: (raw.status || 'pending').toLowerCase(),
-    paymentStatus: (raw.paymentStatus || 'pending').toLowerCase(),
-    items: raw.orderItems?.length ?? raw.itemCount ?? 0,
+    paymentStatus: (raw.paymentStatus || raw.payment?.status || 'pending').toLowerCase(),
+    items: raw._count?.items ?? raw.orderItems?.length ?? raw.itemCount ?? 0,
     date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-IN') : '',
     trackingNumber: raw.trackingNumber || raw.shipments?.[0]?.trackingNumber || '',
     address: addressStr,
-    orderItems: raw.orderItems || [],
+    orderItems: raw.orderItems || raw.items || [],
   };
 }
 
@@ -158,7 +158,7 @@ export default function OrdersPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/orders`, { headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/api/admin/orders`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load orders');
       const raw = json.data ?? json.orders ?? json ?? [];
@@ -198,13 +198,33 @@ export default function OrdersPage() {
     setSelectedOrder((prev: any | null) => prev ? patch(prev) : prev);
 
     try {
-      if (newStatus === 'cancelled') {
-        await fetch(`${API_BASE}/api/orders/${rawId}/cancel`, { method: 'PATCH', headers: authHeaders() });
-      }
-      // For other transitions, re-fetch to get server truth
+      // Map UI status key to DB enum value
+      const STATUS_MAP: Record<string, string> = {
+        pending: 'PENDING',
+        confirmed: 'CONFIRMED',
+        processing: 'PROCESSING',
+        packed: 'PACKED',
+        ready_to_ship: 'READY_TO_SHIP',
+        shipped: 'SHIPPED',
+        in_transit: 'IN_TRANSIT',
+        out_for_delivery: 'OUT_FOR_DELIVERY',
+        delivered: 'DELIVERED',
+        cancelled: 'CANCELLED',
+        return_requested: 'RETURN_REQUESTED',
+        returned: 'RETURNED',
+        refund_processing: 'REFUND_PROCESSING',
+        refund_completed: 'REFUND_COMPLETED',
+      };
+      const dbStatus = STATUS_MAP[newStatus] || newStatus.toUpperCase();
+      await fetch(`${API_BASE}/api/admin/orders/${rawId}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ status: dbStatus }),
+      });
       await fetchOrders();
     } catch (e) {
-      // Status update failed
+      // Status update failed — force refetch to restore server truth
+      await fetchOrders();
     }
   };
 
