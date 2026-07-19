@@ -429,7 +429,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orderDetails.items.map((item) => (
+                  {orderDetails.items.map((item: any) => (
                     <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg">
                       <img
                         src={item.image}
