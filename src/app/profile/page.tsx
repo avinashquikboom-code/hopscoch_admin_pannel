@@ -672,13 +672,22 @@ export default function ProfilePage() {
 
               {/* ── NOTIFICATIONS ── */}
               {activeTab === 'notifications' && (
-                <motion.div key="notifications" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+                <motion.div key="notifications" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }} className="space-y-4">
                   <Card className="border-border/30 rounded-2xl bg-card shadow-sm overflow-hidden">
                     <div className="h-0.5 w-full bg-gradient-to-r from-[#14b8a6]/40 via-[#14b8a6]/20 to-transparent" />
                     <CardContent className="p-6 space-y-5">
-                      <div>
-                        <h3 className="text-base font-bold text-foreground">Notification Preferences</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">Configure system-level alerts and email notification toggles.</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-base font-bold text-foreground">Notification Preferences</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">Configure system-level alerts and email notification toggles.</p>
+                        </div>
+                        <Button 
+                          onClick={() => router.push('/notifications')}
+                          size="sm"
+                          className="bg-[#14b8a6] hover:bg-[#0f766e] text-black font-bold text-xs rounded-xl h-8 px-3"
+                        >
+                          <Bell className="h-3.5 w-3.5 mr-1.5" /> Open Notifications Center
+                        </Button>
                       </div>
                       <Divider />
 

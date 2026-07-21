@@ -70,23 +70,25 @@ function normalizeOrder(raw: any) {
   const shippingAddress = raw.shippingAddress || raw.address || {};
   const addressStr = typeof shippingAddress === 'string'
     ? shippingAddress
-    : [shippingAddress.addressLine1 || shippingAddress.line1, shippingAddress.city, shippingAddress.state, shippingAddress.pincode]
+    : [shippingAddress.recipientName || shippingAddress.name, shippingAddress.addressLine1 || shippingAddress.line1, shippingAddress.city, shippingAddress.state, shippingAddress.pincode || shippingAddress.postalCode]
         .filter(Boolean).join(', ');
+
+  const rawItems = raw.items || raw.orderItems || [];
 
   return {
     id: raw.orderNumber || raw.id || '',
     _rawId: raw.id,
-    customer: `${user.firstName || ''} ${user.lastName || ''}`.trim() || raw.customerName || 'Customer',
+    customer: shippingAddress.fullName || shippingAddress.recipientName || shippingAddress.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || (user.email ? user.email.split('@')[0] : '') || raw.customerName || 'Customer',
     email: user.email || raw.email || '',
-    phone: user.phone || raw.phone || '',
+    phone: user.phone || raw.phone || shippingAddress.phone || '',
     amount: Number(raw.totalAmount || raw.total || 0),
-    status: (raw.status || 'pending').toLowerCase(),
-    paymentStatus: (raw.paymentStatus || raw.payment?.status || 'pending').toLowerCase(),
-    items: raw._count?.items ?? raw.orderItems?.length ?? raw.itemCount ?? 0,
-    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-IN') : '',
+    status: (raw.status || 'pending').toLowerCase().trim(),
+    paymentStatus: (raw.paymentStatus || raw.payment?.status || 'pending').toLowerCase().trim(),
+    items: raw._count?.items ?? rawItems.length ?? raw.itemCount ?? 0,
+    date: raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('en-IN') : (raw.orderDate || ''),
     trackingNumber: raw.trackingNumber || raw.shipments?.[0]?.trackingNumber || '',
-    address: addressStr,
-    orderItems: raw.orderItems || raw.items || [],
+    address: addressStr || 'Standard Shipping Address',
+    orderItems: rawItems,
   };
 }
 
@@ -107,11 +109,11 @@ function getOrderItems(order: any) {
     return [{ name: 'Order Item', quantity: 1, price: order.amount, size: '—', color: '—' }];
   }
   return order.orderItems.map((item: any) => ({
-    name: item.product?.name || item.productName || 'Product',
-    quantity: item.quantity,
-    price: Number(item.price || item.unitPrice || 0),
-    size: item.variant?.size || item.size || '—',
-    color: item.variant?.color || item.color || '—',
+    name: item.product?.title || item.product?.name || item.productName || 'Product',
+    quantity: item.quantity || 1,
+    price: Number(item.price || item.unitPrice || item.product?.price || 0),
+    size: item.selectedSize || item.variant?.size || item.size || '—',
+    color: item.selectedColor || item.variant?.color || item.color || '—',
   }));
 }
 
@@ -161,8 +163,9 @@ export default function OrdersPage() {
       const res = await fetch(`${API_BASE}/api/admin/orders`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load orders');
-      const raw = json.data ?? json.orders ?? json ?? [];
-      setOrdersList(Array.isArray(raw) ? raw.map(normalizeOrder) : []);
+      const rawData = json.data?.orders ?? json.orders ?? json.data ?? json ?? [];
+      const rawList = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.orders) ? rawData.orders : []);
+      setOrdersList(rawList.map(normalizeOrder));
     } catch (e: any) {
       setError(e.message || 'Could not fetch orders');
     } finally {
@@ -238,7 +241,12 @@ export default function OrdersPage() {
         order.email.toLowerCase().includes(searchQuery.toLowerCase());
       
       // 2. Main Tab (Status)
-      const matchesTab = activeTab === 'all' || order.status === activeTab;
+      const matchesTab = activeTab === 'all' ||
+        (activeTab === 'processing' && ['processing', 'pending', 'confirmed', 'paid', 'placed', 'created', 'order_placed'].includes(order.status)) ||
+        (activeTab === 'shipped' && ['shipped', 'out_for_delivery', 'in_transit', 'packed', 'ready_to_ship'].includes(order.status)) ||
+        (activeTab === 'delivered' && ['delivered', 'completed'].includes(order.status)) ||
+        (activeTab === 'cancelled' && ['cancelled', 'refunded', 'return_requested', 'returned'].includes(order.status)) ||
+        order.status === activeTab;
 
       // 3. Payment Status
       const matchesPayment = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
@@ -290,7 +298,13 @@ export default function OrdersPage() {
 
   const getStatusCount = (status: string) => {
     if (status === 'all') return ordersList.length;
-    return ordersList.filter(o => o.status === status).length;
+    return ordersList.filter(o => {
+      if (status === 'processing') return ['processing', 'pending', 'confirmed', 'paid', 'placed', 'created', 'order_placed'].includes(o.status);
+      if (status === 'shipped') return ['shipped', 'out_for_delivery', 'in_transit', 'packed', 'ready_to_ship'].includes(o.status);
+      if (status === 'delivered') return ['delivered', 'completed'].includes(o.status);
+      if (status === 'cancelled') return ['cancelled', 'refunded', 'return_requested', 'returned'].includes(o.status);
+      return o.status === status;
+    }).length;
   };
 
   const isFiltersApplied = paymentFilter !== 'all' || dateFilter !== 'all' || minAmount !== '' || maxAmount !== '';

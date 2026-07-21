@@ -30,6 +30,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 
 
@@ -216,13 +217,15 @@ export default function NewProductPage() {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/api/catalog/products`, {
+      console.log('📌 Creating product at:', `${API_BASE}/api/admin/products`, body);
+      const res = await fetch(`${API_BASE}/api/admin/products`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to save product');
+      console.log('📥 Server response:', res.status, json);
+      if (!res.ok) throw new Error(json.message || `Failed to save product (Status ${res.status})`);
 
       const productId = json.data?.id || json.id;
 
@@ -237,17 +240,23 @@ export default function NewProductPage() {
             uploadFormData.append('image', file);
             uploadFormData.append('productId', String(productId));
 
-            await fetch(`${API_BASE}/api/admin/images`, {
+            console.log('📤 Uploading image for product:', productId, file.name);
+            const imgRes = await fetch(`${API_BASE}/api/admin/images`, {
               method: 'POST',
               headers: uploadHeaders,
               body: uploadFormData,
             });
+            const imgJson = await imgRes.json().catch(() => ({}));
+            console.log('📥 Image upload response:', imgRes.status, imgJson);
           })
         );
       }
 
+      toast.success('Product created successfully!');
       router.push('/products');
     } catch (err: any) {
+      console.error('❌ Error creating product:', err);
+      toast.error(err.message || 'Failed to save product');
       alert(err.message || 'Failed to save product');
     } finally {
       setIsLoading(false);

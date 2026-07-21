@@ -66,23 +66,33 @@ function authHeaders(): HeadersInit {
 }
 
 function normalizeProduct(raw: any) {
+  const stockFromVariant = raw.variants && raw.variants.length > 0 ? raw.variants[0].stock : undefined;
+  let imgs: any[] = [];
+  if (Array.isArray(raw.images) && raw.images.length > 0) {
+    imgs = raw.images.map((img: any) => {
+      if (typeof img === 'string') return { url: img };
+      return { url: img?.url || img?.image_url || img?.imageUrl || '' };
+    }).filter((img: any) => img.url);
+  }
+  if (imgs.length === 0 && raw.thumbnailUrl) {
+    imgs = [{ url: raw.thumbnailUrl }];
+  }
+
   return {
-    id: raw.id || raw._id || String(Math.random()),
+    id: String(raw.id || raw._id || Math.random()),
     name: raw.name || raw.title || 'Unnamed Product',
-    sku: raw.sku || raw.code || `SKU-${raw.id ? String(raw.id).slice(0, 6) : '000'}`,
-    price: Number(raw.price || raw.sellingPrice || raw.mrp || 0),
-    stock: Number(raw.stock ?? raw.stockQuantity ?? raw.inventory?.quantity ?? 0),
+    sku: raw.sku || (raw.variants && raw.variants[0]?.sku) || raw.code || `SKU-${raw.id ? String(raw.id).slice(0, 6) : '000'}`,
+    price: Number(raw.basePrice || raw.price || raw.sellingPrice || raw.mrp || 0),
+    stock: Number(raw.stock ?? stockFromVariant ?? raw.stockQuantity ?? raw.inventory?.quantity ?? 0),
     category: raw.category?.name || raw.categoryName || raw.category || 'General',
     brand: raw.brand?.name || raw.brandName || raw.brand || 'Unbranded',
-    status: (raw.status || (raw.isActive ? 'active' : 'inactive')).toLowerCase(),
+    status: (raw.status || (raw.isActive ? 'published' : 'draft')).toLowerCase(),
     isFeatured: raw.isFeatured ?? false,
     isTrending: raw.isTrending ?? false,
     isBestSeller: raw.isBestSeller ?? false,
     description: raw.description || raw.shortDescription || '',
-    images: Array.isArray(raw.images) ? raw.images.map((img: any) => {
-      if (typeof img === 'string') return { url: img };
-      return { url: img?.url || img?.image_url || img?.imageUrl || '' };
-    }).filter((img: any) => img.url) : [],
+    images: imgs,
+    thumbnailUrl: raw.thumbnailUrl || (imgs.length > 0 ? imgs[0].url : null),
   };
 }
 
@@ -156,12 +166,22 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/catalog/products`, { headers: authHeaders() });
+      console.log('📌 [fetchProducts] GET /api/admin/products');
+      const res = await fetch(`${API_BASE}/api/admin/products`, { headers: authHeaders() });
       const json = await res.json();
+      console.log('📥 [fetchProducts] Server Response:', res.status, json);
       if (!res.ok) throw new Error(json.message || 'Failed to load products');
-      const raw = json.data ?? json.products ?? json ?? [];
-      setProductsList(Array.isArray(raw) ? raw.map(normalizeProduct) : []);
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+
+      const raw = json.data?.products ?? (Array.isArray(json.data) ? json.data : []) ?? json.products ?? json ?? [];
+      const normalized = Array.isArray(raw) ? raw.map(normalizeProduct) : [];
+      console.log('✅ Normalized products list:', normalized);
+      setProductsList(normalized);
+    } catch (e: any) {
+      console.error('❌ [fetchProducts] Error:', e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { 
@@ -171,7 +191,8 @@ export default function ProductsPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     const body = {
-      name: formData.name, sku: formData.sku,
+      name: formData.name, 
+      sku: formData.sku && formData.sku.trim() !== '' ? formData.sku.trim() : undefined,
       price: parseFloat(formData.price) || 0,
       stock: parseInt(formData.stock) || 0,
       category: formData.category, brand: formData.brand,
@@ -179,51 +200,60 @@ export default function ProductsPage() {
       status: formData.status, isFeatured: false, isTrending: false, isBestSeller: false,
     };
     try {
-      const res = await fetch(`${API_BASE}/api/catalog/products`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+      console.log('📌 [handleAddProduct] POST /api/admin/products', body);
+      const res = await fetch(`${API_BASE}/api/admin/products`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
       const json = await res.json();
-      if (res.ok) {
-        if (imageFiles.length > 0) {
-          const productId = json.data?.id || json.id;
-          if (productId) {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-            const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-
-            await Promise.all(
-              imageFiles.map(async (file) => {
-                const uploadFormData = new FormData();
-                uploadFormData.append('image', file);
-                uploadFormData.append('productId', String(productId));
-
-                await fetch(`${API_BASE}/api/admin/images`, {
-                  method: 'POST',
-                  headers: uploadHeaders,
-                  body: uploadFormData,
-                });
-              })
-            );
-          }
-        }
-
-        const createdProduct = json.data || json;
-        const optimisticProduct = {
-          ...normalizeProduct(createdProduct),
-          stock: body.stock,
-          price: body.price,
-          category: body.category,
-          brand: body.brand,
-          images: imageFiles.map(file => ({ url: URL.createObjectURL(file) })),
-        };
-        setProductsList(prev => [optimisticProduct, ...prev]);
-
-        setAddSheetOpen(false);
-        setImageFiles([]);
-        setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', description: '', status: 'PUBLISHED' });
-        
-        fetchProducts();
-        fetchCategories();
+      console.log('📥 [handleAddProduct] Server Response:', res.status, json);
+      if (!res.ok) {
+        throw new Error(json.message || `Failed to add product (Status ${res.status})`);
       }
+      toast.success('Product created successfully!');
+
+      if (imageFiles.length > 0) {
+        const productId = json.data?.id || json.id;
+        if (productId) {
+          const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+          const uploadHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+          await Promise.all(
+            imageFiles.map(async (file) => {
+              const uploadFormData = new FormData();
+              uploadFormData.append('image', file);
+              uploadFormData.append('productId', String(productId));
+
+              console.log('📤 Uploading image for product:', productId, file.name);
+              const imgRes = await fetch(`${API_BASE}/api/admin/images`, {
+                method: 'POST',
+                headers: uploadHeaders,
+                body: uploadFormData,
+              });
+              const imgJson = await imgRes.json().catch(() => ({}));
+              console.log('📥 Image upload response:', imgRes.status, imgJson);
+            })
+          );
+        }
+      }
+
+      const createdProduct = json.data || json;
+      const optimisticProduct = {
+        ...normalizeProduct(createdProduct),
+        stock: body.stock,
+        price: body.price,
+        category: body.category,
+        brand: body.brand,
+        images: imageFiles.map(file => ({ url: URL.createObjectURL(file) })),
+      };
+      setProductsList(prev => [optimisticProduct, ...prev]);
+
+      setAddSheetOpen(false);
+      setImageFiles([]);
+      setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', description: '', status: 'PUBLISHED' });
+      
+      fetchProducts();
+      fetchCategories();
     } catch (err: any) {
-      console.error(err);
+      console.error('❌ [handleAddProduct] Error:', err);
+      toast.error(err.message || 'Failed to add product');
     }
   };
 
@@ -253,17 +283,25 @@ export default function ProductsPage() {
     setIsEditing(false);
 
     try {
-      await fetch(`${API_BASE}/api/catalog/products/${selectedProduct.id}`, {
+      const body = {
+        name: editName,
+        price: parseFloat(editPrice) || 0,
+        brand: editBrand,
+        description: editDesc,
+        status: editStatus,
+      };
+      console.log('📌 [handleSaveProduct] PUT /api/admin/products/' + selectedProduct.id, body);
+      const res = await fetch(`${API_BASE}/api/admin/products/${selectedProduct.id}`, {
         method: 'PUT',
         headers: authHeaders(),
-        body: JSON.stringify({
-          name: editName,
-          price: parseFloat(editPrice) || 0,
-          brand: editBrand,
-          description: editDesc,
-          status: editStatus,
-        }),
+        body: JSON.stringify(body),
       });
+      const json = await res.json();
+      console.log('📥 [handleSaveProduct] Server Response:', res.status, json);
+      if (!res.ok) {
+        throw new Error(json.message || `Failed to update product (Status ${res.status})`);
+      }
+      toast.success('Product updated successfully!');
 
       if (editImageFiles.length > 0) {
         const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
@@ -275,18 +313,22 @@ export default function ProductsPage() {
             uploadFormData.append('image', file);
             uploadFormData.append('productId', String(selectedProduct.id));
 
-            await fetch(`${API_BASE}/api/admin/images`, {
+            console.log('📤 Uploading image for product edit:', selectedProduct.id, file.name);
+            const imgRes = await fetch(`${API_BASE}/api/admin/images`, {
               method: 'POST',
               headers: uploadHeaders,
               body: uploadFormData,
             });
+            const imgJson = await imgRes.json().catch(() => ({}));
+            console.log('📥 Image upload response:', imgRes.status, imgJson);
           })
         );
         setEditImageFiles([]);
         fetchProducts();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('❌ [handleSaveProduct] Error:', err);
+      toast.error(err.message || 'Failed to update product');
     }
   };
 
@@ -312,7 +354,7 @@ export default function ProductsPage() {
     });
 
     try {
-      const res = await fetch(`${API_BASE}/api/catalog/products/${productId}`, {
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ stock: newStock }),
@@ -362,13 +404,21 @@ export default function ProductsPage() {
     setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: next.toLowerCase() } : p));
     setSelectedProduct((prev: any) => prev && prev.id === productId ? { ...prev, status: next.toLowerCase() } : prev);
     try {
-      await fetch(`${API_BASE}/api/catalog/products/${productId}`, {
+      console.log('📌 [handleToggleStatus] PUT /api/admin/products/' + productId, { status: next });
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ status: next }),
       });
-    } catch (err) {
-      console.error('Failed to toggle status:', err);
+      const json = await res.json();
+      console.log('📥 [handleToggleStatus] Server Response:', res.status, json);
+      if (!res.ok) {
+        throw new Error(json.message || `Failed to toggle status (Status ${res.status})`);
+      }
+      toast.success(`Product status set to ${next}`);
+    } catch (err: any) {
+      console.error('❌ [handleToggleStatus] Error:', err);
+      toast.error(err.message || 'Failed to toggle status');
       // revert on error
       setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: currentStatus.toLowerCase() } : p));
       setSelectedProduct((prev: any) => prev && prev.id === productId ? { ...prev, status: currentStatus.toLowerCase() } : prev);
@@ -378,7 +428,19 @@ export default function ProductsPage() {
   const handleDeleteProduct = async (productId: string) => {
     setProductsList(prev => prev.filter(p => p.id !== productId));
     setSelectedProduct(null);
-    try { await fetch(`${API_BASE}/api/catalog/products/${productId}`, { method: 'DELETE', headers: authHeaders() }); } catch { }
+    try {
+      console.log('📌 [handleDeleteProduct] DELETE /api/admin/products/' + productId);
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, { method: 'DELETE', headers: authHeaders() });
+      const json = await res.json();
+      console.log('📥 [handleDeleteProduct] Server Response:', res.status, json);
+      if (!res.ok) {
+        throw new Error(json.message || `Failed to delete product (Status ${res.status})`);
+      }
+      toast.success('Product deleted successfully');
+    } catch (err: any) {
+      console.error('❌ [handleDeleteProduct] Error:', err);
+      toast.error(err.message || 'Failed to delete product');
+    }
   };
 
   const filteredProducts = useMemo(() => {
@@ -583,7 +645,7 @@ export default function ProductsPage() {
                             
                             await Promise.all(
                               idsToDelete.map(id =>
-                                fetch(`${API_BASE}/api/catalog/products/${id}`, {
+                                fetch(`${API_BASE}/api/admin/products/${id}`, {
                                   method: 'DELETE',
                                   headers: authHeaders(),
                                 })

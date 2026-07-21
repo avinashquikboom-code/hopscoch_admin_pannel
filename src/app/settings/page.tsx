@@ -1,7 +1,7 @@
 'use client';
 import { API_BASE } from '@/lib/api';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrency } from '@/context/currency-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
@@ -15,6 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   Save,
   Upload,
@@ -28,14 +36,48 @@ import {
   CheckCircle2,
   Volume2,
   Sliders,
-  Sparkles
+  Sparkles,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  Tag,
+  ShoppingBag,
+  Users,
+  Calendar,
+  Clock,
+  Radio,
+  Eye,
+  X,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
-
+import { AnimatePresence, motion } from 'framer-motion';
 
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
+
+function normalizeNotification(raw: any) {
+  return {
+    id: raw.id || raw._id || String(Math.random()),
+    title: raw.title || 'System Notification',
+    message: raw.message || raw.body || '',
+    type: raw.type || 'general',
+    sendToAll: raw.sendToAll ?? true,
+    targetUsers: Array.isArray(raw.targetUsers) ? raw.targetUsers : [],
+    isSent: raw.isSent !== undefined ? raw.isSent : (raw.status === 'sent'),
+    sentAt: raw.sentAt ? new Date(raw.sentAt).toLocaleString() : raw.createdAt ? new Date(raw.createdAt).toLocaleString() : '',
+  };
+}
+
+const notificationTypes: Record<string, { label: string; icon: any; color: string }> = {
+  offer: { label: 'Offer', icon: Tag, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  coupon: { label: 'Coupon', icon: Tag, color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
+  order: { label: 'Order Update', icon: ShoppingBag, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  general: { label: 'General', icon: Bell, color: 'bg-[#14b8a6]/10 text-[#14b8a6] border-[#14b8a6]/20' },
+};
 
 export default function SettingsPage() {
   const { setCurrencyCode } = useCurrency();
@@ -56,6 +98,15 @@ export default function SettingsPage() {
     weeklyDigests: false,
   });
 
+  // Notification management state
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifSearch, setNotifSearch] = useState('');
+  const [notifFilterType, setNotifFilterType] = useState('all');
+  const [isAddNotifOpen, setIsAddNotifOpen] = useState(false);
+  const [sendToAll, setSendToAll] = useState(true);
+  const [notifForm, setNotifForm] = useState({ title: '', type: 'general', message: '', targetUsers: '' });
+
   const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/settings`, { headers: authHeaders() });
@@ -66,7 +117,24 @@ export default function SettingsPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+  const fetchNotifications = useCallback(async () => {
+    setNotifLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications`, { headers: authHeaders() });
+      const json = await res.json();
+      const raw = json.data ?? json.notifications ?? json ?? [];
+      setNotificationsList(Array.isArray(raw) ? raw.map(normalizeNotification) : []);
+    } catch {
+      setNotificationsList([]);
+    } finally {
+      setNotifLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSettings();
+    fetchNotifications();
+  }, [fetchSettings, fetchNotifications]);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -78,13 +146,78 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setIsSaved(true);
-        setCurrencyCode(config.currency); // update global context instantly
+        setCurrencyCode(config.currency);
         setTimeout(() => setIsSaved(false), 2500);
       }
     } catch {} finally {
       setIsLoading(false);
     }
   };
+
+  const handleCreateNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifForm.title || !notifForm.message) return;
+    const body = {
+      title: notifForm.title,
+      type: notifForm.type,
+      message: notifForm.message,
+      sendToAll: sendToAll,
+      targetUsers: sendToAll ? [] : notifForm.targetUsers.split(',').map(u => u.trim()).filter(Boolean),
+      isSent: false,
+    };
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        await fetchNotifications();
+      } else {
+        setNotificationsList(prev => [normalizeNotification({ ...body, id: String(Date.now()) }), ...prev]);
+      }
+    } catch {
+      setNotificationsList(prev => [normalizeNotification({ ...body, id: String(Date.now()) }), ...prev]);
+    }
+    setNotifForm({ title: '', type: 'general', message: '', targetUsers: '' });
+    setSendToAll(true);
+    setIsAddNotifOpen(false);
+  };
+
+  const handleSendNotification = async (id: string) => {
+    const formattedDate = new Date().toLocaleString();
+    setNotificationsList(prev =>
+      prev.map(n => n.id === id ? { ...n, isSent: true, sentAt: formattedDate } : n)
+    );
+    try {
+      await fetch(`${API_BASE}/api/notifications/${id}/send`, { method: 'POST', headers: authHeaders() });
+    } catch {}
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    setNotificationsList(prev => prev.filter(n => n.id !== id));
+    try {
+      await fetch(`${API_BASE}/api/notifications/${id}`, { method: 'DELETE', headers: authHeaders() });
+    } catch {}
+  };
+
+  const filteredNotifications = useMemo(() => {
+    return notificationsList.filter((n) => {
+      const matchesSearch =
+        n.title.toLowerCase().includes(notifSearch.toLowerCase()) ||
+        n.message.toLowerCase().includes(notifSearch.toLowerCase());
+      const matchesType = notifFilterType === 'all' || n.type === notifFilterType;
+      return matchesSearch && matchesType;
+    });
+  }, [notificationsList, notifSearch, notifFilterType]);
+
+  const notifStats = useMemo(() => {
+    const total = notificationsList.length;
+    const sent = notificationsList.filter(n => n.isSent).length;
+    const pending = total - sent;
+    const broadcast = notificationsList.filter(n => n.sendToAll).length;
+    return { total, sent, pending, broadcast };
+  }, [notificationsList]);
 
   return (
     <AdminLayout>
@@ -93,14 +226,19 @@ export default function SettingsPage() {
           titlePart1="System"
           titlePart2="Settings"
           badgeText="System Configuration"
-          subtitle="Configure core store metadata, language preferences, and notification alerts."
+          subtitle="Configure core store metadata, language preferences, and notification broadcasts."
         />
 
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList className="bg-muted/40 p-1 border border-border/20 rounded-xl flex overflow-x-auto w-full md:w-fit justify-start h-auto">
             <TabsTrigger value="general" className="rounded-lg py-2 px-4 text-xs font-semibold">General Settings</TabsTrigger>
             <TabsTrigger value="store" className="rounded-lg py-2 px-4 text-xs font-semibold">Store Branding</TabsTrigger>
-            <TabsTrigger value="notification" className="rounded-lg py-2 px-4 text-xs font-semibold">Notifications</TabsTrigger>
+            <TabsTrigger value="notification" className="rounded-lg py-2 px-4 text-xs font-semibold flex items-center gap-1.5">
+              <span>Notifications</span>
+              <Badge variant="secondary" className="bg-[#14b8a6]/15 text-[#14b8a6] border-none text-[10px] px-1.5 py-0 h-4">
+                {notificationsList.length}
+              </Badge>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-0">
@@ -260,24 +398,25 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notification" className="mt-0">
+          <TabsContent value="notification" className="mt-0 space-y-6">
+            {/* System Notification Toggles */}
             <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md">
-              <CardContent className="p-6 space-y-6">
+              <CardContent className="p-6 space-y-5">
                 <div className="space-y-1">
-                  <h3 className="text-base font-bold text-foreground">Notification Preferences</h3>
-                  <p className="text-xs text-muted-foreground font-light">Configure triggers for automated system communication broadcasts.</p>
+                  <h3 className="text-base font-bold text-foreground">Automated Alert Triggers</h3>
+                  <p className="text-xs text-muted-foreground font-light">Configure system-level automatic notification alerts and email briefs.</p>
                 </div>
                 <Separator className="border-border/10" />
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-[#14b8a6]/10 text-[#14b8a6] rounded-lg shrink-0">
-                        <Store className="h-4.5 w-4.5" />
+                        <Store className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-foreground">New Order Alerts</p>
-                        <p className="text-xs text-muted-foreground font-light mt-0.5">Receive immediate dashboard triggers on new sales.</p>
+                        <p className="text-xs font-bold text-foreground">New Order Alerts</p>
+                        <p className="text-[11px] text-muted-foreground font-light mt-0.5">Triggers on new sales</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
@@ -286,11 +425,11 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg shrink-0">
-                        <Sliders className="h-4.5 w-4.5" />
+                        <Sliders className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-foreground">Low Stock Threshold Warnings</p>
-                        <p className="text-xs text-muted-foreground font-light mt-0.5">Get email briefs when mapped items fall below target counts.</p>
+                        <p className="text-xs font-bold text-foreground">Low Stock Warnings</p>
+                        <p className="text-[11px] text-muted-foreground font-light mt-0.5">Low inventory alerts</p>
                       </div>
                     </div>
                     <Switch defaultChecked />
@@ -299,30 +438,328 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between p-4 border border-border/30 rounded-xl bg-muted/15">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg shrink-0">
-                        <Volume2 className="h-4.5 w-4.5" />
+                        <Volume2 className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-foreground">Buyer Review Submissions</p>
-                        <p className="text-xs text-muted-foreground font-light mt-0.5">Notify moderator queues on new star reviews.</p>
+                        <p className="text-xs font-bold text-foreground">Review Alerts</p>
+                        <p className="text-[11px] text-muted-foreground font-light mt-0.5">New buyer reviews</p>
                       </div>
                     </div>
                     <Switch />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="flex justify-end pt-2">
-                  <Button 
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className="rounded-lg bg-primary text-white hover:bg-primary/95 h-11 px-6 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                  >
-                    {isLoading ? 'Saving Changes...' : isSaved ? <><CheckCircle2 className="h-4 w-4" /> Preferences Saved</> : <><Save className="h-4 w-4" /> Save Preferences</>}
-                  </Button>
+            {/* Live System Notifications Section */}
+            <Card className="border-border/30 rounded-xl bg-card/60 backdrop-blur-md overflow-hidden">
+              <CardContent className="p-6 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-foreground">All Broadcast Notifications</h3>
+                      <Badge variant="outline" className="text-[10px] uppercase font-mono bg-[#14b8a6]/10 text-[#14b8a6] border-[#14b8a6]/30">
+                        {notifStats.total} Total
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-light">
+                      Manage, dispatch, and review all push broadcasts sent across the application.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={fetchNotifications}
+                      variant="outline" 
+                      size="sm"
+                      className="rounded-lg h-9 px-3 border-border/40 text-xs gap-1.5"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${notifLoading ? 'animate-spin' : ''}`} /> Refresh
+                    </Button>
+                    <Button 
+                      onClick={() => setIsAddNotifOpen(true)}
+                      className="rounded-lg bg-primary hover:bg-primary/95 text-white h-9 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Plus className="h-4 w-4" /> Send Notification
+                    </Button>
+                  </div>
+                </div>
+
+                {/* KPI Summary Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 border border-border/20 rounded-xl bg-muted/20">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total</span>
+                    <p className="text-lg font-extrabold text-foreground mt-0.5">{notifStats.total}</p>
+                  </div>
+                  <div className="p-3 border border-emerald-500/20 rounded-xl bg-emerald-500/5">
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Dispatched</span>
+                    <p className="text-lg font-extrabold text-emerald-500 mt-0.5">{notifStats.sent}</p>
+                  </div>
+                  <div className="p-3 border border-amber-500/20 rounded-xl bg-amber-500/5">
+                    <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Draft / Pending</span>
+                    <p className="text-lg font-extrabold text-amber-500 mt-0.5">{notifStats.pending}</p>
+                  </div>
+                  <div className="p-3 border border-blue-500/20 rounded-xl bg-blue-500/5">
+                    <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Broadcast All</span>
+                    <p className="text-lg font-extrabold text-blue-500 mt-0.5">{notifStats.broadcast}</p>
+                  </div>
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search notifications by title or message..." 
+                      value={notifSearch}
+                      onChange={e => setNotifSearch(e.target.value)}
+                      className="pl-9 h-9 rounded-lg border-border/40 text-xs bg-background"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+                    {['all', 'general', 'offer', 'coupon', 'order'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setNotifFilterType(t)}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-medium capitalize transition-all cursor-pointer whitespace-nowrap ${
+                          notifFilterType === t 
+                            ? 'bg-primary text-white font-bold shadow-xs' 
+                            : 'bg-muted/30 text-muted-foreground hover:bg-muted/60'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notifications Table */}
+                <div className="border border-border/20 rounded-xl overflow-hidden bg-background">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow className="border-border/10">
+                        <TableHead className="text-[11px] font-bold text-muted-foreground uppercase">Notification</TableHead>
+                        <TableHead className="text-[11px] font-bold text-muted-foreground uppercase">Type</TableHead>
+                        <TableHead className="text-[11px] font-bold text-muted-foreground uppercase">Audience</TableHead>
+                        <TableHead className="text-[11px] font-bold text-muted-foreground uppercase">Status</TableHead>
+                        <TableHead className="text-[11px] font-bold text-muted-foreground uppercase text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {notifLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-32 text-center text-xs text-muted-foreground">
+                            <div className="flex items-center justify-center gap-2">
+                              <RefreshCw className="h-4 w-4 animate-spin text-primary" /> Loading notifications...
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredNotifications.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-32 text-center text-xs text-muted-foreground">
+                            <div className="space-y-1">
+                              <Bell className="h-6 w-6 mx-auto text-muted-foreground/40 mb-1" />
+                              <p className="font-semibold text-foreground">No notifications found</p>
+                              <p className="text-[11px] text-muted-foreground font-light">Create a new broadcast using the button above.</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredNotifications.map((item) => {
+                          const typeMeta = notificationTypes[item.type] || notificationTypes.general;
+                          const IconComp = typeMeta.icon;
+
+                          return (
+                            <TableRow key={item.id} className="border-border/10 hover:bg-muted/20 transition-colors">
+                              <TableCell className="py-3">
+                                <div className="flex items-start gap-3">
+                                  <div className={`p-2 rounded-lg shrink-0 mt-0.5 border ${typeMeta.color}`}>
+                                    <IconComp className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 max-w-md">
+                                    <p className="text-xs font-bold text-foreground truncate">{item.title}</p>
+                                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{item.message}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-3">
+                                <Badge variant="outline" className={`text-[10px] font-bold capitalize border ${typeMeta.color}`}>
+                                  {item.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-3">
+                                {item.sendToAll ? (
+                                  <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 text-[10px] font-medium border border-blue-500/20">
+                                    <Globe className="h-3 w-3 mr-1" /> Broadcast All
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 text-[10px] font-medium border border-purple-500/20">
+                                    <Users className="h-3 w-3 mr-1" /> {item.targetUsers?.length || 0} Segment Users
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="py-3">
+                                {item.isSent ? (
+                                  <div className="space-y-0.5">
+                                    <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-[10px] font-bold">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" /> Sent
+                                    </Badge>
+                                    {item.sentAt && (
+                                      <p className="text-[10px] text-muted-foreground font-mono">{item.sentAt}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30 text-[10px] font-medium">
+                                    <Clock className="h-3 w-3 mr-1" /> Draft / Pending
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="py-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!item.isSent && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleSendNotification(item.id)}
+                                      className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg gap-1 cursor-pointer"
+                                    >
+                                      <Send className="h-3 w-3" /> Dispatch
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteNotification(item.id)}
+                                    className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Modal for Creating New Broadcast Notification */}
+        {isAddNotifOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Create Notification Broadcast</h3>
+                    <p className="text-xs text-muted-foreground">Send real-time alerts or promotional push updates.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsAddNotifOpen(false)}
+                  className="p-1 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateNotification} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notification Title</Label>
+                  <Input 
+                    id="title" 
+                    placeholder="e.g. Flash Sale Live — 40% Off Couture!" 
+                    value={notifForm.title}
+                    onChange={e => setNotifForm(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                    className="h-10 rounded-lg border-border/50 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notification Type</Label>
+                  <select
+                    id="type"
+                    value={notifForm.type}
+                    onChange={e => setNotifForm(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full h-10 rounded-lg border border-border/50 bg-background px-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                  >
+                    <option value="general">General Alert</option>
+                    <option value="offer">Promotional Offer</option>
+                    <option value="coupon">Coupon Voucher</option>
+                    <option value="order">Order Update</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="message" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notification Body Message</Label>
+                  <Textarea 
+                    id="message" 
+                    rows={3} 
+                    placeholder="Enter message description..." 
+                    value={notifForm.message}
+                    onChange={e => setNotifForm(prev => ({ ...prev, message: e.target.value }))}
+                    required
+                    className="rounded-lg border-border/50 bg-background resize-none text-xs p-3 focus:border-primary"
+                  />
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="sendToAll" 
+                      checked={sendToAll} 
+                      onCheckedChange={(checked) => setSendToAll(Boolean(checked))} 
+                    />
+                    <Label htmlFor="sendToAll" className="text-xs font-medium cursor-pointer">
+                      Broadcast to All Active Users
+                    </Label>
+                  </div>
+
+                  {!sendToAll && (
+                    <div className="space-y-1.5 pl-6">
+                      <Label htmlFor="targetUsers" className="text-xs font-bold text-muted-foreground">Target User Emails (comma separated)</Label>
+                      <Input 
+                        id="targetUsers" 
+                        placeholder="user1@example.com, user2@example.com" 
+                        value={notifForm.targetUsers}
+                        onChange={e => setNotifForm(prev => ({ ...prev, targetUsers: e.target.value }))}
+                        className="h-9 rounded-lg border-border/50 text-xs"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-border/20">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsAddNotifOpen(false)}
+                    className="rounded-lg h-10 px-4 text-xs font-bold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="rounded-lg bg-primary hover:bg-primary/95 text-white h-10 px-5 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" /> Save Broadcast Draft
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
