@@ -3,7 +3,21 @@
  * All API calls use this helper — never hardcode data in pages.
  */
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+export const getApiBase = (): string => {
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocalhost) {
+      const envUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!envUrl || envUrl.includes('api.fciseller.com')) {
+        return 'http://localhost:5001';
+      }
+      return envUrl;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+};
+
+export const API_BASE = getApiBase();
 // export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.102:5001';
 export const APP_TYPE = 'admin'; // Admin panel specific app type
 
