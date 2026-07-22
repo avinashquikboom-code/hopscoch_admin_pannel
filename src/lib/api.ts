@@ -5,13 +5,9 @@
 
 export const getApiBase = (): string => {
   if (typeof window !== 'undefined') {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isLocalhost) {
-      const envUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!envUrl || envUrl.includes('api.fciseller.com')) {
-        return 'http://localhost:5001';
-      }
-      return envUrl;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5001';
     }
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';

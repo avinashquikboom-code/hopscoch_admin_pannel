@@ -1,5 +1,5 @@
 'use client';
-// Master Colors and Sizes page
+// Master Colors and Sizes page - Forced HMR refresh
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
