@@ -208,6 +208,68 @@ export default function ProductsPage() {
   const [editDesc, setEditDesc] = useState('');
   const [editStatus, setEditStatus] = useState('PUBLISHED');
 
+  const [newVarColor, setNewVarColor] = useState('');
+  const [newVarSize, setNewVarSize] = useState('');
+  const [newVarPrice, setNewVarPrice] = useState('');
+  const [newVarStock, setNewVarStock] = useState('');
+  const [isAddingVariant, setIsAddingVariant] = useState(false);
+
+  const handleAddVariant = async (productId: string | number) => {
+    if (!newVarColor && !newVarSize) return;
+    try {
+      const payload = {
+        variants: [
+          {
+            color: newVarColor || 'Default',
+            size: newVarSize || 'One Size',
+            price: newVarPrice ? parseFloat(newVarPrice) : undefined,
+            stock: newVarStock ? parseInt(newVarStock) : 0,
+          }
+        ]
+      };
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const updatedJson = await res.json();
+        if (updatedJson.data) {
+          const norm = normalizeProduct(updatedJson.data);
+          setSelectedProduct(norm);
+        }
+        fetchProducts();
+        setNewVarColor('');
+        setNewVarSize('');
+        setNewVarPrice('');
+        setNewVarStock('');
+        setIsAddingVariant(false);
+      }
+    } catch (err) {
+      console.error('Failed to add variant:', err);
+    }
+  };
+
+  const handleDeleteVariant = async (productId: string | number, variantId: string | number) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}/variants/${variantId}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        fetchProducts();
+        if (selectedProduct && selectedProduct.variants) {
+          setSelectedProduct({
+            ...selectedProduct,
+            variants: selectedProduct.variants.filter((v: any) => String(v.id) !== String(variantId))
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete variant:', err);
+    }
+  };
+
   const fetchProducts = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -1535,23 +1597,98 @@ export default function ProductsPage() {
                           ))}
                         </div>
                       )}
-                      {selectedProduct.variants && selectedProduct.variants.length > 0 && (
-                        <div className="pt-2 border-t border-border/30 space-y-2">
-                          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Product Variants ({selectedProduct.variants.length})</span>
-                          <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                            {selectedProduct.variants.map((v: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/30 text-xs">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono text-[10px] text-muted-foreground">{v.sku}</span>
-                                  {v.color && v.color !== 'Default' && <Badge variant="outline" className="text-[10px] py-0">{v.color}</Badge>}
-                                  {v.size && v.size !== 'One Size' && <Badge variant="outline" className="text-[10px] py-0">{v.size}</Badge>}
-                                </div>
-                                <span className="font-semibold text-foreground text-xs">{v.stock} in stock</span>
-                              </div>
-                            ))}
-                          </div>
+                      <div className="pt-3 border-t border-border/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                            Product Variants ({selectedProduct.variants ? selectedProduct.variants.length : 0})
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1 rounded-md border-primary/30 text-primary hover:bg-primary/5 cursor-pointer"
+                            onClick={() => setIsAddingVariant(!isAddingVariant)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            {isAddingVariant ? 'Cancel' : 'Add Variant'}
+                          </Button>
                         </div>
-                      )}
+
+                        {/* Add New Variant Inline Form */}
+                        {isAddingVariant && (
+                          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                            <span className="text-xs font-bold text-primary block">Create New Variant</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                placeholder="Color (e.g. Red)"
+                                value={newVarColor}
+                                onChange={(e) => setNewVarColor(e.target.value)}
+                                className="h-8 text-xs bg-background"
+                              />
+                              <Input
+                                placeholder="Size (e.g. XL)"
+                                value={newVarSize}
+                                onChange={(e) => setNewVarSize(e.target.value)}
+                                className="h-8 text-xs bg-background"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Price (₹)"
+                                value={newVarPrice}
+                                onChange={(e) => setNewVarPrice(e.target.value)}
+                                className="h-8 text-xs bg-background"
+                              />
+                              <Input
+                                type="number"
+                                placeholder="Stock"
+                                value={newVarStock}
+                                onChange={(e) => setNewVarStock(e.target.value)}
+                                className="h-8 text-xs bg-background"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-8 text-xs w-full bg-primary text-white rounded-md cursor-pointer"
+                              onClick={() => handleAddVariant(selectedProduct.id)}
+                            >
+                              Save Variant
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Variants List */}
+                        {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                          <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                            {selectedProduct.variants.map((v: any, idx: number) => {
+                              const hasOrders = v._count?.orderItems > 0 || v.hasOrders;
+                              return (
+                                <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-background border border-border/40 text-xs">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-mono text-[10px] text-muted-foreground">{v.sku || `VAR-${v.id}`}</span>
+                                    {v.color && v.color !== 'Default' && <Badge variant="outline" className="text-[10px] py-0">{v.color}</Badge>}
+                                    {v.size && v.size !== 'One Size' && <Badge variant="outline" className="text-[10px] py-0">{v.size}</Badge>}
+                                    <span className="font-bold text-foreground text-xs">₹{v.price}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-muted-foreground text-xs">{v.stock} in stock</span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className={`h-6 w-6 rounded-md ${hasOrders ? 'opacity-40 cursor-not-allowed text-muted-foreground' : 'text-rose-500 hover:bg-rose-500/10 cursor-pointer'}`}
+                                      title={hasOrders ? `Cannot delete: referenced by existing orders` : `Remove variant`}
+                                      onClick={() => handleDeleteVariant(selectedProduct.id, v.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

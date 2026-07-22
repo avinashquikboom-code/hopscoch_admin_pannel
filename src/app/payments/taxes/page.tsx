@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,23 +11,20 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2, Percent } from 'lucide-react';
 import { AppDrawer } from '@/components/ui/app-drawer';
 import { PageHeader } from '@/components/layout/page-header';
+import { API_BASE, authHeaders } from '@/lib/api';
 
 interface TaxRule {
   id: string;
   name: string;
-  category: string;
+  category?: string;
   rate: number;
   type: string;
-  hsn: string;
+  taxType?: string;
+  hsnCode?: string;
+  hsn?: string;
   active: boolean;
+  isActive?: boolean;
 }
-
-const taxRules: TaxRule[] = [
-  { id: '1', name: 'GST 5% — Apparel (≤₹999)', category: 'Apparel', rate: 5, type: 'inclusive', hsn: '6101', active: true },
-  { id: '2', name: 'GST 12% — Apparel (>₹999)', category: 'Apparel', rate: 12, type: 'inclusive', hsn: '6101', active: true },
-  { id: '3', name: 'GST 18% — Accessories', category: 'Accessories', rate: 18, type: 'exclusive', hsn: '6217', active: true },
-  { id: '4', name: 'GST 0% — Export Orders', category: 'Export', rate: 0, type: 'exclusive', hsn: 'N/A', active: true },
-];
 
 const gstStats = [
   { label: 'CGST Collected', value: '₹1,24,820', color: 'text-[#14b8a6]' },
@@ -37,14 +34,47 @@ const gstStats = [
 ];
 
 export default function TaxesPage() {
-  const [rules, setRules] = useState<TaxRule[]>(taxRules);
+  const [rules, setRules] = useState<TaxRule[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<TaxRule | null>(null);
-  const [form, setForm] = useState({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
+  const [form, setForm] = useState({ name: '', category: 'General', rate: '', type: 'inclusive', hsn: '', active: true });
+
+  const fetchTaxes = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+      if (res.ok) {
+        const json = await res.json();
+        const taxList = json.data?.taxes || json.taxes || json.data || [];
+        if (Array.isArray(taxList)) {
+          setRules(
+            taxList.map((t: any) => ({
+              id: String(t.id),
+              name: t.name,
+              category: t.category || 'General',
+              rate: Number(t.rate),
+              type: (t.taxType || t.type || 'inclusive').toLowerCase(),
+              hsn: t.hsnCode || t.hsn || 'N/A',
+              active: t.isActive !== false,
+            }))
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch tax rules:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTaxes();
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingRule(null);
-    setForm({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
+    setForm({ name: '', category: 'General', rate: '', type: 'inclusive', hsn: '', active: true });
     setOpen(true);
   };
 
@@ -52,46 +82,60 @@ export default function TaxesPage() {
     setEditingRule(rule);
     setForm({
       name: rule.name,
-      category: rule.category,
+      category: rule.category || 'General',
       rate: String(rule.rate),
-      type: rule.type,
-      hsn: rule.hsn,
+      type: rule.type.toLowerCase(),
+      hsn: rule.hsn || '',
       active: rule.active,
     });
     setOpen(true);
   };
 
-  const handleAddOrUpdate = (e: React.FormEvent) => {
+  const handleAddOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingRule) {
-      setRules(rs =>
-        rs.map(r =>
-          r.id === editingRule.id
-            ? { ...r, name: form.name, category: form.category, rate: Number(form.rate) || 0, type: form.type, hsn: form.hsn, active: form.active }
-            : r
-        )
-      );
-    } else {
-      setRules(rs => [
-        ...rs,
-        {
-          id: String(Date.now() + Math.floor(Math.random() * 1000)),
-          name: form.name,
-          category: form.category,
-          rate: Number(form.rate) || 0,
-          type: form.type,
-          hsn: form.hsn,
-          active: form.active,
-        },
-      ]);
+    const payload = {
+      name: form.name,
+      rate: Number(form.rate) || 0,
+      type: form.type.toUpperCase(),
+      taxType: form.type.toUpperCase(),
+      hsnCode: form.hsn,
+      isActive: form.active,
+    };
+
+    try {
+      if (editingRule) {
+        await fetch(`${API_BASE}/api/admin/taxes/${editingRule.id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch(`${API_BASE}/api/admin/taxes`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload),
+        });
+      }
+      fetchTaxes();
+    } catch (err) {
+      console.error('Failed to save tax rule:', err);
     }
-    setForm({ name: '', category: '', rate: '', type: 'inclusive', hsn: '', active: true });
+
+    setForm({ name: '', category: 'General', rate: '', type: 'inclusive', hsn: '', active: true });
     setOpen(false);
     setEditingRule(null);
   };
 
-  const handleDelete = (id: string) => {
-    setRules(rs => rs.filter(r => r.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`${API_BASE}/api/admin/taxes/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      fetchTaxes();
+    } catch (err) {
+      console.error('Failed to delete tax rule:', err);
+    }
   };
 
   return (

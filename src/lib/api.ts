@@ -16,7 +16,7 @@ function getApiKey(): string {
   return process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
 }
 
-function authHeaders(): HeadersInit {
+export function authHeaders(): HeadersInit {
   const token = getToken();
   const apiKey = getApiKey();
   return {

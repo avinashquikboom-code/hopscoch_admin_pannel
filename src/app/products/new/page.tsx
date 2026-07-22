@@ -3,7 +3,7 @@ import { API_BASE } from '@/lib/api';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import { STANDARD_COLORS, STANDARD_SIZES } from '@/lib/constants';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -209,26 +209,33 @@ export default function NewProductPage() {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
+  const isSubmittingRef = useRef(false);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmittingRef.current || isLoading) return;
+    isSubmittingRef.current = true;
     setIsLoading(true);
 
     const formDataObj = new FormData(e.currentTarget);
 
     if (!selectedBrand) {
       alert('Please select a Brand.');
+      isSubmittingRef.current = false;
       setIsLoading(false);
       return;
     }
 
     if (!selectedCategory) {
       alert('Please select a Category.');
+      isSubmittingRef.current = false;
       setIsLoading(false);
       return;
     }
 
     if (subcategories.length > 0 && !selectedSubCategory) {
       alert('Please select a Sub Category.');
+      isSubmittingRef.current = false;
       setIsLoading(false);
       return;
     }
@@ -335,6 +342,7 @@ export default function NewProductPage() {
       toast.error(err.message || 'Failed to save product');
       alert(err.message || 'Failed to save product');
     } finally {
+      isSubmittingRef.current = false;
       setIsLoading(false);
     }
   };

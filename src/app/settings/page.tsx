@@ -107,6 +107,40 @@ export default function SettingsPage() {
   const [sendToAll, setSendToAll] = useState(true);
   const [notifForm, setNotifForm] = useState({ title: '', type: 'general', message: '', targetUsers: '' });
 
+  // Reset Data Modal State
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const handleResetData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (resetConfirmText !== 'DELETE ALL DATA' || !resetPassword) return;
+
+    setResetLoading(true);
+    setResetError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/reset-data`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ password: resetPassword }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to reset store data');
+
+      alert('All store data has been successfully reset.');
+      setIsResetOpen(false);
+      setResetPassword('');
+      setResetConfirmText('');
+      window.location.reload();
+    } catch (err: any) {
+      setResetError(err.message || 'Reset failed');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/settings`, { headers: authHeaders() });
@@ -645,6 +679,119 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Danger Zone — Reset Store Data Card */}
+        <Card className="border-rose-500/30 bg-rose-500/5 rounded-2xl overflow-hidden shadow-xs mt-8">
+          <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/20">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Danger Zone — Reset All Store Data</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                  Permanently delete products, orders, inventory, customers, reviews, and transactions. Admin user accounts and Tax Rules will be preserved.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 h-10 rounded-xl flex-shrink-0 cursor-pointer"
+              onClick={() => setIsResetOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" /> Reset Store Data
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Two-Step Verification Modal for Data Reset */}
+        {isResetOpen && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-rose-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-rose-500">
+                  <AlertTriangle className="h-6 w-6" />
+                  <h3 className="text-lg font-extrabold">Confirm System Data Reset</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setIsResetOpen(false); setResetError(null); }}
+                  className="text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 space-y-1 font-medium">
+                <p className="font-bold">⚠️ High-Risk Action Warning!</p>
+                <p>This will permanently wipe all transactions, orders, inventory, products, and customer records from the database. This action cannot be undone.</p>
+              </div>
+
+              {resetError && (
+                <div className="p-3 rounded-lg bg-rose-500/20 border border-rose-500/40 text-xs text-rose-600 font-semibold">
+                  {resetError}
+                </div>
+              )}
+
+              <form onSubmit={handleResetData} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="adminPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Step 1: Re-enter Admin Password *
+                  </Label>
+                  <Input
+                    id="adminPassword"
+                    type="password"
+                    placeholder="Enter your current admin password"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    required
+                    className="h-10 text-xs rounded-lg border-border/50 bg-background"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmString" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Step 2: Type "DELETE ALL DATA" to confirm *
+                  </Label>
+                  <Input
+                    id="confirmString"
+                    type="text"
+                    placeholder="DELETE ALL DATA"
+                    value={resetConfirmText}
+                    onChange={(e) => setResetConfirmText(e.target.value)}
+                    required
+                    className="h-10 text-xs font-mono font-bold rounded-lg border-border/50 bg-background"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-border/20">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setIsResetOpen(false); setResetError(null); }}
+                    className="rounded-lg h-10 px-4 text-xs font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    disabled={resetLoading || resetConfirmText !== 'DELETE ALL DATA' || !resetPassword}
+                    className="rounded-lg bg-rose-600 hover:bg-rose-700 text-white h-10 px-5 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    {resetLoading ? 'Wiping Data...' : 'I understand, wipe all data'}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
 
         {/* Modal for Creating New Broadcast Notification */}
         {isAddNotifOpen && (

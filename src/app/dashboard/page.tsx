@@ -8,7 +8,14 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import api from '@/lib/api';
+import api, { API_BASE } from '@/lib/api';
+
+function resolveImageUrl(url?: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `${API_BASE}${url}`;
+  return `${API_BASE}/${url}`;
+}
 import { 
   DollarSign, 
   ShoppingBag, 
@@ -479,22 +486,38 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground py-6 text-center">No product data yet</p>
                 ) : (
                   <div className="divide-y divide-border/20 space-y-1">
-                    {topProducts.map((product: any, i: number) => (
-                      <div key={i} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
-                        <div className="flex-shrink-0 w-11 h-11 rounded-md bg-[#14b8a6]/10 flex items-center justify-center text-[#14b8a6] border border-[#14b8a6]/15">
-                          <Package className="h-5 w-5" />
+                    {topProducts.map((product: any, i: number) => {
+                      const rawImg = product.image || product.thumbnailUrl || product.thumbnail || product.images?.[0]?.url;
+                      const imgUrl = resolveImageUrl(rawImg);
+                      return (
+                        <div key={i} className="flex items-center gap-4 py-3 first:pt-1 last:pb-1">
+                          <div className="flex-shrink-0 w-11 h-11 rounded-md bg-[#14b8a6]/10 flex items-center justify-center text-[#14b8a6] border border-[#14b8a6]/15 overflow-hidden">
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={product.name || 'Product'}
+                                className="w-full h-full object-cover rounded-md"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement?.classList.remove('overflow-hidden');
+                                }}
+                              />
+                            ) : (
+                              <Package className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{product.name || product.productName}</p>
+                            <p className="text-xs text-muted-foreground font-normal">{product.sales ?? product.totalSales ?? 0} sales units</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm text-[#14b8a6]">
+                              {product.revenue != null ? formatCurrency(product.revenue) : '—'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">{product.name || product.productName}</p>
-                          <p className="text-xs text-muted-foreground font-normal">{product.sales ?? product.totalSales ?? 0} sales units</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm text-[#14b8a6]">
-                            {product.revenue != null ? formatCurrency(product.revenue) : '—'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
