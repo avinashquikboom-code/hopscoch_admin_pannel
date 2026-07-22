@@ -118,6 +118,8 @@ export default function ProductsPage() {
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [availableColors, setAvailableColors] = useState<string[]>(STANDARD_COLORS);
+  const [availableSizes, setAvailableSizes] = useState<string[]>(STANDARD_SIZES);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -151,10 +153,40 @@ export default function ProductsPage() {
     }
   }, []);
 
+  const fetchColorsAndSizes = useCallback(async () => {
+    try {
+      const [colorRes, sizeRes] = await Promise.all([
+        fetch(`${API_BASE}/api/colors`),
+        fetch(`${API_BASE}/api/sizes`),
+      ]);
+
+      if (colorRes.ok) {
+        const colorJson = await colorRes.json();
+        const colorData = colorJson.data || colorJson;
+        if (Array.isArray(colorData) && colorData.length > 0) {
+          const fetchedNames = colorData.map((c: any) => c.name);
+          setAvailableColors(fetchedNames);
+        }
+      }
+
+      if (sizeRes.ok) {
+        const sizeJson = await sizeRes.json();
+        const sizeData = sizeJson.data || sizeJson;
+        if (Array.isArray(sizeData) && sizeData.length > 0) {
+          const fetchedNames = sizeData.map((s: any) => s.name);
+          setAvailableSizes(fetchedNames);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching colors/sizes in products page:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
     fetchBrands();
-  }, [fetchCategories, fetchBrands]);
+    fetchColorsAndSizes();
+  }, [fetchCategories, fetchBrands, fetchColorsAndSizes]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -1126,14 +1158,14 @@ export default function ProductsPage() {
                   <MultiSelectDropdown
                     label="Color Options"
                     placeholder="Select colors..."
-                    options={STANDARD_COLORS}
+                    options={availableColors}
                     selectedValues={formData.colors}
                     onChange={(colors) => setFormData({ ...formData, colors })}
                   />
                   <MultiSelectDropdown
                     label="Size Options"
                     placeholder="Select sizes..."
-                    options={STANDARD_SIZES}
+                    options={availableSizes}
                     selectedValues={formData.sizes}
                     onChange={(sizes) => setFormData({ ...formData, sizes })}
                   />

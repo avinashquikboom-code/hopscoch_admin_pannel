@@ -55,6 +55,9 @@ export default function NewProductPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
 
+  const [availableColors, setAvailableColors] = useState<string[]>(STANDARD_COLORS);
+  const [availableSizes, setAvailableSizes] = useState<string[]>(STANDARD_SIZES);
+
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
   const [isSubcategoriesLoading, setIsSubcategoriesLoading] = useState(false);
   const [isBrandsLoading, setIsBrandsLoading] = useState(false);
@@ -107,6 +110,34 @@ export default function NewProductPage() {
         setBrandsError(err.message || 'Failed to load brands');
       } finally {
         setIsBrandsLoading(false);
+      }
+
+      // Fetch dynamic Colors & Sizes from API
+      try {
+        const [colorRes, sizeRes] = await Promise.all([
+          fetch(`${API_BASE}/api/colors`),
+          fetch(`${API_BASE}/api/sizes`),
+        ]);
+
+        if (colorRes.ok) {
+          const colorJson = await colorRes.json();
+          const colorData = colorJson.data || colorJson;
+          if (Array.isArray(colorData) && colorData.length > 0) {
+            const fetchedNames = colorData.map((c: any) => c.name);
+            setAvailableColors(fetchedNames);
+          }
+        }
+
+        if (sizeRes.ok) {
+          const sizeJson = await sizeRes.json();
+          const sizeData = sizeJson.data || sizeJson;
+          if (Array.isArray(sizeData) && sizeData.length > 0) {
+            const fetchedNames = sizeData.map((s: any) => s.name);
+            setAvailableSizes(fetchedNames);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic colors/sizes:', err);
       }
     };
 
@@ -426,14 +457,14 @@ export default function NewProductPage() {
                     <MultiSelectDropdown
                       label="Color Options"
                       placeholder="Select or add colors..."
-                      options={STANDARD_COLORS}
+                      options={availableColors}
                       selectedValues={selectedColors}
                       onChange={setSelectedColors}
                     />
                     <MultiSelectDropdown
                       label="Size Options"
                       placeholder="Select or add sizes..."
-                      options={STANDARD_SIZES}
+                      options={availableSizes}
                       selectedValues={selectedSizes}
                       onChange={setSelectedSizes}
                     />
