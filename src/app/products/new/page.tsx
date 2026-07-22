@@ -51,6 +51,9 @@ export default function NewProductPage() {
   const [parentCategories, setParentCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [taxRules, setTaxRules] = useState<any[]>([]);
+  const [selectedTaxRule, setSelectedTaxRule] = useState<string>('');
+  const [hsnCode, setHsnCode] = useState<string>('');
 
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -75,7 +78,7 @@ export default function NewProductPage() {
     };
   };
 
-  // Fetch initial Category & Brand lists
+  // Fetch initial Category & Brand lists & Tax rules
   useEffect(() => {
     const loadInitialData = async () => {
       setIsCategoriesLoading(true);
@@ -111,6 +114,19 @@ export default function NewProductPage() {
         setBrandsError(err.message || 'Failed to load brands');
       } finally {
         setIsBrandsLoading(false);
+      }
+
+      try {
+        const taxRes = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+        if (taxRes.ok) {
+          const taxJson = await taxRes.json();
+          const taxData = taxJson.data?.taxes || taxJson.taxes || taxJson.data || taxJson;
+          if (Array.isArray(taxData)) {
+            setTaxRules(taxData.filter((t: any) => t.isActive !== false));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load tax rules:', err);
       }
 
       // Fetch dynamic Colors & Sizes from API
@@ -228,6 +244,8 @@ export default function NewProductPage() {
       stock: stock,
       categoryId: Number(selectedSubCategory || selectedCategory),
       brandId: Number(selectedBrand),
+      taxRuleId: selectedTaxRule && selectedTaxRule !== 'none' ? Number(selectedTaxRule) : null,
+      hsnCode: hsnCode.trim() || null,
       description: formDataObj.get('description') as string,
       shortDescription: formDataObj.get('shortDescription') as string,
       seoTitle: formDataObj.get('metaTitle') as string,
@@ -559,6 +577,38 @@ export default function NewProductPage() {
                     <div className="space-y-2">
                       <Label htmlFor="lowStock">Low Stock Threshold</Label>
                       <Input id="lowStock" type="number" placeholder="10" />
+                    </div>
+                  </div>
+
+                  {/* Tax & GST Configuration */}
+                  <div className="p-4 rounded-xl border border-border bg-card space-y-4">
+                    <h4 className="font-semibold text-sm text-foreground">Tax & GST Configuration</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="taxRule">Tax Rule / GST Rate</Label>
+                        <Select value={selectedTaxRule} onValueChange={(val) => setSelectedTaxRule(val || '')}>
+                          <SelectTrigger id="taxRule">
+                            <SelectValue placeholder="Default (from Category)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Default (from Category)</SelectItem>
+                            {taxRules.map((rule) => (
+                              <SelectItem key={rule.id} value={String(rule.id)}>
+                                {rule.name} ({rule.rate}% — {rule.taxType || rule.type || 'EXCLUSIVE'})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="hsnCode">HSN / SAC Code</Label>
+                        <Input
+                          id="hsnCode"
+                          placeholder="e.g. 6204 (Apparel)"
+                          value={hsnCode}
+                          onChange={(e) => setHsnCode(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
 
