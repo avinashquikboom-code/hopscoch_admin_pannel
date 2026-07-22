@@ -1,6 +1,8 @@
 'use client';
+// Master Colors and Sizes page
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
@@ -49,7 +51,18 @@ interface SizeItem {
 }
 
 export default function ColorsSizesPage() {
-  const [activeTab, setActiveTab] = useState<'colors' | 'sizes'>('colors');
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<'colors' | 'sizes'>(
+    pathname?.startsWith('/sizes') ? 'sizes' : 'colors'
+  );
+
+  useEffect(() => {
+    if (pathname?.startsWith('/sizes')) {
+      setActiveTab('sizes');
+    } else if (pathname?.startsWith('/colors')) {
+      setActiveTab('colors');
+    }
+  }, [pathname]);
   
   // Data State
   const [colors, setColors] = useState<ColorItem[]>([]);
@@ -117,6 +130,14 @@ export default function ColorsSizesPage() {
     setIsColorModalOpen(true);
   };
 
+  const authHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   const handleSaveColor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!colorName.trim()) {
@@ -126,19 +147,33 @@ export default function ColorsSizesPage() {
 
     setIsSubmittingColor(true);
     try {
-      const url = editingColor
+      const primaryUrl = editingColor
         ? `${API_BASE}/api/colors/${editingColor.id}`
         : `${API_BASE}/api/colors`;
+      const fallbackUrl = editingColor
+        ? `${API_BASE}/api/admin/colors/${editingColor.id}`
+        : `${API_BASE}/api/admin/colors`;
       const method = editingColor ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      let res = await fetch(primaryUrl, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           name: colorName.trim(),
           hexCode: colorHex,
         }),
       });
+
+      if (res.status === 404) {
+        res = await fetch(fallbackUrl, {
+          method,
+          headers: authHeaders(),
+          body: JSON.stringify({
+            name: colorName.trim(),
+            hexCode: colorHex,
+          }),
+        });
+      }
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to save color');
@@ -157,9 +192,16 @@ export default function ColorsSizesPage() {
     if (!confirm(`Are you sure you want to delete color "${name}"?`)) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/colors/${id}`, {
+      let res = await fetch(`${API_BASE}/api/colors/${id}`, {
         method: 'DELETE',
+        headers: authHeaders(),
       });
+      if (res.status === 404) {
+        res = await fetch(`${API_BASE}/api/admin/colors/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to delete color');
 
@@ -196,20 +238,35 @@ export default function ColorsSizesPage() {
 
     setIsSubmittingSize(true);
     try {
-      const url = editingSize
+      const primaryUrl = editingSize
         ? `${API_BASE}/api/sizes/${editingSize.id}`
         : `${API_BASE}/api/sizes`;
+      const fallbackUrl = editingSize
+        ? `${API_BASE}/api/admin/sizes/${editingSize.id}`
+        : `${API_BASE}/api/admin/sizes`;
       const method = editingSize ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      let res = await fetch(primaryUrl, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           name: sizeName.trim(),
           code: sizeCode.trim() || sizeName.trim(),
           sortOrder: Number(sizeSortOrder) || 0,
         }),
       });
+
+      if (res.status === 404) {
+        res = await fetch(fallbackUrl, {
+          method,
+          headers: authHeaders(),
+          body: JSON.stringify({
+            name: sizeName.trim(),
+            code: sizeCode.trim() || sizeName.trim(),
+            sortOrder: Number(sizeSortOrder) || 0,
+          }),
+        });
+      }
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to save size');
@@ -228,9 +285,16 @@ export default function ColorsSizesPage() {
     if (!confirm(`Are you sure you want to delete size "${name}"?`)) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/sizes/${id}`, {
+      let res = await fetch(`${API_BASE}/api/sizes/${id}`, {
         method: 'DELETE',
+        headers: authHeaders(),
       });
+      if (res.status === 404) {
+        res = await fetch(`${API_BASE}/api/admin/sizes/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to delete size');
 

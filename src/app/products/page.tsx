@@ -4,6 +4,7 @@ import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import { STANDARD_COLORS, STANDARD_SIZES } from '@/lib/constants';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useCurrency } from '@/context/currency-context';
 import { toast } from '@/components/ui/toast';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -57,7 +58,10 @@ import {
   List,
   TrendingUp,
   X,
-  RefreshCw
+  RefreshCw,
+  Palette,
+  Ruler,
+  SlidersHorizontal
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -596,6 +600,31 @@ export default function ProductsPage() {
             </Button>
           }
         />
+
+        {/* Products Sub-Tabs Bar */}
+        <div className="flex items-center gap-2 border-b border-border/40 pb-3 overflow-x-auto">
+          <Link
+            href="/products"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-primary/10 text-primary border border-primary/20"
+          >
+            <Package className="h-4 w-4" />
+            All Products
+          </Link>
+          <Link
+            href="/colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+          >
+            <Palette className="h-4 w-4 text-rose-500" />
+            Colors
+          </Link>
+          <Link
+            href="/sizes"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+          >
+            <Ruler className="h-4 w-4 text-emerald-500" />
+            Sizes
+          </Link>
+        </div>
 
         {/* Premium KPI Summary Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

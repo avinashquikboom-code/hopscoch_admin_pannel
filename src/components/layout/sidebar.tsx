@@ -30,6 +30,8 @@ import {
   Radio,
   SlidersHorizontal,
   Home,
+  Palette,
+  Ruler,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,11 +93,12 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       icon: Package,
       items: [
         { name: 'Products', href: '/products' },
+        { name: 'Colors', href: '/colors', icon: Palette },
+        { name: 'Sizes', href: '/sizes', icon: Ruler },
         { name: 'Categories', href: '/categories' },
         { name: 'Sub Categories', href: '/sub-categories' },
         { name: 'Brands', href: '/brands' },
         { name: 'Collections', href: '/collections' },
-        { name: 'Colors & Sizes', href: '/colors-sizes' },
         { name: 'Inventory', href: '/inventory' },
       ],
     },

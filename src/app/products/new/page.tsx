@@ -29,6 +29,7 @@ import {
   Upload, 
   X, 
   Plus,
+  Sparkles,
   Image as ImageIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -672,20 +673,88 @@ export default function NewProductPage() {
             <TabsContent value="variants" keepMounted className="data-[hidden]:hidden">
               <Card>
                 <CardHeader>
-                  <CardTitle>Product Variants</CardTitle>
-                  <CardDescription>Manage product variants (colors, sizes)</CardDescription>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-xl font-bold flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Product Variants (Color & Size)
+                      </CardTitle>
+                      <CardDescription>
+                        Select master colors & sizes to auto-generate variant combinations, or add custom variant rows.
+                      </CardDescription>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        if (selectedColors.length === 0 && selectedSizes.length === 0) {
+                          toast.error('Please select at least one Color or Size option first');
+                          return;
+                        }
+                        const cList = selectedColors.length > 0 ? selectedColors : ['Default'];
+                        const sList = selectedSizes.length > 0 ? selectedSizes : ['One Size'];
+                        const generated: any[] = [];
+                        const skuInput = (document.getElementById('sku') as HTMLInputElement)?.value || 'SKU';
+                        const priceInput = (document.getElementById('price') as HTMLInputElement)?.value || '';
+                        const stockInput = (document.getElementById('stock') as HTMLInputElement)?.value || '';
+                        let idx = 1;
+                        for (const c of cList) {
+                          for (const s of sList) {
+                            generated.push({
+                              sku: `${skuInput.trim().toUpperCase()}-${c.toUpperCase().replace(/\s+/g, '-')}-${s.toUpperCase().replace(/\s+/g, '-')}-${idx++}`,
+                              price: priceInput,
+                              stock: stockInput,
+                              color: c,
+                              size: s,
+                              material: '',
+                            });
+                          }
+                        }
+                        setVariants(generated);
+                        toast.success(`Generated ${generated.length} variant rows!`);
+                      }}
+                      className="bg-primary hover:bg-primary/90 gap-2 text-white font-semibold shadow-sm"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Auto-Generate Matrix ({selectedColors.length * (selectedSizes.length || 1) || 1})
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Color & Size selection controls directly inside Variants sub tab */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
+                    <MultiSelectDropdown
+                      label="Color Options"
+                      placeholder="Select or add colors..."
+                      options={availableColors}
+                      selectedValues={selectedColors}
+                      onChange={setSelectedColors}
+                    />
+                    <MultiSelectDropdown
+                      label="Size Options"
+                      placeholder="Select or add sizes..."
+                      options={availableSizes}
+                      selectedValues={selectedSizes}
+                      onChange={setSelectedSizes}
+                    />
+                  </div>
+
                   {variants.map((variant, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                    <div key={index} className="border rounded-xl p-4 space-y-4 bg-card shadow-sm hover:border-primary/40 transition-colors">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Variant {index + 1}</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-bold border-primary/30 text-primary">
+                            Variant #{index + 1}
+                          </Badge>
+                          {variant.color && <Badge variant="secondary">{variant.color}</Badge>}
+                          {variant.size && <Badge variant="secondary">{variant.size}</Badge>}
+                        </div>
                         {variants.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => removeVariant(index)}
+                            className="text-rose-500 hover:bg-rose-500/10 h-8 w-8 p-0"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -693,7 +762,7 @@ export default function NewProductPage() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div className="space-y-2">
-                          <Label>SKU</Label>
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">SKU Code</Label>
                           <Input
                             placeholder="SKU"
                             value={variant.sku}
@@ -705,7 +774,7 @@ export default function NewProductPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Price</Label>
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Price ($)</Label>
                           <Input
                             type="number"
                             placeholder="0.00"
@@ -718,7 +787,7 @@ export default function NewProductPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Stock</Label>
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Stock Qty</Label>
                           <Input
                             type="number"
                             placeholder="0"
@@ -731,31 +800,41 @@ export default function NewProductPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Color</Label>
-                          <Input
-                            placeholder="Color"
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Color</Label>
+                          <select
                             value={variant.color}
                             onChange={(e) => {
                               const newVariants = [...variants];
                               newVariants[index].color = e.target.value;
                               setVariants(newVariants);
                             }}
-                          />
+                            className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
+                          >
+                            <option value="">Select Color</option>
+                            {availableColors.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Size</Label>
-                          <Input
-                            placeholder="Size"
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Size</Label>
+                          <select
                             value={variant.size}
                             onChange={(e) => {
                               const newVariants = [...variants];
                               newVariants[index].size = e.target.value;
                               setVariants(newVariants);
                             }}
-                          />
+                            className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
+                          >
+                            <option value="">Select Size</option>
+                            {availableSizes.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Material</Label>
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Material</Label>
                           <Input
                             placeholder="Material"
                             value={variant.material}
@@ -770,9 +849,9 @@ export default function NewProductPage() {
                     </div>
                   ))}
 
-                  <Button type="button" variant="outline" onClick={addVariant}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Variant
+                  <Button type="button" variant="outline" onClick={addVariant} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Custom Variant Row
                   </Button>
                 </CardContent>
               </Card>
