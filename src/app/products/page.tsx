@@ -1,5 +1,7 @@
 'use client';
 import { API_BASE } from '@/lib/api';
+import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
+import { STANDARD_COLORS, STANDARD_SIZES } from '@/lib/constants';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurrency } from '@/context/currency-context';
@@ -78,6 +80,10 @@ function normalizeProduct(raw: any) {
     imgs = [{ url: raw.thumbnailUrl }];
   }
 
+  const rawVariants = Array.isArray(raw.variants) ? raw.variants : [];
+  const colors = Array.from(new Set(rawVariants.map((v: any) => v.color).filter((c: any) => c && c !== 'Default')));
+  const sizes = Array.from(new Set(rawVariants.map((v: any) => v.size).filter((s: any) => s && s !== 'One Size')));
+
   return {
     id: String(raw.id || raw._id || Math.random()),
     name: raw.name || raw.title || 'Unnamed Product',
@@ -93,6 +99,9 @@ function normalizeProduct(raw: any) {
     description: raw.description || raw.shortDescription || '',
     images: imgs,
     thumbnailUrl: raw.thumbnailUrl || (imgs.length > 0 ? imgs[0].url : null),
+    variants: rawVariants,
+    colors: colors,
+    sizes: sizes,
   };
 }
 
@@ -104,7 +113,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: '', brand: '', description: '', status: 'PUBLISHED' });
+  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: '', brand: '', colors: [] as string[], sizes: [] as string[], description: '', status: 'PUBLISHED' });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -190,15 +199,48 @@ export default function ProductsPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = {
+
+    const colors = formData.colors || [];
+    const sizes = formData.sizes || [];
+
+    let variants: any[] = [];
+    const baseSku = (formData.sku || 'SKU').trim().toUpperCase();
+
+    if (colors.length > 0 || sizes.length > 0) {
+      const cList = colors.length > 0 ? colors : ['Default'];
+      const sList = sizes.length > 0 ? sizes : ['One Size'];
+      let idx = 1;
+      for (const c of cList) {
+        for (const s of sList) {
+          variants.push({
+            sku: `${baseSku}-${c.toUpperCase().replace(/\s+/g, '-')}-${s.toUpperCase().replace(/\s+/g, '-')}-${idx++}`,
+            price: parseFloat(formData.price) || 0,
+            stock: parseInt(formData.stock) || 0,
+            color: c,
+            size: s,
+          });
+        }
+      }
+    }
+
+    const body: any = {
       name: formData.name, 
       sku: formData.sku && formData.sku.trim() !== '' ? formData.sku.trim() : undefined,
       price: parseFloat(formData.price) || 0,
       stock: parseInt(formData.stock) || 0,
-      category: formData.category, brand: formData.brand,
+      category: formData.category,
+      brand: formData.brand,
       description: formData.description,
-      status: formData.status, isFeatured: false, isTrending: false, isBestSeller: false,
+      status: formData.status,
+      isFeatured: false,
+      isTrending: false,
+      isBestSeller: false,
     };
+
+    if (variants.length > 0) {
+      body.variants = variants;
+    }
+
     try {
       console.log('📌 [handleAddProduct] POST /api/admin/products', body);
       const res = await fetch(`${API_BASE}/api/admin/products`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
@@ -247,7 +289,7 @@ export default function ProductsPage() {
 
       setAddSheetOpen(false);
       setImageFiles([]);
-      setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', description: '', status: 'PUBLISHED' });
+      setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', colors: [], sizes: [], description: '', status: 'PUBLISHED' });
       
       fetchProducts();
       fetchCategories();
@@ -1080,6 +1122,23 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <MultiSelectDropdown
+                    label="Color Options"
+                    placeholder="Select colors..."
+                    options={STANDARD_COLORS}
+                    selectedValues={formData.colors}
+                    onChange={(colors) => setFormData({ ...formData, colors })}
+                  />
+                  <MultiSelectDropdown
+                    label="Size Options"
+                    placeholder="Select sizes..."
+                    options={STANDARD_SIZES}
+                    selectedValues={formData.sizes}
+                    onChange={(sizes) => setFormData({ ...formData, sizes })}
+                  />
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category Department</Label>
                   <select
@@ -1390,6 +1449,50 @@ export default function ProductsPage() {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Color & Size Options Section */}
+                  {((selectedProduct.colors && selectedProduct.colors.length > 0) || (selectedProduct.sizes && selectedProduct.sizes.length > 0) || (selectedProduct.variants && selectedProduct.variants.length > 0)) && (
+                    <div className="space-y-3 p-4 rounded-xl border border-border/40 bg-muted/10">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Color & Size Options</h3>
+                      {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-semibold text-muted-foreground">Colors:</span>
+                          {selectedProduct.colors.map((c: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs px-2.5 py-0.5">
+                              {c}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-semibold text-muted-foreground">Sizes:</span>
+                          {selectedProduct.sizes.map((s: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs px-2.5 py-0.5">
+                              {s}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                        <div className="pt-2 border-t border-border/30 space-y-2">
+                          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Product Variants ({selectedProduct.variants.length})</span>
+                          <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                            {selectedProduct.variants.map((v: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/30 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[10px] text-muted-foreground">{v.sku}</span>
+                                  {v.color && v.color !== 'Default' && <Badge variant="outline" className="text-[10px] py-0">{v.color}</Badge>}
+                                  {v.size && v.size !== 'One Size' && <Badge variant="outline" className="text-[10px] py-0">{v.size}</Badge>}
+                                </div>
+                                <span className="font-semibold text-foreground text-xs">{v.stock} in stock</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Inventory Control Panel</h3>

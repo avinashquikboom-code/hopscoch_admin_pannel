@@ -1,5 +1,7 @@
 'use client';
 import { API_BASE } from '@/lib/api';
+import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
+import { STANDARD_COLORS, STANDARD_SIZES } from '@/lib/constants';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -41,6 +43,8 @@ export default function NewProductPage() {
   const [variants, setVariants] = useState([
     { sku: '', price: '', stock: '', color: '', size: '', material: '' }
   ]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
   // Dynamic lists and loading/error states
   const [parentCategories, setParentCategories] = useState<any[]>([]);
@@ -199,21 +203,43 @@ export default function NewProductPage() {
       status: 'PUBLISHED',
       gender: 'UNISEX',
       ageGroup: 'ADULT',
-      variants: variants
-        .filter((v) => v.sku.trim() !== '' || v.color.trim() !== '' || v.size.trim() !== '')
-        .map((v, idx) => {
+      variants: (() => {
+        let finalVars = variants
+          .filter((v) => v.sku.trim() !== '' || v.color.trim() !== '' || v.size.trim() !== '')
+          .map((v, idx) => {
+            const baseSku = (formDataObj.get('sku') as string || 'SKU').trim().toUpperCase();
+            const cleanColor = (v.color || 'DEFAULT').trim().toUpperCase().replace(/\s+/g, '-');
+            const cleanSize = (v.size || 'ONETIME').trim().toUpperCase().replace(/\s+/g, '-');
+            return {
+              sku: v.sku.trim() || `${baseSku}-${cleanColor}-${cleanSize}-${idx + 1}`,
+              price: parseFloat(v.price) || price,
+              stock: parseInt(v.stock) || stock,
+              color: v.color || null,
+              size: v.size || null,
+              material: v.material || null,
+            };
+          });
+
+        if (finalVars.length === 0 && (selectedColors.length > 0 || selectedSizes.length > 0)) {
+          const cList = selectedColors.length > 0 ? selectedColors : ['Default'];
+          const sList = selectedSizes.length > 0 ? selectedSizes : ['One Size'];
           const baseSku = (formDataObj.get('sku') as string || 'SKU').trim().toUpperCase();
-          const cleanColor = (v.color || 'DEFAULT').trim().toUpperCase().replace(/\s+/g, '-');
-          const cleanSize = (v.size || 'ONETIME').trim().toUpperCase().replace(/\s+/g, '-');
-          return {
-            sku: v.sku.trim() || `${baseSku}-${cleanColor}-${cleanSize}-${idx + 1}`,
-            price: parseFloat(v.price) || price,
-            stock: parseInt(v.stock) || 0,
-            color: v.color || null,
-            size: v.size || null,
-            material: v.material || null,
-          };
-        }),
+          let idx = 1;
+          for (const c of cList) {
+            for (const s of sList) {
+              finalVars.push({
+                sku: `${baseSku}-${c.toUpperCase().replace(/\s+/g, '-')}-${s.toUpperCase().replace(/\s+/g, '-')}-${idx++}`,
+                price: price,
+                stock: stock,
+                color: c !== 'Default' ? c : null,
+                size: s !== 'One Size' ? s : null,
+                material: null,
+              });
+            }
+          }
+        }
+        return finalVars;
+      })(),
     };
 
     try {
@@ -301,7 +327,7 @@ export default function NewProductPage() {
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Inventory</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
-              <TabsTrigger value="variants">Variants</TabsTrigger>
+              <TabsTrigger value="variants">Variants (Color & Size)</TabsTrigger>
               <TabsTrigger value="seo">SEO</TabsTrigger>
             </TabsList>
 
@@ -395,6 +421,24 @@ export default function NewProductPage() {
                     </div>
                   </div>
 
+                  {/* Color & Size Options */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
+                    <MultiSelectDropdown
+                      label="Color Options"
+                      placeholder="Select or add colors..."
+                      options={STANDARD_COLORS}
+                      selectedValues={selectedColors}
+                      onChange={setSelectedColors}
+                    />
+                    <MultiSelectDropdown
+                      label="Size Options"
+                      placeholder="Select or add sizes..."
+                      options={STANDARD_SIZES}
+                      selectedValues={selectedSizes}
+                      onChange={setSelectedSizes}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="description">Description *</Label>
                     <Textarea 
@@ -484,6 +528,24 @@ export default function NewProductPage() {
                       <Label htmlFor="lowStock">Low Stock Threshold</Label>
                       <Input id="lowStock" type="number" placeholder="10" />
                     </div>
+                  </div>
+
+                  {/* Color & Size Options */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
+                    <MultiSelectDropdown
+                      label="Color Options"
+                      placeholder="Select or add colors..."
+                      options={STANDARD_COLORS}
+                      selectedValues={selectedColors}
+                      onChange={setSelectedColors}
+                    />
+                    <MultiSelectDropdown
+                      label="Size Options"
+                      placeholder="Select or add sizes..."
+                      options={STANDARD_SIZES}
+                      selectedValues={selectedSizes}
+                      onChange={setSelectedSizes}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
