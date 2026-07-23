@@ -190,11 +190,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               exit={{ opacity: 0, x: -8 }}
               className="flex items-center gap-2"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Sparkles className="h-4 w-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border p-1">
+                <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
               </div>
-              <span className="text-sm font-bold text-foreground tracking-tight">
-                FCI SELLER
+              <span className="text-xs font-bold text-foreground tracking-tight">
+                FCI Seller E-commerce
               </span>
             </motion.div>
           ) : (
@@ -204,8 +204,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               exit={{ opacity: 0, scale: 0.8 }}
               className="mx-auto"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Sparkles className="h-4 w-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border p-1">
+                <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
               </div>
             </motion.div>
           )}

@@ -104,11 +104,11 @@ export default function LoginPage() {
 
         {/* Brand Logo */}
         <div className="relative z-10 flex items-center space-x-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e]">
-            <Sparkles className="w-5 h-5 text-black" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-white p-1">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
-          <span className="text-xl font-black tracking-[0.25em] text-white">
-            FCI SELLER
+          <span className="text-xl font-black tracking-[0.2em] text-white">
+            FCI SELLER E-COMMERCE
           </span>
         </div>
 
