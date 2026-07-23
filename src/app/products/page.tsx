@@ -125,6 +125,7 @@ export default function ProductsPage() {
   const [brands, setBrands] = useState<any[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>(STANDARD_COLORS);
   const [availableSizes, setAvailableSizes] = useState<string[]>(STANDARD_SIZES);
+  const [existingTaxRules, setExistingTaxRules] = useState<any[]>([]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -205,11 +206,25 @@ export default function ProductsPage() {
     }
   }, []);
 
+  const fetchTaxRules = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json.data ?? json ?? [];
+        setExistingTaxRules(Array.isArray(raw) ? raw.filter((t: any) => t.isActive !== false) : []);
+      }
+    } catch (e) {
+      console.error('Error fetching tax rules:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
     fetchBrands();
     fetchColorsAndSizes();
-  }, [fetchCategories, fetchBrands, fetchColorsAndSizes]);
+    fetchTaxRules();
+  }, [fetchCategories, fetchBrands, fetchColorsAndSizes, fetchTaxRules]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -1324,34 +1339,75 @@ export default function ProductsPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="taxType" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax Type</Label>
-                    <select
-                      id="taxType"
-                      value={formData.taxType}
-                      onChange={(e) => setFormData({ ...formData, taxType: e.target.value })}
-                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
-                    >
-                      <option value="GST">GST</option>
-                      <option value="IGST">IGST</option>
-                      <option value="VAT">VAT</option>
-                      <option value="NONE">None / Exempt</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="taxPercent" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax %</Label>
-                    <input
-                      id="taxPercent"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={formData.taxPercent}
-                      onChange={(e) => setFormData({ ...formData, taxPercent: e.target.value })}
-                      placeholder="e.g. 18"
-                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                    />
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax Configuration</Label>
+                  {existingTaxRules.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground">Quick-pick from saved tax rules:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {existingTaxRules.map((tax: any) => {
+                          const tType = tax.taxType || tax.type || 'GST';
+                          const tRate = String(Number(tax.rate));
+                          const isSelected = formData.taxType === tType && formData.taxPercent === tRate;
+                          return (
+                            <button
+                              key={tax.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, taxType: tType, taxPercent: tRate })}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                                isSelected
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-border/40 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                              }`}
+                            >
+                              {tax.name || `${tType} ${tRate}%`}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, taxType: 'NONE', taxPercent: '' })}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                            formData.taxType === 'NONE'
+                              ? 'border-gray-400 bg-gray-500/10 text-gray-600'
+                              : 'border-border/40 text-muted-foreground hover:border-gray-400/40'
+                          }`}
+                        >
+                          None / Exempt
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="taxType" className="text-xs font-semibold text-muted-foreground">Tax Type</Label>
+                      <select
+                        id="taxType"
+                        value={formData.taxType}
+                        onChange={(e) => setFormData({ ...formData, taxType: e.target.value })}
+                        className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                      >
+                        <option value="GST">GST</option>
+                        <option value="IGST">IGST</option>
+                        <option value="VAT">VAT</option>
+                        <option value="NONE">None / Exempt</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="taxPercent" className="text-xs font-semibold text-muted-foreground">Tax %</Label>
+                      <input
+                        id="taxPercent"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={formData.taxPercent}
+                        onChange={(e) => setFormData({ ...formData, taxPercent: e.target.value })}
+                        placeholder={formData.taxType === 'NONE' ? '—' : 'e.g. 18'}
+                        disabled={formData.taxType === 'NONE'}
+                        className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                    </div>
                   </div>
                 </div>
 
