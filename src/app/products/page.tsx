@@ -117,10 +117,11 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: '', brand: '', colors: [] as string[], sizes: [] as string[], description: '', status: 'PUBLISHED' });
+  const [formData, setFormData] = useState({ name: '', sku: '', price: '', stock: '', category: '', subCategory: '', brand: '', colors: [] as string[], sizes: [] as string[], description: '', status: 'PUBLISHED', taxType: 'GST', taxPercent: '' });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>(STANDARD_COLORS);
   const [availableSizes, setAvailableSizes] = useState<string[]>(STANDARD_SIZES);
@@ -140,6 +141,24 @@ export default function ProductsPage() {
       console.error('Error fetching categories in products page:', e);
     }
   }, []);
+
+  const fetchSubCategories = useCallback(async (parentCategoryName: string) => {
+    try {
+      const parent = categories.find((c: any) => c.name === parentCategoryName);
+      if (!parent) { setSubCategories([]); return; }
+      const res = await fetch(`${API_BASE}/api/categories/${parent.id}/children`);
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json.data ?? json ?? [];
+        setSubCategories(Array.isArray(raw) ? raw : []);
+      } else {
+        setSubCategories([]);
+      }
+    } catch (e) {
+      console.error('Error fetching subcategories:', e);
+      setSubCategories([]);
+    }
+  }, [categories]);
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -327,9 +346,12 @@ export default function ProductsPage() {
       price: parseFloat(formData.price) || 0,
       stock: parseInt(formData.stock) || 0,
       category: formData.category,
+      subCategory: formData.subCategory || undefined,
       brand: formData.brand,
       description: formData.description,
       status: formData.status,
+      taxType: formData.taxType || undefined,
+      taxPercent: formData.taxPercent ? parseFloat(formData.taxPercent) : undefined,
       isFeatured: false,
       isTrending: false,
       isBestSeller: false,
@@ -387,7 +409,8 @@ export default function ProductsPage() {
 
       setAddSheetOpen(false);
       setImageFiles([]);
-      setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', brand: brands[0]?.name || '', colors: [], sizes: [], description: '', status: 'PUBLISHED' });
+      setSubCategories([]);
+      setFormData({ name: '', sku: '', price: '', stock: '', category: categories[0]?.name || '', subCategory: '', brand: brands[0]?.name || '', colors: [], sizes: [], description: '', status: 'PUBLISHED', taxType: 'GST', taxPercent: '' });
       
       fetchProducts();
       fetchCategories();
@@ -1267,7 +1290,10 @@ export default function ProductsPage() {
                   <select
                     id="category"
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, category: e.target.value, subCategory: '' });
+                      fetchSubCategories(e.target.value);
+                    }}
                     className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                   >
                     {categories.length > 0 ? (
@@ -1278,6 +1304,55 @@ export default function ProductsPage() {
                       <option value="">No Categories Available</option>
                     )}
                   </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="subCategory" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub-Category</Label>
+                  <select
+                    id="subCategory"
+                    value={formData.subCategory}
+                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                  >
+                    <option value="">— None —</option>
+                    {subCategories.map((sc) => (
+                      <option key={sc.id} value={sc.name}>{sc.name}</option>
+                    ))}
+                  </select>
+                  {subCategories.length === 0 && formData.category && (
+                    <p className="text-xs text-muted-foreground mt-1">No sub-categories found for this category.</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="taxType" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax Type</Label>
+                    <select
+                      id="taxType"
+                      value={formData.taxType}
+                      onChange={(e) => setFormData({ ...formData, taxType: e.target.value })}
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="GST">GST</option>
+                      <option value="IGST">IGST</option>
+                      <option value="VAT">VAT</option>
+                      <option value="NONE">None / Exempt</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="taxPercent" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax %</Label>
+                    <input
+                      id="taxPercent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.taxPercent}
+                      onChange={(e) => setFormData({ ...formData, taxPercent: e.target.value })}
+                      placeholder="e.g. 18"
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
