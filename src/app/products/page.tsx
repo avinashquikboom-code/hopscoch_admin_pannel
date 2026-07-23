@@ -165,35 +165,31 @@ export default function ProductsPage() {
     }
   }, []);
 
-  const fetchSubCategories = useCallback(async (parentCategoryName: string, catList?: any[]) => {
-    const list = catList ?? categories;
-    const parent = list.find((c: any) => c.name === parentCategoryName);
-    if (!parent) { setSubCategories([]); return; }
-    setSubCategoryLoading(true);
-    try {
-      // First try the dedicated children endpoint for freshest data
-      const res = await fetch(`${API_BASE}/api/categories/${parent.id}/children`);
-      if (res.ok) {
-        const json = await res.json();
-        const raw = json.data ?? json ?? [];
-        setSubCategories(Array.isArray(raw) ? raw : []);
-      } else if (Array.isArray(parent.children)) {
-        // Fallback: use nested children already in the categories response
-        setSubCategories(parent.children.filter((c: any) => !c.deletedAt));
-      } else {
-        setSubCategories([]);
+  // Dynamically compute subcategories from categories data
+  const displayedSubCategories = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+
+    // If a specific parent category is selected
+    if (formData.category) {
+      const parent = categories.find((c: any) => c.name.toLowerCase() === formData.category.toLowerCase());
+      if (parent && Array.isArray(parent.children) && parent.children.length > 0) {
+        return parent.children.filter((c: any) => !c.deletedAt);
       }
-    } catch (e) {
-      // Fallback to nested children on error
-      if (Array.isArray(parent.children)) {
-        setSubCategories(parent.children.filter((c: any) => !c.deletedAt));
-      } else {
-        setSubCategories([]);
-      }
-    } finally {
-      setSubCategoryLoading(false);
     }
-  }, [categories]);
+
+    // Fallback: combine all subcategories across all categories
+    const allSubs: any[] = [];
+    categories.forEach((parent: any) => {
+      if (Array.isArray(parent.children)) {
+        parent.children.forEach((sub: any) => {
+          if (!sub.deletedAt && !allSubs.some((s: any) => s.id === sub.id)) {
+            allSubs.push({ ...sub, parentName: parent.name });
+          }
+        });
+      }
+    });
+    return allSubs;
+  }, [categories, formData.category]);
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -1351,10 +1347,10 @@ export default function ProductsPage() {
                     value={formData.category}
                     onChange={(e) => {
                       setFormData({ ...formData, category: e.target.value, subCategory: '' });
-                      fetchSubCategories(e.target.value);
                     }}
                     className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                   >
+                    <option value="">— Select Category Department —</option>
                     {categories.length > 0 ? (
                       categories.map((c) => (
                         <option key={c.id} value={c.name}>{c.name}</option>
@@ -1365,31 +1361,37 @@ export default function ProductsPage() {
                   </select>
                 </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="subCategory" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub-Category</Label>
-                    <div className="relative">
-                      <select
-                        id="subCategory"
-                        value={formData.subCategory}
-                        onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
-                        disabled={subCategoryLoading}
-                        className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer disabled:opacity-60"
-                      >
-                        <option value="">— None —</option>
-                        {subCategories.map((sc) => (
-                          <option key={sc.id} value={sc.name}>{sc.name}</option>
-                        ))}
-                      </select>
-                      {subCategoryLoading && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">Loading...</span>
-                        </div>
-                      )}
-                    </div>
-                    {!subCategoryLoading && subCategories.length === 0 && formData.category && (
-                      <p className="text-xs text-muted-foreground mt-1">No sub-categories found. Add them from the <strong>Sub-Categories</strong> page.</p>
-                    )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="subCategory" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sub-Category</Label>
+                  <div className="relative">
+                    <select
+                      id="subCategory"
+                      value={formData.subCategory}
+                      onChange={(e) => {
+                        const selectedSubName = e.target.value;
+                        setFormData((prev) => {
+                          let nextCat = prev.category;
+                          if (!nextCat && selectedSubName) {
+                            const match = displayedSubCategories.find((s: any) => s.name === selectedSubName);
+                            if (match?.parentName) nextCat = match.parentName;
+                          }
+                          return { ...prev, subCategory: selectedSubName, category: nextCat };
+                        });
+                      }}
+                      className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
+                    >
+                      <option value="">— None —</option>
+                      {displayedSubCategories.map((sc: any) => (
+                        <option key={sc.id} value={sc.name}>
+                          {sc.name}{sc.parentName ? ` (${sc.parentName})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                  {displayedSubCategories.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">No sub-categories found. Add them from the <strong>Sub-Categories</strong> page.</p>
+                  )}
+                </div>
 
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax Configuration</Label>
