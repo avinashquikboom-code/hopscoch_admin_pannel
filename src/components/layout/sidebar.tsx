@@ -194,7 +194,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
               </div>
               <span className="text-xs font-bold text-foreground tracking-tight">
-                FCI Seller E-commerce
+                FCI Seller
               </span>
             </motion.div>
           ) : (

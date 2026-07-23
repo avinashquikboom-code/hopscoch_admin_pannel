@@ -108,7 +108,7 @@ export default function LoginPage() {
             <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
           <span className="text-xl font-black tracking-[0.2em] text-white">
-            FCI SELLER E-COMMERCE
+            FCI SELLER
           </span>
         </div>
 

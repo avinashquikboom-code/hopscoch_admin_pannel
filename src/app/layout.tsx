@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FCI Seller E-commerce - Admin Panel",
+  title: "FCI Seller - Admin Panel",
   description: "Production-ready luxury fashion eCommerce Admin Panel",
 };
 

@@ -84,15 +84,15 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [config, setConfig] = useState({
-    storeName: 'FCI Seller E-commerce',
+    storeName: 'FCI Seller',
     storeEmail: 'admin@fciseller.com',
     storePhone: '+1 234 567 8900',
     storeAddress: '123 Fashion Street, New York, NY 10001',
     currency: 'USD',
     language: 'en',
     timezone: 'UTC',
-    metaTitle: 'FCI Seller E-commerce - Luxury Fashion Store',
-    metaDescription: 'Discover premium couture fashion and high-end accessories at FCI Seller E-commerce. Exquisite quality for the modern wardrobe.',
+    metaTitle: 'FCI Seller - Luxury Fashion Store',
+    metaDescription: 'Discover premium couture fashion and high-end accessories at FCI Seller. Exquisite quality for the modern wardrobe.',
     newOrderAlerts: true,
     lowStockWarnings: true,
     weeklyDigests: false,
@@ -406,7 +406,7 @@ export default function SettingsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="metaTitle" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default SEO Meta Title</Label>
-                  <Input id="metaTitle" defaultValue="FCI Seller E-commerce - Luxury Fashion Store" className="h-10 rounded-lg border-border/50" />
+                  <Input id="metaTitle" defaultValue="FCI Seller - Luxury Fashion Store" className="h-10 rounded-lg border-border/50" />
                 </div>
 
                 <div className="space-y-1.5">
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                   <Textarea 
                     id="metaDescription" 
                     rows={3}
-                    defaultValue="Discover premium couture fashion and high-end accessories at FCI Seller E-commerce. Exquisite quality for the modern wardrobe."
+                    defaultValue="Discover premium couture fashion and high-end accessories at FCI Seller. Exquisite quality for the modern wardrobe."
                     className="rounded-lg border-border/50 bg-background resize-none text-sm p-3 focus:border-primary"
                   />
                 </div>
