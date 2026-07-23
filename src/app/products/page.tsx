@@ -1399,7 +1399,7 @@ export default function ProductsPage() {
                   {/* API-driven tax rule selector */}
                   {taxLoading ? (
                     <p className="text-xs text-muted-foreground animate-pulse">Loading tax rules...</p>
-                  ) : existingTaxRules.length > 0 ? (
+                  ) : (
                     <div className="space-y-1.5">
                       <Label htmlFor="taxRuleSelect" className="text-xs font-semibold text-muted-foreground">Select Tax Rule</Label>
                       <select
@@ -1407,80 +1407,69 @@ export default function ProductsPage() {
                         value={formData.selectedTaxRuleId}
                         onChange={(e) => {
                           const ruleId = e.target.value;
-                          if (ruleId === '__custom__') {
+                          if (ruleId === '__custom__' || ruleId === '') {
                             setFormData({ ...formData, selectedTaxRuleId: '', taxType: 'GST', taxPercent: '' });
                           } else if (ruleId === '__none__') {
-                            setFormData({ ...formData, selectedTaxRuleId: '', taxType: 'NONE', taxPercent: '' });
+                            setFormData({ ...formData, selectedTaxRuleId: '__none__', taxType: 'NONE', taxPercent: '0' });
                           } else {
                             const rule = existingTaxRules.find((t: any) => String(t.id) === ruleId);
                             setFormData({
                               ...formData,
                               selectedTaxRuleId: ruleId,
-                              taxType: rule?.taxType || rule?.type || 'GST',
-                              taxPercent: rule ? String(Number(rule.rate)) : '',
+                              taxType: (rule?.taxType || rule?.type || 'GST').toUpperCase(),
+                              taxPercent: rule ? String(Number(rule.rate ?? rule.taxPercent ?? 0)) : '',
                             });
                           }
                         }}
                         className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
                       >
-                        <option value="__none__">None / Exempt</option>
+                        <option value="">— Select Saved Tax Rule —</option>
                         {existingTaxRules.map((tax: any) => (
                           <option key={tax.id} value={String(tax.id)}>
-                            {tax.name} — {tax.taxType || tax.type} @ {Number(tax.rate)}%
+                            {tax.name} — {tax.taxType || tax.type || 'GST'} @ {Number(tax.rate)}%
                           </option>
                         ))}
-                        <option value="__custom__">+ Custom tax rate...</option>
+                        <option value="__none__">None / Exempt (0%)</option>
+                        <option value="__custom__">+ Custom Tax Rate...</option>
                       </select>
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No saved tax rules found. Add them from <strong>Settings → Taxes</strong>, or enter manually below.</p>
                   )}
 
-                  {/* Show manual inputs only when custom or no rules exist */}
-                  {(formData.selectedTaxRuleId === '' && formData.taxType !== 'NONE') && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="taxType" className="text-xs font-semibold text-muted-foreground">Tax Type</Label>
-                        <select
-                          id="taxType"
-                          value={formData.taxType}
-                          onChange={(e) => setFormData({ ...formData, taxType: e.target.value })}
-                          className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer"
-                        >
-                          <option value="GST">GST</option>
-                          <option value="IGST">IGST</option>
-                          <option value="VAT">VAT</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="taxPercent" className="text-xs font-semibold text-muted-foreground">Tax %</Label>
-                        <input
-                          id="taxPercent"
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          value={formData.taxPercent}
-                          onChange={(e) => setFormData({ ...formData, taxPercent: e.target.value })}
-                          placeholder="e.g. 18"
-                          className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                        />
-                      </div>
+                  {/* Replicated Tax Type and Tax % Rate inputs */}
+                  <div className="grid grid-cols-2 gap-4 pt-1">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="taxType" className="text-xs font-semibold text-muted-foreground">Tax Type</Label>
+                      <select
+                        id="taxType"
+                        value={formData.taxType}
+                        onChange={(e) => setFormData({ ...formData, taxType: e.target.value })}
+                        disabled={Boolean(formData.selectedTaxRuleId && formData.selectedTaxRuleId !== '__custom__')}
+                        className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none cursor-pointer disabled:opacity-75"
+                      >
+                        <option value="GST">GST</option>
+                        <option value="IGST">IGST</option>
+                        <option value="VAT">VAT</option>
+                        <option value="EXCLUSIVE">Exclusive</option>
+                        <option value="INCLUSIVE">Inclusive</option>
+                        <option value="NONE">None / Exempt</option>
+                      </select>
                     </div>
-                  )}
-
-                  {/* Summary badge */}
-                  {(formData.selectedTaxRuleId || formData.taxPercent) && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-                      <span className="text-xs font-semibold text-primary">
-                        {formData.taxType === 'NONE' ? 'No Tax Applied' :
-                          formData.selectedTaxRuleId
-                            ? (() => { const r = existingTaxRules.find((t: any) => String(t.id) === formData.selectedTaxRuleId); return r ? `${r.name} (${Number(r.rate)}%)` : ''; })()
-                            : `${formData.taxType} @ ${formData.taxPercent}%`
-                        }
-                      </span>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="taxPercent" className="text-xs font-semibold text-muted-foreground">Tax % Rate</Label>
+                      <input
+                        id="taxPercent"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={formData.taxPercent}
+                        onChange={(e) => setFormData({ ...formData, taxPercent: e.target.value })}
+                        disabled={Boolean(formData.selectedTaxRuleId && formData.selectedTaxRuleId !== '__custom__')}
+                        placeholder="e.g. 18"
+                        className="w-full h-11 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-75"
+                      />
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">

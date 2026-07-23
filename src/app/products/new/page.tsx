@@ -620,18 +620,18 @@ export default function NewProductPage() {
                             const found = taxRules.find((t: any) => String(t.id) === String(val));
                             if (found) {
                               if (found.hsnCode) setHsnCode(found.hsnCode);
-                              if (found.taxType || found.type) setTaxType((found.taxType || found.type).toUpperCase());
-                              if (found.rate !== undefined) setTaxRate(`${found.rate}%`);
+                              setTaxType((found.taxType || found.type || 'GST').toUpperCase());
+                              setTaxRate(found.rate !== undefined ? `${found.rate}` : (found.taxPercent !== undefined ? `${found.taxPercent}` : ''));
                             } else {
                               setTaxRate('');
                             }
                           }}
                           className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
                         >
-                          <option value="">Default (from Category)</option>
+                          <option value="">Default / Select Tax Rule</option>
                           {taxRules.map((rule) => (
                             <option key={rule.id} value={String(rule.id)}>
-                              {rule.name} ({rule.rate}% GST — {rule.taxType || rule.type || 'EXCLUSIVE'})
+                              {rule.name} ({rule.rate}% — {rule.taxType || rule.type || 'GST'})
                             </option>
                           ))}
                         </select>
@@ -644,18 +644,22 @@ export default function NewProductPage() {
                           onChange={(e) => setTaxType(e.target.value)}
                           className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer font-medium"
                         >
+                          <option value="GST">GST</option>
+                          <option value="IGST">IGST</option>
+                          <option value="VAT">VAT</option>
                           <option value="EXCLUSIVE">Exclusive</option>
                           <option value="INCLUSIVE">Inclusive</option>
+                          <option value="NONE">None / Exempt</option>
                         </select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="taxRate">Tax % Rate</Label>
                         <Input
                           id="taxRate"
-                          placeholder="Select a tax rule above"
+                          placeholder="Rate %"
                           value={taxRate}
-                          readOnly
-                          className="bg-muted/30 font-semibold cursor-not-allowed"
+                          onChange={(e) => setTaxRate(e.target.value)}
+                          className="font-semibold"
                         />
                       </div>
                       <div className="space-y-2">
