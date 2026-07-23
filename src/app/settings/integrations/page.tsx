@@ -287,6 +287,7 @@ export default function IntegrationsSettingsPage() {
               </Button>
 
               <Button
+                type="button"
                 onClick={() => testConnection('razorpay')}
                 disabled={testingRazorpay}
                 variant="outline"
@@ -393,6 +394,7 @@ export default function IntegrationsSettingsPage() {
               </Button>
 
               <Button
+                type="button"
                 onClick={() => testConnection('shiprocket')}
                 disabled={testingShiprocket}
                 variant="outline"
@@ -476,6 +478,7 @@ export default function IntegrationsSettingsPage() {
               </Button>
 
               <Button
+                type="button"
                 onClick={() => testConnection('google')}
                 disabled={testingGoogle}
                 variant="outline"
