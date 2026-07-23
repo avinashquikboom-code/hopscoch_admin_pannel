@@ -53,6 +53,8 @@ export default function NewProductPage() {
   const [brands, setBrands] = useState<any[]>([]);
   const [taxRules, setTaxRules] = useState<any[]>([]);
   const [selectedTaxRule, setSelectedTaxRule] = useState<string>('');
+  const [taxType, setTaxType] = useState<string>('EXCLUSIVE');
+  const [taxRate, setTaxRate] = useState<string>('');
   const [hsnCode, setHsnCode] = useState<string>('');
 
   const [selectedBrand, setSelectedBrand] = useState<string>('');
@@ -606,7 +608,7 @@ export default function NewProductPage() {
                         {taxRules.length} Tax Rule(s) Active
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="taxRule">Tax Rule / GST Rate</Label>
                         <select
@@ -616,8 +618,12 @@ export default function NewProductPage() {
                             const val = e.target.value;
                             setSelectedTaxRule(val);
                             const found = taxRules.find((t: any) => String(t.id) === String(val));
-                            if (found && found.hsnCode) {
-                              setHsnCode(found.hsnCode);
+                            if (found) {
+                              if (found.hsnCode) setHsnCode(found.hsnCode);
+                              if (found.taxType || found.type) setTaxType((found.taxType || found.type).toUpperCase());
+                              if (found.rate !== undefined) setTaxRate(`${found.rate}%`);
+                            } else {
+                              setTaxRate('');
                             }
                           }}
                           className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
@@ -631,6 +637,28 @@ export default function NewProductPage() {
                         </select>
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="taxType">Tax Type</Label>
+                        <select
+                          id="taxType"
+                          value={taxType}
+                          onChange={(e) => setTaxType(e.target.value)}
+                          className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer font-medium"
+                        >
+                          <option value="EXCLUSIVE">Exclusive</option>
+                          <option value="INCLUSIVE">Inclusive</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="taxRate">Tax % Rate</Label>
+                        <Input
+                          id="taxRate"
+                          placeholder="Select a tax rule above"
+                          value={taxRate}
+                          readOnly
+                          className="bg-muted/30 font-semibold cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="hsnCode">HSN / SAC Code</Label>
                         <Input
                           id="hsnCode"
@@ -639,6 +667,7 @@ export default function NewProductPage() {
                           onChange={(e) => setHsnCode(e.target.value)}
                         />
                       </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
