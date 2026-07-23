@@ -639,25 +639,6 @@ export default function NewProductPage() {
                           onChange={(e) => setHsnCode(e.target.value)}
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Color & Size Options */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
-                    <MultiSelectDropdown
-                      label="Color Options"
-                      placeholder="Select or add colors..."
-                      options={STANDARD_COLORS}
-                      selectedValues={selectedColors}
-                      onChange={setSelectedColors}
-                    />
-                    <MultiSelectDropdown
-                      label="Size Options"
-                      placeholder="Select or add sizes..."
-                      options={STANDARD_SIZES}
-                      selectedValues={selectedSizes}
-                      onChange={setSelectedSizes}
-                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -837,37 +818,39 @@ export default function NewProductPage() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-xs font-bold text-muted-foreground uppercase">Color</Label>
-                          <select
+                          <Input
+                            placeholder="e.g. Red, Navy, Black"
+                            list={`color-options-${index}`}
                             value={variant.color}
                             onChange={(e) => {
                               const newVariants = [...variants];
                               newVariants[index].color = e.target.value;
                               setVariants(newVariants);
                             }}
-                            className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
-                          >
-                            <option value="">Select Color</option>
+                          />
+                          <datalist id={`color-options-${index}`}>
                             {availableColors.map((c) => (
-                              <option key={c} value={c}>{c}</option>
+                              <option key={c} value={c} />
                             ))}
-                          </select>
+                          </datalist>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-xs font-bold text-muted-foreground uppercase">Size</Label>
-                          <select
+                          <Input
+                            placeholder="e.g. S, M, L, XL, 32"
+                            list={`size-options-${index}`}
                             value={variant.size}
                             onChange={(e) => {
                               const newVariants = [...variants];
                               newVariants[index].size = e.target.value;
                               setVariants(newVariants);
                             }}
-                            className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
-                          >
-                            <option value="">Select Size</option>
+                          />
+                          <datalist id={`size-options-${index}`}>
                             {availableSizes.map((s) => (
-                              <option key={s} value={s}>{s}</option>
+                              <option key={s} value={s} />
                             ))}
-                          </select>
+                          </datalist>
                         </div>
                       </div>
                     </div>
