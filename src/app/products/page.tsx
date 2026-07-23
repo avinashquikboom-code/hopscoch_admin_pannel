@@ -762,18 +762,11 @@ export default function ProductsPage() {
             All Products
           </Link>
           <Link
-            href="/colors"
+            href="/colors-sizes"
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
           >
-            <Palette className="h-4 w-4 text-rose-500" />
-            Colors
-          </Link>
-          <Link
-            href="/sizes"
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-          >
-            <Ruler className="h-4 w-4 text-emerald-500" />
-            Sizes
+            <Palette className="h-4 w-4 text-purple-500" />
+            Colors & Sizes
           </Link>
         </div>
 

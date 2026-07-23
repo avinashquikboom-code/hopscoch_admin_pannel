@@ -93,8 +93,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       icon: Package,
       items: [
         { name: 'Products', href: '/products' },
-        { name: 'Colors', href: '/colors', icon: Palette },
-        { name: 'Sizes', href: '/sizes', icon: Ruler },
+        { name: 'Colors & Sizes', href: '/colors-sizes', icon: Palette },
         { name: 'Categories', href: '/categories' },
         { name: 'Sub Categories', href: '/sub-categories' },
         { name: 'Brands', href: '/brands' },
