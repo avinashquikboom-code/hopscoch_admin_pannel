@@ -116,18 +116,25 @@ export default function NewProductPage() {
         setIsBrandsLoading(false);
       }
 
-      try {
-        const taxRes = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
-        if (taxRes.ok) {
-          const taxJson = await taxRes.json();
-          const taxData = taxJson.data?.taxes || taxJson.taxes || taxJson.data || taxJson;
-          if (Array.isArray(taxData)) {
-            setTaxRules(taxData.filter((t: any) => t.isActive !== false));
+      const fetchTaxRules = async () => {
+        try {
+          let taxRes = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+          if (!taxRes.ok) {
+            taxRes = await fetch(`${API_BASE}/api/taxes`, { headers: authHeaders() });
           }
+          if (taxRes.ok) {
+            const taxJson = await taxRes.json();
+            const taxData = taxJson.data?.taxes || taxJson.taxes || taxJson.data || taxJson;
+            if (Array.isArray(taxData)) {
+              setTaxRules(taxData.filter((t: any) => t.isActive !== false));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to load tax rules:', err);
         }
-      } catch (err) {
-        console.error('Failed to load tax rules:', err);
-      }
+      };
+
+      await fetchTaxRules();
 
       // Fetch dynamic Colors & Sizes from API
       try {
@@ -385,7 +392,7 @@ export default function NewProductPage() {
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Inventory</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
-              <TabsTrigger value="variants">Variants (Color & Size)</TabsTrigger>
+              <TabsTrigger value="variants">Product Variants</TabsTrigger>
               <TabsTrigger value="seo">SEO</TabsTrigger>
             </TabsList>
 
@@ -590,23 +597,38 @@ export default function NewProductPage() {
 
                   {/* Tax & GST Configuration */}
                   <div className="p-4 rounded-xl border border-border bg-card space-y-4">
-                    <h4 className="font-semibold text-sm text-foreground">Tax & GST Configuration</h4>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-sm text-foreground">Tax & GST Configuration</h4>
+                        <p className="text-xs text-muted-foreground">Select a tax rule created in Tax Rules, or enter custom GST details.</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                        {taxRules.length} Tax Rule(s) Active
+                      </Badge>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="taxRule">Tax Rule / GST Rate</Label>
-                        <Select value={selectedTaxRule} onValueChange={(val) => setSelectedTaxRule(val || '')}>
-                          <SelectTrigger id="taxRule">
-                            <SelectValue placeholder="Default (from Category)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Default (from Category)</SelectItem>
-                            {taxRules.map((rule) => (
-                              <SelectItem key={rule.id} value={String(rule.id)}>
-                                {rule.name} ({rule.rate}% — {rule.taxType || rule.type || 'EXCLUSIVE'})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <select
+                          id="taxRule"
+                          value={selectedTaxRule}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedTaxRule(val);
+                            const found = taxRules.find((t: any) => String(t.id) === String(val));
+                            if (found && found.hsnCode) {
+                              setHsnCode(found.hsnCode);
+                            }
+                          }}
+                          className="w-full h-10 rounded-md border border-border/50 bg-background px-3 py-1 text-sm focus:border-primary outline-none cursor-pointer"
+                        >
+                          <option value="">Default (from Category)</option>
+                          {taxRules.map((rule) => (
+                            <option key={rule.id} value={String(rule.id)}>
+                              {rule.name} ({rule.rate}% GST — {rule.taxType || rule.type || 'EXCLUSIVE'})
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="hsnCode">HSN / SAC Code</Label>
@@ -735,73 +757,29 @@ export default function NewProductPage() {
                     <div>
                       <CardTitle className="text-xl font-bold flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
-                        Product Variants (Color & Size)
+                        Product Variants
                       </CardTitle>
                       <CardDescription>
-                        Select master colors & sizes to auto-generate variant combinations, or add custom variant rows.
+                        Manage product variants (SKU, Price, Stock, Color, and Size) in a single consolidated list.
                       </CardDescription>
                     </div>
                     <Button
                       type="button"
-                      onClick={() => {
-                        if (selectedColors.length === 0 && selectedSizes.length === 0) {
-                          toast.error('Please select at least one Color or Size option first');
-                          return;
-                        }
-                        const cList = selectedColors.length > 0 ? selectedColors : ['Default'];
-                        const sList = selectedSizes.length > 0 ? selectedSizes : ['One Size'];
-                        const generated: any[] = [];
-                        const skuInput = (document.getElementById('sku') as HTMLInputElement)?.value || 'SKU';
-                        const priceInput = (document.getElementById('price') as HTMLInputElement)?.value || '';
-                        const stockInput = (document.getElementById('stock') as HTMLInputElement)?.value || '';
-                        let idx = 1;
-                        for (const c of cList) {
-                          for (const s of sList) {
-                            generated.push({
-                              sku: `${skuInput.trim().toUpperCase()}-${c.toUpperCase().replace(/\s+/g, '-')}-${s.toUpperCase().replace(/\s+/g, '-')}-${idx++}`,
-                              price: priceInput,
-                              stock: stockInput,
-                              color: c,
-                              size: s,
-                              material: '',
-                            });
-                          }
-                        }
-                        setVariants(generated);
-                        toast.success(`Generated ${generated.length} variant rows!`);
-                      }}
+                      onClick={addVariant}
                       className="bg-primary hover:bg-primary/90 gap-2 text-white font-semibold shadow-sm"
                     >
-                      <Sparkles className="h-4 w-4" />
-                      Auto-Generate Matrix ({selectedColors.length * (selectedSizes.length || 1) || 1})
+                      <Plus className="h-4 w-4" />
+                      Add Variant Option
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Color & Size selection controls directly inside Variants sub tab */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
-                    <MultiSelectDropdown
-                      label="Color Options"
-                      placeholder="Select or add colors..."
-                      options={availableColors}
-                      selectedValues={selectedColors}
-                      onChange={setSelectedColors}
-                    />
-                    <MultiSelectDropdown
-                      label="Size Options"
-                      placeholder="Select or add sizes..."
-                      options={availableSizes}
-                      selectedValues={selectedSizes}
-                      onChange={setSelectedSizes}
-                    />
-                  </div>
-
                   {variants.map((variant, index) => (
                     <div key={index} className="border rounded-xl p-4 space-y-4 bg-card shadow-sm hover:border-primary/40 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-bold border-primary/30 text-primary">
-                            Variant #{index + 1}
+                            Variant Option #{index + 1}
                           </Badge>
                           {variant.color && <Badge variant="secondary">{variant.color}</Badge>}
                           {variant.size && <Badge variant="secondary">{variant.size}</Badge>}
@@ -818,11 +796,11 @@ export default function NewProductPage() {
                           </Button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div className="space-y-2">
                           <Label className="text-xs font-bold text-muted-foreground uppercase">SKU Code</Label>
                           <Input
-                            placeholder="SKU"
+                            placeholder="e.g. SKU-RED-L"
                             value={variant.sku}
                             onChange={(e) => {
                               const newVariants = [...variants];
@@ -832,7 +810,7 @@ export default function NewProductPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold text-muted-foreground uppercase">Price ($)</Label>
+                          <Label className="text-xs font-bold text-muted-foreground uppercase">Price (₹ / $)</Label>
                           <Input
                             type="number"
                             placeholder="0.00"
@@ -890,18 +868,6 @@ export default function NewProductPage() {
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-muted-foreground uppercase">Material</Label>
-                          <Input
-                            placeholder="Material"
-                            value={variant.material}
-                            onChange={(e) => {
-                              const newVariants = [...variants];
-                              newVariants[index].material = e.target.value;
-                              setVariants(newVariants);
-                            }}
-                          />
                         </div>
                       </div>
                     </div>
