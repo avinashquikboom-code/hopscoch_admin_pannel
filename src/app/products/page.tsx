@@ -239,10 +239,13 @@ export default function ProductsPage() {
   const fetchTaxRules = useCallback(async () => {
     setTaxLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+      let res = await fetch(`${API_BASE}/api/admin/taxes`, { headers: authHeaders() });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/taxes`, { headers: authHeaders() });
+      }
       if (res.ok) {
         const json = await res.json();
-        const raw = json.data ?? json ?? [];
+        const raw = json.data?.taxes ?? json.taxes ?? json.data ?? json ?? [];
         setExistingTaxRules(Array.isArray(raw) ? raw.filter((t: any) => t.isActive !== false) : []);
       }
     } catch (e) {

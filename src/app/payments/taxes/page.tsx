@@ -118,9 +118,14 @@ export default function TaxesPage() {
       if (selectedCountry !== 'ALL') queryParams.append('country', selectedCountry);
       if (selectedStatus !== 'ALL') queryParams.append('isActive', String(selectedStatus === 'ACTIVE'));
 
-      const res = await fetch(`${API_BASE}/api/admin/taxes?${queryParams.toString()}`, {
+      let res = await fetch(`${API_BASE}/api/admin/taxes?${queryParams.toString()}`, {
         headers: authHeaders(),
       });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/taxes?${queryParams.toString()}`, {
+          headers: authHeaders(),
+        });
+      }
 
       if (res.ok) {
         const json = await res.json();
