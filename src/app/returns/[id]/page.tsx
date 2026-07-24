@@ -1,5 +1,6 @@
 'use client';
 
+import { getImageUrl } from '@/lib/api';
 import { useState, use } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
@@ -232,7 +233,7 @@ export default function ReturnDetailsPage({ params }: { params: Promise<{ id: st
                   {returnDetails.items.map((item) => (
                     <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg">
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-md"
                       />
@@ -271,7 +272,7 @@ export default function ReturnDetailsPage({ params }: { params: Promise<{ id: st
                     {returnDetails.images.map((image, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={image}
+                          src={getImageUrl(image)}
                           alt={`Return image ${index + 1}`}
                           className="w-full aspect-square object-cover rounded-lg cursor-pointer"
                         />

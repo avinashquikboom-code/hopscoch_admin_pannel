@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -518,7 +518,7 @@ export default function SubCategoriesPage() {
                         <TableCell className="py-4 font-semibold text-sm text-foreground flex items-center gap-2">
                           {sc.iconUrl ? (
                             <img 
-                              src={sc.iconUrl.startsWith('http') ? sc.iconUrl : `${API_BASE}/${sc.iconUrl}`} 
+                              src={getImageUrl(sc.iconUrl)} 
                               alt={sc.name} 
                               className="w-7 h-7 rounded-md object-cover shadow-sm flex-shrink-0"
                             />
@@ -861,7 +861,7 @@ export default function SubCategoriesPage() {
                         <div className="space-y-2 mb-4">
                           <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group">
                             <img 
-                              src={banners[0].startsWith('http') ? banners[0] : `${API_BASE}/${banners[0]}`} 
+                              src={getImageUrl(banners[0])} 
                               alt={selectedSubCategory.name} 
                               className="w-full h-full object-cover"
                             />
@@ -874,7 +874,7 @@ export default function SubCategoriesPage() {
                               {banners.slice(1).map((bUrl: string, bIdx: number) => (
                                 <div key={bIdx} className="h-16 rounded-lg border border-border/20 overflow-hidden relative">
                                   <img 
-                                    src={bUrl.startsWith('http') ? bUrl : `${API_BASE}/${bUrl}`} 
+                                    src={getImageUrl(bUrl)} 
                                     alt={`Banner ${bIdx + 2}`} 
                                     className="w-full h-full object-cover"
                                   />
@@ -887,7 +887,7 @@ export default function SubCategoriesPage() {
                     })() : selectedSubCategory.iconUrl ? (
                       <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
                         <img 
-                          src={selectedSubCategory.iconUrl.startsWith('http') ? selectedSubCategory.iconUrl : `${API_BASE}/${selectedSubCategory.iconUrl}`} 
+                          src={getImageUrl(selectedSubCategory.iconUrl)} 
                           alt={selectedSubCategory.name} 
                           className="w-16 h-16 object-cover rounded-lg"
                         />

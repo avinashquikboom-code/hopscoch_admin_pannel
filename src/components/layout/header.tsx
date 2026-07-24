@@ -1,5 +1,6 @@
 'use client';
 
+import { getImageUrl } from '@/lib/api';
 import { Search, Bell, User, Settings, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
@@ -149,7 +150,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuTrigger render={
             <div className="relative h-10 w-10 rounded-full hover:bg-muted/65 p-0 border border-[#14b8a6]/30 cursor-pointer bg-transparent flex items-center justify-center">
               <Avatar className="h-9 w-9 rounded-full">
-                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt="Admin" />}
+                {user?.avatarUrl && <AvatarImage src={getImageUrl(user.avatarUrl)} alt="Admin" />}
                 <AvatarFallback className="bg-gradient-to-tr from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black font-bold text-xs rounded-full">
                   {getInitials()}
                 </AvatarFallback>
@@ -161,7 +162,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuLabel className="px-2 py-2">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 rounded-full border border-[#14b8a6]/20 flex-shrink-0">
-                  {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt="Admin" />}
+                  {user?.avatarUrl && <AvatarImage src={getImageUrl(user.avatarUrl)} alt="Admin" />}
                   <AvatarFallback className="rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] text-black text-xs font-black">
                     {getInitials()}
                   </AvatarFallback>

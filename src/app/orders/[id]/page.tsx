@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, use, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -432,7 +432,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   {orderDetails.items.map((item: any) => (
                     <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg">
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-md"
                       />

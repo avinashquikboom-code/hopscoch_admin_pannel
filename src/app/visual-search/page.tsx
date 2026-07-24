@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -349,7 +349,7 @@ export default function VisualSearchPage() {
                   >
                     {/* Left thumbnail mockup layout */}
                     <div className="w-full md:w-36 h-28 rounded-lg bg-gradient-to-tr from-zinc-700 to-zinc-950 flex items-center justify-center shrink-0 relative overflow-hidden shadow-inner border border-border/20">
-                      <img src={item.imageUrl} alt={item.productName} className="object-cover w-full h-full opacity-85" />
+                      <img src={getImageUrl(item.imageUrl)} alt={item.productName} className="object-cover w-full h-full opacity-85" />
                     </div>
 
                     {/* Right description */}
@@ -490,7 +490,7 @@ export default function VisualSearchPage() {
                   
                   {/* Left thumbnail mockup layout */}
                   <div className="w-full h-48 rounded-xl overflow-hidden shadow-inner border border-border/20 relative">
-                    <img src={selectedItem.imageUrl} alt={selectedItem.productName} className="object-cover w-full h-full opacity-90" />
+                    <img src={getImageUrl(selectedItem.imageUrl)} alt={selectedItem.productName} className="object-cover w-full h-full opacity-90" />
                   </div>
 
                   <Separator className="my-6 border-border/10" />

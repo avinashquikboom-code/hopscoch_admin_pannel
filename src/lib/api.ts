@@ -7,6 +7,51 @@ export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.fciselle
 // export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.102:5001';
 export const APP_TYPE = 'admin'; // Admin panel specific app type
 
+/**
+ * Normalizes image URLs for display across the admin panel.
+ * Handles relative paths, double slashes, blob URLs, and overrides stale local IP hostnames.
+ */
+export function getImageUrl(url?: string | null): string {
+  if (!url) return '';
+
+  // Local file previews (blob URLs / base64 data URIs)
+  if (url.startsWith('blob:') || url.startsWith('data:')) {
+    return url;
+  }
+
+  // If full HTTP/HTTPS URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      const parsed = new URL(url);
+      // Replace hardcoded local IPs / localhost with current API_BASE origin
+      if (
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.hostname.startsWith('192.168.') ||
+        parsed.hostname.startsWith('10.') ||
+        parsed.hostname.startsWith('172.')
+      ) {
+        const cleanBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+        const path = parsed.pathname.startsWith('/') ? parsed.pathname : `/${parsed.pathname}`;
+        return `${cleanBase}${path}${parsed.search}`;
+      }
+      // Upgrade HTTP to HTTPS if site is served over HTTPS to avoid mixed content block
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && parsed.protocol === 'http:') {
+        return url.replace(/^http:\/\//, 'https://');
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  }
+
+  // Relative path cleanup
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  const cleanBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+  return `${cleanBase}${cleanPath}`;
+}
+
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth_token');

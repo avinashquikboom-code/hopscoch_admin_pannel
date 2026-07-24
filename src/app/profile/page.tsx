@@ -1,6 +1,6 @@
 'use client';
 
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/toast';
@@ -326,7 +326,7 @@ export default function ProfilePage() {
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] blur-2xl opacity-15" />
                 <Avatar className="h-24 w-24 rounded-full border-4 border-card shadow-xl relative">
-                  {profileData.avatarUrl && <AvatarImage src={profileData.avatarUrl} alt={fullName} />}
+                  {profileData.avatarUrl && <AvatarImage src={getImageUrl(profileData.avatarUrl)} alt={fullName} />}
                   <AvatarFallback className="rounded-full bg-gradient-to-br from-[#14b8a6] via-[#2dd4bf] to-[#0f766e] text-black text-3xl font-black">
                     {getInitials()}
                   </AvatarFallback>
@@ -446,7 +446,7 @@ export default function ProfilePage() {
                       {/* Avatar upload row */}
                       <div className="flex items-center gap-4 p-4 rounded-xl border border-border/30 bg-muted/10">
                         <Avatar className="h-16 w-16 rounded-full border-2 border-[#14b8a6]/30 shadow-md flex-shrink-0">
-                          {profileData.avatarUrl && <AvatarImage src={profileData.avatarUrl} />}
+                          {profileData.avatarUrl && <AvatarImage src={getImageUrl(profileData.avatarUrl)} />}
                           <AvatarFallback className="rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] text-black font-black text-xl">
                             {getInitials()}
                           </AvatarFallback>
@@ -723,7 +723,7 @@ export default function ProfilePage() {
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-11 w-11 rounded-full border border-[#14b8a6]/25 shadow-sm flex-shrink-0">
-                    {profileData.avatarUrl && <AvatarImage src={profileData.avatarUrl} />}
+                    {profileData.avatarUrl && <AvatarImage src={getImageUrl(profileData.avatarUrl)} />}
                     <AvatarFallback className="rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0f766e] text-black text-xs font-black">
                       {getInitials()}
                     </AvatarFallback>

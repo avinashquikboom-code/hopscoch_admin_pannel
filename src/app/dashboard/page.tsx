@@ -8,13 +8,10 @@ import { AdminLayout } from '@/components/layout/admin-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import api, { API_BASE } from '@/lib/api';
+import api, { API_BASE, getImageUrl } from '@/lib/api';
 
 function resolveImageUrl(url?: string): string {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/')) return `${API_BASE}${url}`;
-  return `${API_BASE}/${url}`;
+  return getImageUrl(url);
 }
 import { 
   DollarSign, 

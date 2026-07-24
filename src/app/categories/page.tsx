@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import React, { useState, Fragment, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -430,7 +430,7 @@ export default function CategoriesPage() {
                         <TableCell className="py-4 font-semibold text-sm text-foreground flex items-center gap-2">
                           {category.iconUrl ? (
                             <img 
-                              src={category.iconUrl.startsWith('http') ? category.iconUrl : `${API_BASE}/${category.iconUrl}`} 
+                              src={getImageUrl(category.iconUrl)} 
                               alt={category.name} 
                               className="w-7 h-7 rounded-md object-cover shadow-sm flex-shrink-0"
                             />
@@ -819,7 +819,7 @@ export default function CategoriesPage() {
                         <div className="space-y-2 mb-4">
                           <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group">
                             <img 
-                              src={banners[0].startsWith('http') ? banners[0] : `${API_BASE}/${banners[0]}`} 
+                              src={getImageUrl(banners[0])} 
                               alt={selectedCategory.name} 
                               className="w-full h-full object-cover"
                             />
@@ -832,7 +832,7 @@ export default function CategoriesPage() {
                               {banners.slice(1).map((bUrl: string, bIdx: number) => (
                                 <div key={bIdx} className="h-16 rounded-lg border border-border/20 overflow-hidden relative">
                                   <img 
-                                    src={bUrl.startsWith('http') ? bUrl : `${API_BASE}/${bUrl}`} 
+                                    src={getImageUrl(bUrl)} 
                                     alt={`Banner ${bIdx + 2}`} 
                                     className="w-full h-full object-cover"
                                   />
@@ -845,7 +845,7 @@ export default function CategoriesPage() {
                     })() : selectedCategory.iconUrl ? (
                       <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
                         <img 
-                          src={selectedCategory.iconUrl.startsWith('http') ? selectedCategory.iconUrl : `${API_BASE}/${selectedCategory.iconUrl}`} 
+                          src={getImageUrl(selectedCategory.iconUrl)} 
                           alt={selectedCategory.name} 
                           className="w-16 h-16 object-cover rounded-lg"
                         />

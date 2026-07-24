@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import { STANDARD_COLORS, STANDARD_SIZES } from '@/lib/constants';
 
@@ -1105,7 +1105,7 @@ export default function ProductsPage() {
                             <div className="flex items-center gap-3">
                               {product.images && product.images.length > 0 ? (
                                 <img 
-                                  src={product.images[0].url ? (product.images[0].url.startsWith('http') ? product.images[0].url : `${API_BASE}/${product.images[0].url}`) : (product.images[0].startsWith('http') ? product.images[0] : `${API_BASE}/${product.images[0]}`)} 
+                                  src={getImageUrl(product.images[0]?.url || product.images[0])} 
                                   alt={product.name} 
                                   className="w-11 h-11 rounded-lg object-cover shadow-sm flex-shrink-0"
                                 />
@@ -1667,7 +1667,7 @@ export default function ProductsPage() {
                   {selectedProduct.images && selectedProduct.images.length > 0 ? (
                     <div className="w-full h-44 rounded-xl border border-border/30 overflow-hidden relative group">
                       <img 
-                        src={selectedProduct.images[0].url ? (selectedProduct.images[0].url.startsWith('http') ? selectedProduct.images[0].url : `${API_BASE}/${selectedProduct.images[0].url}`) : (selectedProduct.images[0].startsWith('http') ? selectedProduct.images[0] : `${API_BASE}/${selectedProduct.images[0]}`)} 
+                        src={getImageUrl(selectedProduct.images[0]?.url || selectedProduct.images[0])} 
                         alt={selectedProduct.name} 
                         className="w-full h-full object-cover"
                       />

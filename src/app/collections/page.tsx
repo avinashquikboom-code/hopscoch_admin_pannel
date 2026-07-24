@@ -1,5 +1,5 @@
 'use client';
-import api, { API_BASE } from '@/lib/api';
+import api, { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -311,7 +311,7 @@ export default function CollectionsPage() {
                           <div className="flex items-center gap-3">
                             {collection.imageUrl ? (
                               <img 
-                                src={collection.imageUrl.startsWith('http') ? collection.imageUrl : `${API_BASE}/${collection.imageUrl}`} 
+                                src={getImageUrl(collection.imageUrl)} 
                                 alt={collection.name} 
                                 className="w-14 h-10 rounded-lg object-cover flex-shrink-0 shadow-sm border border-border/20"
                               />
@@ -625,7 +625,7 @@ export default function CollectionsPage() {
                   {selectedCollection.imageUrl && (
                     <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4">
                       <img 
-                        src={selectedCollection.imageUrl.startsWith('http') ? selectedCollection.imageUrl : `${API_BASE}/${selectedCollection.imageUrl}`} 
+                        src={getImageUrl(selectedCollection.imageUrl)} 
                         alt={selectedCollection.name} 
                         className="w-full h-full object-cover"
                       />

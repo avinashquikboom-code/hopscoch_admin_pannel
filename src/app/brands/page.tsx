@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -339,7 +339,7 @@ export default function BrandsPage() {
                         <div className="flex items-center gap-3">
                           {brand.logoUrl ? (
                             <img 
-                              src={brand.logoUrl.startsWith('http') ? brand.logoUrl : `${API_BASE}/${brand.logoUrl}`} 
+                              src={getImageUrl(brand.logoUrl)} 
                               alt={brand.name} 
                               className="h-10 w-10 rounded-lg object-cover flex-shrink-0 shadow-sm"
                             />
@@ -662,7 +662,7 @@ export default function BrandsPage() {
                   {selectedBrand.bannerUrl ? (
                     <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4">
                       <img 
-                        src={selectedBrand.bannerUrl.startsWith('http') ? selectedBrand.bannerUrl : `${API_BASE}/${selectedBrand.bannerUrl}`} 
+                        src={getImageUrl(selectedBrand.bannerUrl)} 
                         alt={selectedBrand.name} 
                         className="w-full h-full object-cover"
                       />
@@ -673,7 +673,7 @@ export default function BrandsPage() {
                   ) : selectedBrand.logoUrl ? (
                     <div className="w-full h-36 rounded-xl border border-border/30 overflow-hidden relative group mb-4 flex items-center justify-center bg-muted/20">
                       <img 
-                        src={selectedBrand.logoUrl.startsWith('http') ? selectedBrand.logoUrl : `${API_BASE}/${selectedBrand.logoUrl}`} 
+                        src={getImageUrl(selectedBrand.logoUrl)} 
                         alt={selectedBrand.name} 
                         className="w-16 h-16 object-cover rounded-lg"
                       />

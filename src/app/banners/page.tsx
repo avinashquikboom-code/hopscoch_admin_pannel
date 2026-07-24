@@ -1,5 +1,5 @@
 'use client';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, getImageUrl } from '@/lib/api';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
@@ -428,7 +428,7 @@ export default function BannersPage() {
                         <TableCell className="py-4">
                           {banner.imageUrl ? (
                             <img 
-                              src={banner.imageUrl} 
+                              src={getImageUrl(banner.imageUrl)} 
                               alt={banner.title} 
                               className="w-28 h-14 rounded-lg object-cover shadow-inner border border-border/20"
                             />
@@ -822,7 +822,7 @@ export default function BannersPage() {
                   {selectedBanner.imageUrl ? (
                     <div className="w-full h-40 rounded-xl overflow-hidden shadow-md relative border border-border/20">
                       <img 
-                        src={editImageFile ? URL.createObjectURL(editImageFile) : selectedBanner.imageUrl} 
+                        src={editImageFile ? URL.createObjectURL(editImageFile) : getImageUrl(selectedBanner.imageUrl)} 
                         alt={selectedBanner.title} 
                         className="w-full h-full object-cover"
                       />
