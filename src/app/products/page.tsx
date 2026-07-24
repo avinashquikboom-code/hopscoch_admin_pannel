@@ -399,6 +399,9 @@ export default function ProductsPage() {
       }
     }
 
+    const isSavedRule = formData.selectedTaxRuleId && formData.selectedTaxRuleId !== '__custom__' && formData.selectedTaxRuleId !== '__none__';
+    const isExemptRule = formData.selectedTaxRuleId === '__none__';
+
     const body: any = {
       name: formData.name, 
       sku: formData.sku && formData.sku.trim() !== '' ? formData.sku.trim() : undefined,
@@ -409,11 +412,9 @@ export default function ProductsPage() {
       brand: formData.brand,
       description: formData.description,
       status: formData.status,
-      // Pass existing taxRuleId directly if a saved rule is selected
-      taxRuleId: formData.selectedTaxRuleId ? Number(formData.selectedTaxRuleId) : undefined,
-      // Otherwise pass taxType + taxPercent for auto-create in service
-      taxType: !formData.selectedTaxRuleId ? (formData.taxType || undefined) : undefined,
-      taxPercent: !formData.selectedTaxRuleId && formData.taxPercent ? parseFloat(formData.taxPercent) : undefined,
+      taxRuleId: isSavedRule ? Number(formData.selectedTaxRuleId) : (isExemptRule ? null : undefined),
+      taxType: !isSavedRule ? (isExemptRule ? 'NONE' : (formData.taxType || 'GST')) : undefined,
+      taxPercent: !isSavedRule ? (isExemptRule ? 0 : (formData.taxPercent ? parseFloat(formData.taxPercent) : undefined)) : undefined,
       isFeatured: false,
       isTrending: false,
       isBestSeller: false,
@@ -508,12 +509,18 @@ export default function ProductsPage() {
     setIsEditing(false);
 
     try {
-      const body = {
+      const isSavedRule = formData.selectedTaxRuleId && formData.selectedTaxRuleId !== '__custom__' && formData.selectedTaxRuleId !== '__none__';
+      const isExemptRule = formData.selectedTaxRuleId === '__none__';
+
+      const body: any = {
         name: editName,
         price: parseFloat(editPrice) || 0,
         brand: editBrand,
         description: editDesc,
         status: editStatus,
+        taxRuleId: isSavedRule ? Number(formData.selectedTaxRuleId) : (isExemptRule ? null : undefined),
+        taxType: !isSavedRule ? (isExemptRule ? 'NONE' : (formData.taxType || 'GST')) : undefined,
+        taxPercent: !isSavedRule ? (isExemptRule ? 0 : (formData.taxPercent ? parseFloat(formData.taxPercent) : undefined)) : undefined,
       };
       console.log('📌 [handleSaveProduct] PUT /api/admin/products/' + selectedProduct.id, body);
       const res = await fetch(`${API_BASE}/api/admin/products/${selectedProduct.id}`, {

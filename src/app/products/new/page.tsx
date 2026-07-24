@@ -252,6 +252,7 @@ export default function NewProductPage() {
     const price = parseFloat(formDataObj.get('price') as string) || 0;
     const stock = parseInt(formDataObj.get('stock') as string) || 0;
 
+    const isSavedTaxRule = selectedTaxRule && selectedTaxRule !== 'none' && selectedTaxRule !== '__custom__';
     const body = {
       name: formDataObj.get('name') as string,
       sku: formDataObj.get('sku') as string,
@@ -260,7 +261,9 @@ export default function NewProductPage() {
       stock: stock,
       categoryId: Number(selectedSubCategory || selectedCategory),
       brandId: Number(selectedBrand),
-      taxRuleId: selectedTaxRule && selectedTaxRule !== 'none' ? Number(selectedTaxRule) : null,
+      taxRuleId: isSavedTaxRule ? Number(selectedTaxRule) : null,
+      taxType: !isSavedTaxRule ? (taxType || 'GST') : undefined,
+      taxPercent: !isSavedTaxRule && taxRate ? parseFloat(taxRate) : undefined,
       hsnCode: hsnCode.trim() || null,
       description: formDataObj.get('description') as string,
       shortDescription: formDataObj.get('shortDescription') as string,
