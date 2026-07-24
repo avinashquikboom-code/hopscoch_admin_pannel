@@ -237,6 +237,7 @@ export default function TaxesPage() {
     const payload = {
       name: form.name.trim(),
       taxCode: form.taxCode.toUpperCase().trim(),
+      type: 'PERCENTAGE',
       taxType: form.taxType,
       country: form.country,
       state: form.state.trim() || undefined,
