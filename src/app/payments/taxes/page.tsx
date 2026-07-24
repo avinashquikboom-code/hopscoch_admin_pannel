@@ -129,7 +129,13 @@ export default function TaxesPage() {
 
       if (res.ok) {
         const json = await res.json();
-        const rawList = json.data || json.taxes || [];
+        const rawList =
+          json.data?.taxes ||
+          json.taxes ||
+          (Array.isArray(json.data) ? json.data : []) ||
+          (Array.isArray(json) ? json : []);
+        const paginationObj = json.data?.pagination || json.pagination;
+
         const items: TaxRule[] = Array.isArray(rawList)
           ? rawList.map((t: any) => ({
               id: String(t.id),
@@ -155,8 +161,8 @@ export default function TaxesPage() {
           : [];
 
         setRules(items);
-        setTotalPages(json.pagination?.totalPages || 1);
-        setTotalCount(json.pagination?.total || items.length);
+        setTotalPages(paginationObj?.totalPages || 1);
+        setTotalCount(paginationObj?.total || items.length);
       }
     } catch (err) {
       console.error('Failed to fetch tax rules:', err);
