@@ -81,6 +81,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
   const [courierSelect, setCourierSelect] = useState('Delhivery');
   const [customCourier, setCustomCourier] = useState('');
   const [awbInput, setAwbInput] = useState('');
+  const [trackingUrlInput, setTrackingUrlInput] = useState('');
   const [submittingShipment, setSubmittingShipment] = useState(false);
 
   const fetchOrderData = () => {
@@ -148,6 +149,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
         expectedDelivery: rawOrder.shippedAt ? 'Delivering in 3-5 days' : '',
         courierPartner: rawOrder.courierName || rawOrder.shipment?.courier || '',
         awbNumber: rawOrder.awbNumber || rawOrder.shipment?.awb || '',
+        trackingUrl: rawOrder.trackingUrl || rawOrder.shipment?.trackingUrl || '',
       });
 
       const rawTimeline: any[] = Array.isArray(timelineJson.data ?? timelineJson) ? (timelineJson.data ?? timelineJson) : [];
@@ -170,7 +172,25 @@ export default function OrderDetailsPage({ params }: { params: any }) {
     fetchOrderData();
   }, [id]);
 
-  const handleUpdateStatus = async (newStatus: string, courierName?: string, awbNumber?: string) => {
+  const openShipModal = () => {
+    if (orderDetails) {
+      if (orderDetails.awbNumber) setAwbInput(orderDetails.awbNumber);
+      if (orderDetails.trackingUrl) setTrackingUrlInput(orderDetails.trackingUrl);
+      if (orderDetails.courierPartner) {
+        const standardCouriers = ['Delhivery', 'Bluedart', 'DTDC', 'India Post', 'Ecom Express', 'Shiprocket', 'XpressBees'];
+        if (standardCouriers.includes(orderDetails.courierPartner)) {
+          setCourierSelect(orderDetails.courierPartner);
+          setCustomCourier('');
+        } else {
+          setCourierSelect('Other');
+          setCustomCourier(orderDetails.courierPartner);
+        }
+      }
+    }
+    setShowShipModal(true);
+  };
+
+  const handleUpdateStatus = async (newStatus: string, courierName?: string, awbNumber?: string, trackingUrl?: string) => {
     try {
       const numericId = orderDetails?.numericId || id.replace(/\D/g, '');
       const res = await fetch(`${API_BASE}/api/v1/admin/orders/${numericId}`, {
@@ -178,8 +198,9 @@ export default function OrderDetailsPage({ params }: { params: any }) {
         headers: authHeaders(),
         body: JSON.stringify({
           status: newStatus.toUpperCase(),
-          ...(courierName ? { courierName } : {}),
+          ...(courierName ? { courierName, shippingCompany: courierName } : {}),
           ...(awbNumber ? { awbNumber } : {}),
+          ...(trackingUrl ? { trackingUrl } : {}),
         }),
       });
       const data = await res.json();
@@ -197,18 +218,24 @@ export default function OrderDetailsPage({ params }: { params: any }) {
 
   const handleShipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!awbInput.trim()) {
-      toast.error('AWB / Tracking Number is required');
+    const cleanAwb = awbInput.trim();
+    if (!cleanAwb) {
+      toast.error('AWB number is required.');
       return;
     }
     const finalCourier = courierSelect === 'Other' ? customCourier.trim() : courierSelect;
     if (!finalCourier) {
-      toast.error('Courier name is required');
+      toast.error('Shipping company is required.');
+      return;
+    }
+    const cleanUrl = trackingUrlInput.trim();
+    if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+      toast.error('Tracking URL must start with http:// or https://');
       return;
     }
 
     setSubmittingShipment(true);
-    await handleUpdateStatus('SHIPPED', finalCourier, awbInput.trim());
+    await handleUpdateStatus('SHIPPED', finalCourier, cleanAwb, cleanUrl || undefined);
     setSubmittingShipment(false);
   };
 
@@ -342,9 +369,9 @@ export default function OrderDetailsPage({ params }: { params: any }) {
               <CardHeader><CardTitle className="text-sm font-bold flex items-center gap-2"><Truck className="h-4 w-4 text-teal-600" /> Shipping & Fulfillment</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {orderDetails.status !== 'shipped' && orderDetails.status !== 'delivered' && orderDetails.status !== 'cancelled' && (
-                  <Button onClick={() => setShowShipModal(true)} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold cursor-pointer">
+                  <Button onClick={openShipModal} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold cursor-pointer">
                     <Ship className="mr-2 h-4 w-4" />
-                    Mark as Shipped (Enter AWB)
+                    Ship Order
                   </Button>
                 )}
 
@@ -357,7 +384,8 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                       {orderDetails.awbNumber && (
                         <a
                           href={
-                            orderDetails.courierPartner?.toLowerCase().includes('delhivery')
+                            orderDetails.trackingUrl ||
+                            (orderDetails.courierPartner?.toLowerCase().includes('delhivery')
                               ? `https://www.delhivery.com/track/package/${orderDetails.awbNumber}`
                               : orderDetails.courierPartner?.toLowerCase().includes('bluedart')
                               ? `https://www.bluedart.com/tracking?numbers=${orderDetails.awbNumber}`
@@ -365,13 +393,13 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                               ? `https://www.dtdc.in/tracking/shipment-tracking.asp?trNo=${orderDetails.awbNumber}`
                               : orderDetails.courierPartner?.toLowerCase().includes('xpressbees')
                               ? `https://www.xpressbees.com/shipment/tracking?awbNo=${orderDetails.awbNumber}`
-                              : `https://shiprocket.co/tracking/${orderDetails.awbNumber}`
+                              : `https://shiprocket.co/tracking/${orderDetails.awbNumber}`)
                           }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[11px] font-bold text-teal-600 hover:underline flex items-center gap-1 cursor-pointer"
                         >
-                          <ExternalLink className="h-3 w-3" /> Track Direct
+                          <ExternalLink className="h-3 w-3" /> Track Shipment
                         </a>
                       )}
                     </div>
@@ -397,8 +425,8 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                         </button>
                       )}
                     </div>
-                    <Button onClick={() => setShowShipModal(true)} variant="outline" size="sm" className="w-full mt-2 text-xs cursor-pointer">
-                      Edit Courier / AWB Info
+                    <Button onClick={openShipModal} variant="outline" size="sm" className="w-full mt-2 text-xs cursor-pointer">
+                      Edit Tracking Details
                     </Button>
                     {orderDetails.status === 'shipped' && (
                       <Button onClick={() => handleUpdateStatus('DELIVERED')} variant="default" size="sm" className="w-full mt-1 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
@@ -419,14 +447,14 @@ export default function OrderDetailsPage({ params }: { params: any }) {
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Truck className="h-5 w-5 text-teal-600" />
-                  Mark Order as Shipped
+                  {orderDetails.status === 'shipped' ? 'Edit Tracking Details' : 'Ship Order'}
                 </h3>
                 <button onClick={() => setShowShipModal(false)} className="text-muted-foreground hover:text-foreground font-bold text-lg cursor-pointer">×</button>
               </div>
 
               <form onSubmit={handleShipSubmit} className="space-y-4 text-sm">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Courier Partner</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Shipping / Logistics Company *</label>
                   <select
                     value={courierSelect}
                     onChange={e => setCourierSelect(e.target.value)}
@@ -437,13 +465,15 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                     <option value="DTDC">DTDC</option>
                     <option value="India Post">India Post (Speed Post)</option>
                     <option value="Ecom Express">Ecom Express</option>
+                    <option value="Shiprocket">Shiprocket</option>
+                    <option value="XpressBees">XpressBees</option>
                     <option value="Other">Other Courier</option>
                   </select>
                 </div>
 
                 {courierSelect === 'Other' && (
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Enter Courier Name</label>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Enter Courier Name *</label>
                     <input
                       type="text"
                       placeholder="e.g. Professional Couriers"
@@ -456,7 +486,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">AWB / Tracking Number *</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">AWB Number *</label>
                   <input
                     type="text"
                     placeholder="Enter AWB or Consignment Number"
@@ -467,19 +497,31 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Tracking URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://... (leave blank to auto-generate)"
+                    value={trackingUrlInput}
+                    onChange={e => setTrackingUrlInput(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-teal-500 text-xs"
+                  />
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setShowShipModal(false)} className="flex-1 cursor-pointer">
                     Cancel
                   </Button>
                   <Button type="submit" disabled={submittingShipment} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold cursor-pointer">
                     {submittingShipment ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                    Confirm Shipping
+                    {orderDetails.status === 'shipped' ? 'Update Tracking' : 'Ship Order'}
                   </Button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
       </div>
       )}
     </AdminLayout>

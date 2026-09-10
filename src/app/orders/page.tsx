@@ -63,7 +63,10 @@ import {
   AlertCircle,
   ArrowUpDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 
 // ── API helper ──────────────────────────────────────────────────────────────
@@ -140,7 +143,10 @@ function normalizeOrder(raw: any) {
           }
         })()
       : String(raw.orderDate || ''),
-    trackingNumber: String(raw.trackingNumber || raw.shipments?.[0]?.trackingNumber || ''),
+    trackingNumber: String(raw.awbNumber || raw.shipment?.awb || raw.trackingNumber || raw.shipments?.[0]?.trackingNumber || ''),
+    awbNumber: String(raw.awbNumber || raw.shipment?.awb || raw.trackingNumber || ''),
+    courierName: String(raw.courierName || raw.shipment?.courier || ''),
+    trackingUrl: String(raw.trackingUrl || raw.shipment?.trackingUrl || raw.shipment?.timeline?.trackingUrl || ''),
     address: addressStr || 'Standard Shipping Address',
     orderItems: Array.isArray(rawItems) ? rawItems : [],
   };
@@ -515,6 +521,95 @@ export default function OrdersPage() {
   // Selected Order for slide out preview
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+  // Ship Order Modal state
+  const [shipModalOpen, setShipModalOpen] = useState(false);
+  const [shippingOrder, setShippingOrder] = useState<any | null>(null);
+  const [shipCourier, setShipCourier] = useState('Delhivery');
+  const [shipCustomCourier, setShipCustomCourier] = useState('');
+  const [shipAwb, setShipAwb] = useState('');
+  const [shipTrackingUrl, setShipTrackingUrl] = useState('');
+  const [submittingShip, setSubmittingShip] = useState(false);
+
+  const openShipModalForOrder = (order: any) => {
+    if (!order) return;
+    setShippingOrder(order);
+    setShipAwb(order.awbNumber || order.trackingNumber || '');
+    setShipTrackingUrl(order.trackingUrl || '');
+    const standardCouriers = ['Delhivery', 'Bluedart', 'DTDC', 'India Post', 'Ecom Express', 'Shiprocket', 'XpressBees'];
+    if (order.courierName) {
+      if (standardCouriers.includes(order.courierName)) {
+        setShipCourier(order.courierName);
+        setShipCustomCourier('');
+      } else {
+        setShipCourier('Other');
+        setShipCustomCourier(order.courierName);
+      }
+    } else {
+      setShipCourier('Delhivery');
+      setShipCustomCourier('');
+    }
+    setShipModalOpen(true);
+  };
+
+  const handleShipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shippingOrder) return;
+    const cleanAwb = shipAwb.trim();
+    if (!cleanAwb) {
+      toast.error('AWB number is required.');
+      return;
+    }
+    const finalCourier = shipCourier === 'Other' ? shipCustomCourier.trim() : shipCourier;
+    if (!finalCourier) {
+      toast.error('Shipping company is required.');
+      return;
+    }
+    const cleanUrl = shipTrackingUrl.trim();
+    if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+      toast.error('Tracking URL must start with http:// or https://');
+      return;
+    }
+
+    setSubmittingShip(true);
+    const rawId = shippingOrder._rawId || shippingOrder.id;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/admin/orders/${rawId}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          status: 'SHIPPED',
+          courierName: finalCourier,
+          shippingCompany: finalCourier,
+          awbNumber: cleanAwb,
+          ...(cleanUrl ? { trackingUrl: cleanUrl } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success(`Order #${shippingOrder.id} marked as SHIPPED with AWB: ${cleanAwb}`);
+        setShipModalOpen(false);
+        await fetchOrders();
+        if (selectedOrder && (selectedOrder.id === shippingOrder.id || selectedOrder._rawId === rawId)) {
+          setSelectedOrder((prev: any) => prev ? {
+            ...prev,
+            status: 'shipped',
+            awbNumber: cleanAwb,
+            trackingNumber: cleanAwb,
+            courierName: finalCourier,
+            trackingUrl: data.data?.trackingUrl || cleanUrl,
+          } : prev);
+        }
+      } else {
+        toast.error(data.message || 'Failed to update order tracking details');
+      }
+    } catch (err: any) {
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setSubmittingShip(false);
+    }
+  };
+
   // ── Fetch orders from API ─────────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -547,15 +642,18 @@ export default function OrdersPage() {
   // Status transitions — calls API then refreshes
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = ordersList.find(o => o.id === orderId);
+    if (newStatus === 'shipped') {
+      if (order) {
+        openShipModalForOrder(order);
+      }
+      return;
+    }
     const rawId = order?._rawId || orderId;
 
     // Optimistic update in UI
     const patch = (o: any) => {
       if (o.id !== orderId) return o;
-      const trackingNumber = newStatus === 'shipped' && !o.trackingNumber
-        ? `TRK${Math.floor(100000000 + Math.random() * 900000000)}`
-        : o.trackingNumber;
-      return { ...o, status: newStatus, trackingNumber, paymentStatus: newStatus === 'refunded' ? 'refunded' : o.paymentStatus };
+      return { ...o, status: newStatus, paymentStatus: newStatus === 'refunded' ? 'refunded' : o.paymentStatus };
     };
     setOrdersList(prev => prev.map(patch));
     setSelectedOrder((prev: any | null) => prev ? patch(prev) : prev);
@@ -1125,16 +1223,22 @@ export default function OrdersPage() {
                                       </DropdownMenuItem>
                                     )}
                                     {order.status === 'processing' && (
-                                      <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'shipped')} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                      <DropdownMenuItem onClick={() => openShipModalForOrder(order)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
                                         <Truck className="mr-2 h-4 w-4 text-cyan-500" />
                                         Ship Order
                                       </DropdownMenuItem>
                                     )}
                                     {order.status === 'shipped' && (
-                                      <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'delivered')} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
-                                        <CheckCircle className="mr-2 h-4 w-4 text-emerald-500" />
-                                        Deliver Order
-                                      </DropdownMenuItem>
+                                      <>
+                                        <DropdownMenuItem onClick={() => openShipModalForOrder(order)} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                          <Edit className="mr-2 h-4 w-4 text-cyan-500" />
+                                          Edit Tracking Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'delivered')} className="p-2 rounded-md hover:bg-muted cursor-pointer text-sm font-medium">
+                                          <CheckCircle className="mr-2 h-4 w-4 text-emerald-500" />
+                                          Deliver Order
+                                        </DropdownMenuItem>
+                                      </>
                                     )}
                                     {order.status !== 'delivered' && order.status !== 'cancelled' && (
                                       <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'cancelled')} className="p-2 rounded-md hover:bg-rose-500/10 text-rose-500 cursor-pointer text-sm font-medium">
@@ -1267,11 +1371,27 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-foreground">Shipped / Dispatched</span>
-                          <span className="text-xs text-muted-foreground mt-0.5">
-                            {['shipped', 'delivered'].includes(selectedOrder.status)
-                              ? `Dispatched via carrier. Tracking: ${selectedOrder.trackingNumber}`
-                              : 'Awaiting dispatch scheduling'}
-                          </span>
+                          <div className="text-xs text-muted-foreground mt-0.5 space-y-1">
+                            {['shipped', 'delivered'].includes(selectedOrder.status) ? (
+                              <>
+                                <div>
+                                  {selectedOrder.courierName ? `Courier: ${selectedOrder.courierName} • ` : ''}AWB: <span className="font-mono font-medium text-foreground">{selectedOrder.awbNumber || selectedOrder.trackingNumber}</span>
+                                </div>
+                                {selectedOrder.trackingUrl && (
+                                  <a
+                                    href={selectedOrder.trackingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400 hover:underline font-medium"
+                                  >
+                                    Track Shipment <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </>
+                            ) : (
+                              <span>Awaiting dispatch scheduling</span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1419,7 +1539,7 @@ export default function OrdersPage() {
                     
                     {selectedOrder.status === 'processing' && (
                       <Button 
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'shipped')}
+                        onClick={() => openShipModalForOrder(selectedOrder)}
                         className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg h-10 px-4 font-semibold text-xs flex items-center gap-1.5"
                       >
                         <Truck className="h-4 w-4" /> Ship Order
@@ -1427,12 +1547,21 @@ export default function OrdersPage() {
                     )}
                     
                     {selectedOrder.status === 'shipped' && (
-                      <Button 
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'delivered')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-10 px-4 font-semibold text-xs flex items-center gap-1.5"
-                      >
-                        <CheckCircle className="h-4 w-4" /> Complete Delivery
-                      </Button>
+                      <>
+                        <Button 
+                          onClick={() => openShipModalForOrder(selectedOrder)}
+                          variant="outline"
+                          className="border-cyan-500/30 text-cyan-500 hover:bg-cyan-500/10 rounded-lg h-10 px-3 font-semibold text-xs flex items-center gap-1.5"
+                        >
+                          <Edit className="h-3.5 w-3.5" /> Edit Tracking
+                        </Button>
+                        <Button 
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'delivered')}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-10 px-4 font-semibold text-xs flex items-center gap-1.5"
+                        >
+                          <CheckCircle className="h-4 w-4" /> Complete Delivery
+                        </Button>
+                      </>
                     )}
 
                     {/* Cancel action */}
@@ -1451,6 +1580,111 @@ export default function OrdersPage() {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Ship Order / Edit Tracking Details Modal */}
+        {shipModalOpen && shippingOrder && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-card border border-border/80 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+              <div className="flex justify-between items-center border-b border-border/40 pb-3">
+                <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-teal-500" />
+                  {shippingOrder.status === 'shipped' ? 'Edit Tracking Details' : 'Ship Order'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShipModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground font-bold text-lg cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleShipSubmit} className="space-y-4 text-sm">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+                    Shipping / Logistics Company *
+                  </label>
+                  <select
+                    value={shipCourier}
+                    onChange={e => setShipCourier(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-border bg-background font-medium focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="Delhivery">Delhivery</option>
+                    <option value="Bluedart">Bluedart</option>
+                    <option value="DTDC">DTDC</option>
+                    <option value="India Post">India Post (Speed Post)</option>
+                    <option value="Ecom Express">Ecom Express</option>
+                    <option value="Shiprocket">Shiprocket</option>
+                    <option value="XpressBees">XpressBees</option>
+                    <option value="Other">Other Courier</option>
+                  </select>
+                </div>
+
+                {shipCourier === 'Other' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+                      Enter Courier Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Professional Couriers"
+                      value={shipCustomCourier}
+                      onChange={e => setShipCustomCourier(e.target.value)}
+                      className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-teal-500"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+                    AWB Number *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter AWB or Consignment Number"
+                    value={shipAwb}
+                    onChange={e => setShipAwb(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-border bg-background font-mono focus:ring-2 focus:ring-teal-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+                    Tracking URL (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://... (leave blank to auto-generate)"
+                    value={shipTrackingUrl}
+                    onChange={e => setShipTrackingUrl(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-teal-500 text-xs"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShipModalOpen(false)}
+                    className="flex-1 cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submittingShip}
+                    className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold cursor-pointer"
+                  >
+                    {submittingShip ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                    {shippingOrder.status === 'shipped' ? 'Update Tracking' : 'Ship Order'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
