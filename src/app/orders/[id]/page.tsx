@@ -2,7 +2,7 @@
 import { API_BASE } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
-import { SELLER_CONFIG } from '@/constants/seller';
+import { SELLER_CONFIG, normalizeSellerName } from '@/constants/seller';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,23 +36,6 @@ const statusConfig = {
   delivered: { label: 'Delivered', icon: CheckCircle, color: 'bg-emerald-600/15 text-emerald-600 font-bold' },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'bg-rose-500/10 text-rose-600' },
 };
-
-function normalizeSellerName(name?: string | null): string {
-  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
-  const trimmed = name.trim();
-  const lower = trimmed.toLowerCase();
-  if (
-    !trimmed ||
-    lower === 'fci' ||
-    lower === 'fci seller' ||
-    lower === 'fci-seller' ||
-    lower === 'fciseller' ||
-    lower === 'fci ecommerce'
-  ) {
-    return SELLER_CONFIG.name;
-  }
-  return trimmed;
-}
 
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('admin_token') || localStorage.getItem('token') : null;
@@ -110,7 +93,9 @@ export default function OrderDetailsPage({ params }: { params: any }) {
         invoiceNumber: `INV-${rawOrder.id}`,
         sellerName: normalizeSellerName(rawOrder.sellerNameSnapshot || rawOrder.sellerName),
         sellerContact: rawOrder.sellerContactSnapshot || SELLER_CONFIG.contactNumber,
-        sellerAddress: rawOrder.sellerAddressSnapshot || '',
+        sellerAddress: rawOrder.sellerAddressSnapshot || SELLER_CONFIG.fullAddress,
+        sellerGst: rawOrder.sellerGstNumber || SELLER_CONFIG.gstin,
+        sellerEmail: rawOrder.sellerEmail || SELLER_CONFIG.supportEmail,
         customer: {
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer',
           email: user.email || '',

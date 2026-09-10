@@ -53,7 +53,7 @@ import {
 import { PageHeader } from '@/components/layout/page-header';
 import { API_BASE, authHeaders } from '@/lib/api';
 import { toast } from '@/components/ui/toast';
-import { SELLER_CONFIG } from '@/constants/seller';
+import { SELLER_CONFIG, normalizeSellerName, normalizeWarehouseName } from '@/constants/seller';
 
 interface InvoiceItem {
   id: string;
@@ -90,26 +90,9 @@ const statusStyles: Record<string, { bg: string; text: string; border: string; i
 interface SellerInfo { sellerLegalName?: string; sellerGstNumber?: string; sellerAddress?: string; sellerCity?: string; sellerState?: string; sellerPincode?: string; sellerContactNumber?: string; sellerEmail?: string; sellerName?: string; }
 interface WarehouseInfo { name?: string; address?: string; city?: string; state?: string; pincode?: string; phone?: string; }
 
-function normalizeSellerName(name?: string | null): string {
-  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
-  const trimmed = name.trim();
-  const lower = trimmed.toLowerCase();
-  if (
-    !trimmed ||
-    lower === 'fci' ||
-    lower === 'fci seller' ||
-    lower === 'fci-seller' ||
-    lower === 'fciseller' ||
-    lower === 'fci ecommerce'
-  ) {
-    return SELLER_CONFIG.name;
-  }
-  return trimmed;
-}
-
 function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse?: WarehouseInfo): string {
   const rawId = String(order?.id || order?.orderNumber || '1001');
-  const invoiceNo = `INV-FCI-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const invoiceNo = `INV-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
   const totalAmt = Number(order?.totalAmount || order?.amount || order?.total || 0);
   const taxableTotal = totalAmt / 1.18;
   const totalGst = totalAmt - taxableTotal;
@@ -145,7 +128,7 @@ function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse
   const sellerEmailVal = seller?.sellerEmail || SELLER_CONFIG.supportEmail;
 
   // Fulfilled By (from default warehouse)
-  const warehouseName = warehouse?.name || `${sellerLegalName} Fulfillment Center`;
+  const warehouseName = normalizeWarehouseName(warehouse?.name || `${sellerLegalName} Fulfillment Center`);
   const warehouseAddr = warehouse ? [warehouse.address, warehouse.city, warehouse.state, warehouse.pincode].filter(Boolean).join(', ') : 'India';
 
   const items = Array.isArray(order?.items) ? order.items : [];
@@ -322,6 +305,180 @@ function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse
   `;
 }
 
+function generateOrderReceiptHtml(order: any, seller?: SellerInfo): string {
+  const rawId = String(order?.id || order?.orderNumber || '1001');
+  const receiptNo = `RCP-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const totalAmt = Number(order?.totalAmount || order?.amount || order?.total || 0);
+
+  const user = order?.user || {};
+  const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || order?.customerName || order?.customer || 'Valued Customer';
+  const customerEmail = user.email || order?.customerEmail || 'customer@example.com';
+  const customerPhone = user.phone || order?.customerPhone || 'N/A';
+  const addr = order?.address || order?.shippingAddress || {};
+  const street = addr.line1 || addr.addressLine1 || addr.street || 'Standard Shipping Address';
+  const city = addr.city || 'Mumbai';
+  const state = addr.state || 'Maharashtra';
+  const pincode = addr.pincode || addr.zipCode || '400705';
+
+  const rawSeller =
+    (typeof order?.sellerNameSnapshot === 'string' ? order.sellerNameSnapshot : null) ||
+    (typeof order?.sellerName === 'string' ? order.sellerName : null) ||
+    (typeof seller?.sellerLegalName === 'string' ? seller.sellerLegalName : null) ||
+    (typeof seller?.sellerName === 'string' ? seller.sellerName : null);
+  const sellerLegalName = normalizeSellerName(rawSeller);
+  const sellerGst = seller?.sellerGstNumber || SELLER_CONFIG.gstin;
+  const sellerAddr =
+    order?.sellerAddressSnapshot ||
+    [seller?.sellerAddress, seller?.sellerCity, seller?.sellerState, seller?.sellerPincode].filter(Boolean).join(', ') ||
+    SELLER_CONFIG.fullAddress;
+  const sellerPhone =
+    order?.sellerContactSnapshot ||
+    seller?.sellerContactNumber ||
+    SELLER_CONFIG.contactNumber;
+  const sellerEmailVal = seller?.sellerEmail || SELLER_CONFIG.supportEmail;
+
+  const items = Array.isArray(order?.items) ? order.items : [];
+  const itemsRowsHtml = items.length > 0 ? items.map((item: any, idx: number) => {
+    const qty = Number(item.quantity || 1);
+    const price = Number(item.price || item.priceSnapshot || 0);
+    const itemTotal = price * qty;
+    const name = item.product?.name || item.name || item.title || 'Retail Product';
+    const size = item.variant?.size || item.size || '';
+    const color = item.variant?.color || item.color || '';
+
+    return `
+      <tr>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px; color: #475569;">${idx + 1}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; color: #0f172a;">
+          ${name}
+          ${size ? `<br/><span style="font-size:11px; color:#64748b; font-weight: normal;">Size: ${size}</span>` : ''}
+          ${color ? `<span style="font-size:11px; color:#64748b; font-weight: normal;"> | Color: ${color}</span>` : ''}
+        </td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px; color: #475569;">${qty}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px; color: #475569;">₹${price.toFixed(2)}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 700; color: #0f172a;">₹${itemTotal.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join('') : `
+    <tr>
+      <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px;" colspan="2">Standard Order Purchase</td>
+      <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px;">1</td>
+      <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px;">₹${totalAmt.toFixed(2)}</td>
+      <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 700;">₹${totalAmt.toFixed(2)}</td>
+    </tr>
+  `;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Payment Receipt - ${sellerLegalName} #${rawId}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #fff; color: #1e293b; margin: 0; padding: 24px; }
+    .receipt-card { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #14b8a6; padding-bottom: 16px; margin-bottom: 20px; }
+    .logo { font-size: 24px; font-weight: 900; color: #14b8a6; letter-spacing: -0.5px; text-transform: uppercase; }
+    .receipt-title { font-size: 20px; font-weight: 800; text-align: right; text-transform: uppercase; color: #0f172a; }
+    .sub-title { font-size: 11px; text-align: right; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; background: #f8fafc; }
+    .box-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #14b8a6; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+    .box p { font-size: 12px; margin: 3px 0; color: #334155; line-height: 1.4; }
+    .box p strong { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: #0f172a; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 10px; border: 1px solid #0f172a; text-align: left; }
+    .totals-table { width: 300px; margin-left: auto; border: none; }
+    .totals-table td { padding: 6px 12px; font-size: 12px; border: none; }
+    .totals-table tr.grand-total td { font-size: 14px; font-weight: 900; color: #0f172a; border-top: 2px solid #14b8a6; border-bottom: 2px solid #14b8a6; background: #f0fdf4; }
+    .footer { margin-top: 30px; border-top: 1px dashed #cbd5e1; padding-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .terms { font-size: 10px; color: #64748b; max-width: 450px; line-height: 1.5; }
+    @media print {
+      body { padding: 0; background: #fff; }
+      .receipt-card { border: none; box-shadow: none; padding: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="max-width: 800px; margin: 0 auto 16px auto; display: flex; justify-content: flex-end; gap: 10px;">
+    <button onclick="window.print()" style="background: #14b8a6; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🖨️ Print Receipt</button>
+  </div>
+
+  <div class="receipt-card">
+    <div class="header">
+      <div>
+        <div class="logo">${sellerLegalName}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 4px;"><strong>GSTIN:</strong> ${sellerGst}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 2px;"><strong>Support:</strong> ${sellerEmailVal}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 2px; max-width: 380px;"><strong>Address:</strong> ${sellerAddr}</div>
+        ${sellerPhone ? `<div style="font-size: 11px; color: #334155; margin-top: 2px;"><strong>Phone:</strong> ${sellerPhone}</div>` : ''}
+      </div>
+      <div>
+        <div class="receipt-title">Payment Receipt</div>
+        <div class="sub-title">Official Acknowledgement</div>
+        <div style="font-size: 11px; color: #14b8a6; font-weight: bold; margin-top: 4px;">Status: PAID</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="box">
+        <div class="box-title">Seller Details</div>
+        <p><strong>${sellerLegalName}</strong></p>
+        <p>${sellerAddr}</p>
+        <p><strong>GSTIN:</strong> ${sellerGst}</p>
+        <p><strong>Support:</strong> ${sellerEmailVal}</p>
+        ${sellerPhone ? `<p><strong>Contact:</strong> ${sellerPhone}</p>` : ''}
+      </div>
+      <div class="box">
+        <div class="box-title">Receipt & Order Summary</div>
+        <p><strong>Receipt No:</strong> ${receiptNo}</p>
+        <p><strong>Receipt Date:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        <p><strong>Order Reference:</strong> #${rawId}</p>
+        <p><strong>Customer:</strong> ${customerName}</p>
+        <p><strong>Contact:</strong> ${customerPhone}</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 40px; text-align: center;">#</th>
+          <th>Item Description</th>
+          <th style="width: 50px; text-align: center;">Qty</th>
+          <th style="width: 110px; text-align: right;">Unit Price</th>
+          <th style="width: 110px; text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsRowsHtml}
+      </tbody>
+    </table>
+
+    <table class="totals-table">
+      <tr class="grand-total">
+        <td>Total Amount Paid:</td>
+        <td style="text-align: right;">₹${totalAmt.toFixed(2)}</td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <div class="terms">
+        <p style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Receipt Notes:</p>
+        <p style="margin: 2px 0;">This payment receipt is issued by ${sellerLegalName} as official acknowledgement of payment received.</p>
+      </div>
+      <div style="text-align: right; font-size: 11px; color: #64748b;">
+        <p>Generated by ${sellerLegalName} Billing System</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+  `;
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -357,12 +514,12 @@ export default function InvoicesPage() {
           return {
             id: rawId,
             orderId: `#ORD-${rawId}`,
-            invoiceNumber: `INV-FCI-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`,
+            invoiceNumber: `INV-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`,
             customerName: cName,
             customerEmail: user.email || o.customerEmail || 'customer@example.com',
             customerPhone: user.phone || o.customerPhone || 'N/A',
             shippingAddress: `${street}, ${city}, ${state} - ${pincode}`,
-            gstNumber: o.sellerGstNumber || o.gstNumber || SELLER_CONFIG.gstin,
+            gstNumber: o.sellerGstNumber || sellerInfo.sellerGstNumber || SELLER_CONFIG.gstin,
             amount: totalAmt,
             taxableAmount: taxable,
             taxAmount: tax,

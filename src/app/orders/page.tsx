@@ -1,6 +1,6 @@
 'use client';
 import { API_BASE } from '@/lib/api';
-import { SELLER_CONFIG } from '@/constants/seller';
+import { SELLER_CONFIG, normalizeSellerName } from '@/constants/seller';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurrency } from '@/context/currency-context';
@@ -67,7 +67,9 @@ import {
   Edit,
   Loader2,
   ExternalLink,
-  Copy
+  Copy,
+  Building2,
+  Receipt
 } from 'lucide-react';
 
 // ── API helper ──────────────────────────────────────────────────────────────
@@ -122,6 +124,17 @@ function normalizeOrder(raw: any) {
     email: String(user.email || raw.email || ''),
     phone: String(shippingAddress.phone || shippingAddress.phoneNumber || user.phone || raw.phone || ''),
     amount: Number(raw.totalAmount || raw.total || 0) || 0,
+    total: Number(raw.totalAmount || raw.total || 0) || 0,
+    totalAmount: Number(raw.totalAmount || raw.total || 0) || 0,
+    subtotal: Number(raw.subtotal || raw.subTotal || 0) || 0,
+    shippingFee: Number(raw.shippingAmount || raw.shippingFee || 0) || 0,
+    taxAmount: Number(raw.taxAmount || 0) || 0,
+    sellerNameSnapshot: raw.sellerNameSnapshot,
+    sellerAddressSnapshot: raw.sellerAddressSnapshot,
+    sellerContactSnapshot: raw.sellerContactSnapshot,
+    sellerGstNumber: raw.sellerGstNumber,
+    sellerName: raw.sellerName,
+    rawOrder: raw,
     status: String(raw.status || 'pending').toLowerCase().trim(),
     paymentStatus: String(raw.paymentStatus || raw.payment?.status || 'pending').toLowerCase().trim(),
     items: Number(raw._count?.items ?? (Array.isArray(rawItems) ? rawItems.length : 0) ?? raw.itemCount ?? 0) || 0,
@@ -217,28 +230,11 @@ function numberToWords(num: number): string {
   return str;
 }
 
-function normalizeSellerName(name?: string | null): string {
-  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
-  const trimmed = name.trim();
-  const lower = trimmed.toLowerCase();
-  if (
-    !trimmed ||
-    lower === 'fci' ||
-    lower === 'fci seller' ||
-    lower === 'fci-seller' ||
-    lower === 'fciseller' ||
-    lower === 'fci ecommerce'
-  ) {
-    return SELLER_CONFIG.name;
-  }
-  return trimmed;
-}
-
 function generateFciSellerInvoiceHtml(order: any, currencySymbol: string = '₹'): string {
   const items = getOrderItems(order);
-  const totalAmt = Number(order.total || order.totalAmount || 0);
+  const totalAmt = Number(order.total || order.totalAmount || order.amount || 0);
   const dateStr = order.date || new Date().toLocaleDateString('en-IN');
-  const invoiceNo = `INV-FCI-${(order.id || '').replace(/[^a-zA-Z0-9]/g, '')}`;
+  const invoiceNo = `INV-${(order.id || '').replace(/[^a-zA-Z0-9]/g, '')}`;
   const rawSeller =
     (typeof order.sellerNameSnapshot === 'string' ? order.sellerNameSnapshot : null) ||
     (typeof order.sellerName === 'string' ? order.sellerName : null) ||
@@ -451,6 +447,152 @@ function generateFciSellerInvoiceHtml(order: any, currencySymbol: string = '₹'
   `;
 }
 
+function generateOrderReceiptHtml(order: any, currencySymbol: string = '₹'): string {
+  const items = getOrderItems(order);
+  const totalAmt = Number(order.total || order.totalAmount || order.amount || 0);
+  const dateStr = order.date || new Date().toLocaleDateString('en-IN');
+  const receiptNo = `RCP-${(order.id || '').replace(/[^a-zA-Z0-9]/g, '')}`;
+  const rawSeller =
+    (typeof order.sellerNameSnapshot === 'string' ? order.sellerNameSnapshot : null) ||
+    (typeof order.sellerName === 'string' ? order.sellerName : null) ||
+    (typeof order.seller === 'string' ? order.seller : order.seller?.name) ||
+    (typeof order.storeName === 'string' ? order.storeName : null);
+  const sellerName = normalizeSellerName(rawSeller);
+  const sellerContact = order.sellerContactSnapshot || order.sellerContact || SELLER_CONFIG.contactNumber;
+  const sellerAddress = order.sellerAddressSnapshot || order.sellerAddress || SELLER_CONFIG.fullAddress;
+  const sellerGst = order.sellerGstNumber || SELLER_CONFIG.gstin;
+  const sellerEmail = order.sellerEmail || SELLER_CONFIG.supportEmail;
+
+  const itemsRowsHtml = items.map((item: any, idx: number) => {
+    const qty = Number(item.quantity || 1);
+    const itemTotal = Number(item.price || 0) * qty;
+
+    return `
+      <tr>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px; color: #475569;">${idx + 1}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; color: #0f172a;">
+          ${item.name}
+          ${item.size && item.size !== '—' ? `<br/><span style="font-size:11px; color:#64748b; font-weight: normal;">Size: ${item.size}</span>` : ''}
+          ${item.color && item.color !== '—' ? `<span style="font-size:11px; color:#64748b; font-weight: normal;"> | Color: ${item.color}</span>` : ''}
+        </td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 12px; color: #475569;">${qty}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px; color: #475569;">${currencySymbol}${Number(item.price || 0).toFixed(2)}</td>
+        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 700; color: #0f172a;">${currencySymbol}${itemTotal.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Payment Receipt - ${sellerName} #${order.id}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #fff; color: #1e293b; margin: 0; padding: 24px; }
+    .receipt-card { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #14b8a6; padding-bottom: 16px; margin-bottom: 20px; }
+    .logo { font-size: 24px; font-weight: 900; color: #14b8a6; letter-spacing: -0.5px; text-transform: uppercase; }
+    .receipt-title { font-size: 20px; font-weight: 800; text-align: right; text-transform: uppercase; color: #0f172a; }
+    .sub-title { font-size: 11px; text-align: right; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; background: #f8fafc; }
+    .box-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #14b8a6; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+    .box p { font-size: 12px; margin: 3px 0; color: #334155; line-height: 1.4; }
+    .box p strong { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: #0f172a; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 10px; border: 1px solid #0f172a; text-align: left; }
+    .totals-table { width: 300px; margin-left: auto; border: none; }
+    .totals-table td { padding: 6px 12px; font-size: 12px; border: none; }
+    .totals-table tr.grand-total td { font-size: 14px; font-weight: 900; color: #0f172a; border-top: 2px solid #14b8a6; border-bottom: 2px solid #14b8a6; background: #f0fdf4; }
+    .footer { margin-top: 30px; border-top: 1px dashed #cbd5e1; padding-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .terms { font-size: 10px; color: #64748b; max-width: 450px; line-height: 1.5; }
+    @media print {
+      body { padding: 0; background: #fff; }
+      .receipt-card { border: none; box-shadow: none; padding: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="max-width: 800px; margin: 0 auto 16px auto; display: flex; justify-content: flex-end; gap: 10px;">
+    <button onclick="window.print()" style="background: #14b8a6; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🖨️ Print Receipt</button>
+  </div>
+
+  <div class="receipt-card">
+    <div class="header">
+      <div>
+        <div class="logo">${sellerName}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 4px;"><strong>GSTIN:</strong> ${sellerGst}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 2px;"><strong>Email:</strong> ${sellerEmail}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 2px; max-width: 380px;"><strong>Address:</strong> ${sellerAddress}</div>
+        <div style="font-size: 11px; color: #334155; margin-top: 2px;"><strong>Phone:</strong> ${sellerContact}</div>
+      </div>
+      <div>
+        <div class="receipt-title">Payment Receipt</div>
+        <div class="sub-title">Official Acknowledgement</div>
+        <div style="font-size: 11px; color: #14b8a6; font-weight: bold; margin-top: 4px;">Status: PAID</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="box">
+        <div class="box-title">Seller Details</div>
+        <p><strong>${sellerName}</strong></p>
+        <p>${sellerAddress}</p>
+        <p><strong>GSTIN:</strong> ${sellerGst}</p>
+        <p><strong>Support:</strong> ${sellerEmail}</p>
+        <p><strong>Contact:</strong> ${sellerContact}</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Receipt & Order Summary</div>
+        <p><strong>Receipt No:</strong> ${receiptNo}</p>
+        <p><strong>Receipt Date:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        <p><strong>Order ID:</strong> #${order.id}</p>
+        <p><strong>Order Date:</strong> ${dateStr}</p>
+        <p><strong>Customer:</strong> ${order.customer}</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 40px; text-align: center;">#</th>
+          <th>Item Description</th>
+          <th style="width: 50px; text-align: center;">Qty</th>
+          <th style="width: 110px; text-align: right;">Unit Price</th>
+          <th style="width: 110px; text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsRowsHtml}
+      </tbody>
+    </table>
+
+    <table class="totals-table">
+      <tr class="grand-total">
+        <td>Total Amount Paid:</td>
+        <td style="text-align: right;">${currencySymbol}${totalAmt.toFixed(2)}</td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <div class="terms">
+        <p style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Receipt Information:</p>
+        <p style="margin: 2px 0;">This payment receipt is issued by ${sellerName} as official acknowledgement of payment received.</p>
+      </div>
+      <div style="text-align: right; font-size: 11px; color: #64748b;">
+        <p>Generated by ${sellerName} Billing</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+  `;
+}
+
 const getAvatarFallback = (name: string) => {
   const parts = name.split(' ');
   return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2);
@@ -501,7 +643,7 @@ export default function OrdersPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `FCI_SELLER_Tax_Invoice_${(order.id || 'Order').replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+    a.download = `Tax_Invoice_${(order.id || 'Order').replace(/[^a-zA-Z0-9]/g, '_')}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -509,6 +651,40 @@ export default function OrdersPage() {
 
     handlePrintInvoice(order);
     toast.success(`Downloading Tax Invoice for Order #${order.id}`);
+  };
+
+  const handlePrintReceipt = (order: any) => {
+    if (!order) return;
+    const html = generateOrderReceiptHtml(order, currencySymbol);
+    const printWin = window.open('', '_blank', 'width=900,height=900');
+    if (printWin) {
+      printWin.document.write(html);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => {
+        printWin.print();
+      }, 300);
+    } else {
+      toast.error('Popup blocked! Please allow popups to print receipts.');
+    }
+  };
+
+  const handleDownloadReceipt = (order: any) => {
+    if (!order) return;
+    const html = generateOrderReceiptHtml(order, currencySymbol);
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Payment_Receipt_${(order.id || 'Order').replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    handlePrintReceipt(order);
+    toast.success(`Downloading Payment Receipt for Order #${order.id}`);
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -1469,6 +1645,27 @@ export default function OrdersPage() {
                           </p>
                         </CardContent>
                       </Card>
+
+                      {/* Sold By (Seller Details) card */}
+                      <Card className="border-border/30 bg-muted/15 rounded-lg shadow-sm md:col-span-2">
+                        <CardContent className="p-4 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                            <Building2 className="h-4 w-4 text-[#14b8a6]" />
+                            <span>Sold By (Seller Details)</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                            <div>
+                              <p className="font-bold text-foreground text-sm">{normalizeSellerName(selectedOrder.sellerNameSnapshot || selectedOrder.sellerName)}</p>
+                              <p>{selectedOrder.sellerAddressSnapshot || SELLER_CONFIG.fullAddress}</p>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="font-mono text-primary font-bold">GSTIN: {selectedOrder.sellerGstNumber || SELLER_CONFIG.gstin}</p>
+                              <p>Email: {SELLER_CONFIG.supportEmail}</p>
+                              <p>Contact: {selectedOrder.sellerContactSnapshot || SELLER_CONFIG.contactNumber}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
 
@@ -1535,6 +1732,13 @@ export default function OrdersPage() {
                   </div>
                   
                   <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handleDownloadReceipt(selectedOrder)}
+                      variant="outline"
+                      className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 rounded-lg h-10 px-3.5 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Receipt className="h-4 w-4" /> Download Receipt
+                    </Button>
                     <Button 
                       onClick={() => handleDownloadInvoice(selectedOrder)}
                       variant="outline"

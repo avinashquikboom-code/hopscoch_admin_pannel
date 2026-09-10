@@ -385,7 +385,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="sellerName" className="text-xs font-bold uppercase tracking-wider text-primary">Seller Display Name</Label>
-                    <Input id="sellerName" value={config.sellerName} onChange={e => setConfig(prev => ({ ...prev, sellerName: e.target.value }))} placeholder="e.g. FCI Seller Retail Pvt. Ltd." className="h-10 rounded-lg border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                    <Input id="sellerName" value={config.sellerName} onChange={e => setConfig(prev => ({ ...prev, sellerName: e.target.value }))} placeholder="e.g. Fashion City India Ltd" className="h-10 rounded-lg border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary/20" />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="sellerContactNumber" className="text-xs font-bold uppercase tracking-wider text-primary">Seller Contact Phone Number</Label>
