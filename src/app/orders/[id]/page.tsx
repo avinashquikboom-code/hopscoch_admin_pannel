@@ -218,6 +218,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
 
   const handleShipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingShipment) return;
     const cleanAwb = awbInput.trim();
     if (!cleanAwb) {
       toast.error('AWB number is required.');
@@ -234,9 +235,12 @@ export default function OrderDetailsPage({ params }: { params: any }) {
       return;
     }
 
-    setSubmittingShipment(true);
-    await handleUpdateStatus('SHIPPED', finalCourier, cleanAwb, cleanUrl || undefined);
-    setSubmittingShipment(false);
+    try {
+      setSubmittingShipment(true);
+      await handleUpdateStatus('SHIPPED', finalCourier, cleanAwb, cleanUrl || undefined);
+    } finally {
+      setSubmittingShipment(false);
+    }
   };
 
   const statusInfo = orderDetails ? statusConfig[orderDetails.status as keyof typeof statusConfig] || statusConfig['pending'] : statusConfig['pending'];
@@ -416,7 +420,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(orderDetails.awbNumber);
-                            toast.success('AWB Number copied to clipboard!');
+                            toast.success('AWB copied');
                           }}
                           className="text-muted-foreground hover:text-foreground flex items-center gap-1 p-1 hover:bg-muted rounded text-[11px] font-semibold cursor-pointer border border-border"
                           title="Copy AWB Number"

@@ -66,7 +66,8 @@ import {
   ChevronRight,
   Edit,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 
 // ── API helper ──────────────────────────────────────────────────────────────
@@ -235,6 +236,7 @@ function normalizeSellerName(name?: string | null): string {
 
 function generateFciSellerInvoiceHtml(order: any, currencySymbol: string = '₹'): string {
   const items = getOrderItems(order);
+  const totalAmt = Number(order.total || order.totalAmount || 0);
   const dateStr = order.date || new Date().toLocaleDateString('en-IN');
   const invoiceNo = `INV-FCI-${(order.id || '').replace(/[^a-zA-Z0-9]/g, '')}`;
   const rawSeller =
@@ -553,7 +555,7 @@ export default function OrdersPage() {
 
   const handleShipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shippingOrder) return;
+    if (!shippingOrder || submittingShip) return;
     const cleanAwb = shipAwb.trim();
     if (!cleanAwb) {
       toast.error('AWB number is required.');
@@ -1374,8 +1376,21 @@ export default function OrdersPage() {
                           <div className="text-xs text-muted-foreground mt-0.5 space-y-1">
                             {['shipped', 'delivered'].includes(selectedOrder.status) ? (
                               <>
-                                <div>
-                                  {selectedOrder.courierName ? `Courier: ${selectedOrder.courierName} • ` : ''}AWB: <span className="font-mono font-medium text-foreground">{selectedOrder.awbNumber || selectedOrder.trackingNumber}</span>
+                                <div className="flex items-center gap-2">
+                                  <span>{selectedOrder.courierName ? `Courier: ${selectedOrder.courierName} • ` : ''}AWB: <span className="font-mono font-medium text-foreground">{selectedOrder.awbNumber || selectedOrder.trackingNumber}</span></span>
+                                  {(selectedOrder.awbNumber || selectedOrder.trackingNumber) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(selectedOrder.awbNumber || selectedOrder.trackingNumber);
+                                        toast.success('AWB copied');
+                                      }}
+                                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 px-1.5 py-0.5 hover:bg-muted rounded text-[10px] font-semibold cursor-pointer border border-border"
+                                      title="Copy AWB"
+                                    >
+                                      <Copy className="h-3 w-3" /> Copy
+                                    </button>
+                                  )}
                                 </div>
                                 {selectedOrder.trackingUrl && (
                                   <a
