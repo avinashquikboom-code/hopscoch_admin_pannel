@@ -37,6 +37,23 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'bg-rose-500/10 text-rose-600' },
 };
 
+function normalizeSellerName(name?: string | null): string {
+  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    !trimmed ||
+    lower === 'fci' ||
+    lower === 'fci seller' ||
+    lower === 'fci-seller' ||
+    lower === 'fciseller' ||
+    lower === 'fci ecommerce'
+  ) {
+    return SELLER_CONFIG.name;
+  }
+  return trimmed;
+}
+
 function authHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('admin_token') || localStorage.getItem('token') : null;
   return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -90,7 +107,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
         numericId: rawOrder.id,
         id: rawOrder.orderNumber || `#${rawOrder.id}`,
         invoiceNumber: `INV-${rawOrder.id}`,
-        sellerName: (rawOrder.sellerNameSnapshot && rawOrder.sellerNameSnapshot !== 'FCI' && rawOrder.sellerNameSnapshot !== 'FCI Seller' ? rawOrder.sellerNameSnapshot : null) || SELLER_CONFIG.name,
+        sellerName: normalizeSellerName(rawOrder.sellerNameSnapshot || rawOrder.sellerName),
         sellerContact: rawOrder.sellerContactSnapshot || SELLER_CONFIG.contactNumber,
         sellerAddress: rawOrder.sellerAddressSnapshot || '',
         customer: {

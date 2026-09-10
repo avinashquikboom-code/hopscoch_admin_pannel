@@ -210,14 +210,33 @@ function numberToWords(num: number): string {
   return str;
 }
 
+function normalizeSellerName(name?: string | null): string {
+  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    !trimmed ||
+    lower === 'fci' ||
+    lower === 'fci seller' ||
+    lower === 'fci-seller' ||
+    lower === 'fciseller' ||
+    lower === 'fci ecommerce'
+  ) {
+    return SELLER_CONFIG.name;
+  }
+  return trimmed;
+}
+
 function generateFciSellerInvoiceHtml(order: any, currencySymbol: string = '₹'): string {
   const items = getOrderItems(order);
   const dateStr = order.date || new Date().toLocaleDateString('en-IN');
   const invoiceNo = `INV-FCI-${(order.id || '').replace(/[^a-zA-Z0-9]/g, '')}`;
-  const rawSeller = order.sellerNameSnapshot || order.sellerName;
-  const sellerName =
-    (rawSeller && rawSeller !== 'FCI' && rawSeller !== 'FCI Seller' ? rawSeller : null) ||
-    SELLER_CONFIG.name;
+  const rawSeller =
+    (typeof order.sellerNameSnapshot === 'string' ? order.sellerNameSnapshot : null) ||
+    (typeof order.sellerName === 'string' ? order.sellerName : null) ||
+    (typeof order.seller === 'string' ? order.seller : order.seller?.name) ||
+    (typeof order.storeName === 'string' ? order.storeName : null);
+  const sellerName = normalizeSellerName(rawSeller);
   const sellerContact = order.sellerContactSnapshot || order.sellerContact || SELLER_CONFIG.contactNumber;
   const sellerAddress = order.sellerAddressSnapshot || order.sellerAddress || SELLER_CONFIG.fullAddress;
   const sellerGst = order.sellerGstNumber || SELLER_CONFIG.gstin;

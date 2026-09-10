@@ -90,6 +90,23 @@ const statusStyles: Record<string, { bg: string; text: string; border: string; i
 interface SellerInfo { sellerLegalName?: string; sellerGstNumber?: string; sellerAddress?: string; sellerCity?: string; sellerState?: string; sellerPincode?: string; sellerContactNumber?: string; sellerEmail?: string; sellerName?: string; }
 interface WarehouseInfo { name?: string; address?: string; city?: string; state?: string; pincode?: string; phone?: string; }
 
+function normalizeSellerName(name?: string | null): string {
+  if (!name || typeof name !== 'string') return SELLER_CONFIG.name;
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    !trimmed ||
+    lower === 'fci' ||
+    lower === 'fci seller' ||
+    lower === 'fci-seller' ||
+    lower === 'fciseller' ||
+    lower === 'fci ecommerce'
+  ) {
+    return SELLER_CONFIG.name;
+  }
+  return trimmed;
+}
+
 function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse?: WarehouseInfo): string {
   const rawId = String(order?.id || order?.orderNumber || '1001');
   const invoiceNo = `INV-FCI-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -110,12 +127,12 @@ function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse
   const pincode = addr.pincode || addr.zipCode || '400705';
 
   // Prefer order-time seller snapshots (manual checkout entry), fall back to settings, then SELLER_CONFIG
-  const rawSeller = order?.sellerNameSnapshot;
-  const sellerLegalName =
-    (rawSeller && rawSeller !== 'FCI' && rawSeller !== 'FCI Seller' ? rawSeller : null) ||
-    seller?.sellerLegalName ||
-    seller?.sellerName ||
-    SELLER_CONFIG.name;
+  const rawSeller =
+    (typeof order?.sellerNameSnapshot === 'string' ? order.sellerNameSnapshot : null) ||
+    (typeof order?.sellerName === 'string' ? order.sellerName : null) ||
+    (typeof seller?.sellerLegalName === 'string' ? seller.sellerLegalName : null) ||
+    (typeof seller?.sellerName === 'string' ? seller.sellerName : null);
+  const sellerLegalName = normalizeSellerName(rawSeller);
   const sellerGst = seller?.sellerGstNumber || SELLER_CONFIG.gstin;
   const sellerAddr =
     order?.sellerAddressSnapshot ||
@@ -226,7 +243,7 @@ function generateFciSellerInvoiceHtml(order: any, seller?: SellerInfo, warehouse
 
     <div class="info-grid">
       <div class="box">
-        <div class="box-title">Sold By</div>
+        <div class="box-title">Sold By (Seller Details)</div>
         <p><strong>${sellerLegalName}</strong></p>
         <p>${sellerAddr}</p>
         <p><strong>GSTIN:</strong> ${sellerGst}</p>
