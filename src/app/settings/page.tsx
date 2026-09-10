@@ -104,8 +104,8 @@ export default function SettingsPage() {
     currency: 'INR',
     language: 'en',
     timezone: 'UTC',
-    metaTitle: 'FCI Seller - Luxury Fashion Store',
-    metaDescription: 'Discover premium couture fashion and high-end accessories at FCI Seller. Exquisite quality for the modern wardrobe.',
+    metaTitle: 'Fashion City India Ltd - Luxury Fashion Store',
+    metaDescription: 'Discover premium couture fashion and high-end accessories at Fashion City India Ltd. Exquisite quality for the modern wardrobe.',
     newOrderAlerts: true,
     lowStockWarnings: true,
     weeklyDigests: false,
@@ -620,7 +620,7 @@ export default function SettingsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="metaTitle" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default SEO Meta Title</Label>
-                  <Input id="metaTitle" defaultValue="FCI Seller - Luxury Fashion Store" className="h-10 rounded-lg border-border/50" />
+                  <Input id="metaTitle" defaultValue="Fashion City India Ltd - Luxury Fashion Store" className="h-10 rounded-lg border-border/50" />
                 </div>
 
                 <div className="space-y-1.5">
@@ -628,7 +628,7 @@ export default function SettingsPage() {
                   <Textarea 
                     id="metaDescription" 
                     rows={3}
-                    defaultValue="Discover premium couture fashion and high-end accessories at FCI Seller. Exquisite quality for the modern wardrobe."
+                    defaultValue="Discover premium couture fashion and high-end accessories at Fashion City India Ltd. Exquisite quality for the modern wardrobe."
                     className="rounded-lg border-border/50 bg-background resize-none text-sm p-3 focus:border-primary"
                   />
                 </div>
