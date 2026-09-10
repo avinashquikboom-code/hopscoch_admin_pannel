@@ -403,7 +403,7 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label htmlFor="sellerLegalName" className="text-xs font-bold uppercase tracking-wider text-primary">Registered Legal Entity Name</Label>
-                        <Input id="sellerLegalName" value={config.sellerLegalName} onChange={e => setConfig(prev => ({ ...prev, sellerLegalName: e.target.value }))} placeholder="e.g. FCI" className="h-10 rounded-lg border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                        <Input id="sellerLegalName" value={config.sellerLegalName} onChange={e => setConfig(prev => ({ ...prev, sellerLegalName: e.target.value }))} placeholder="e.g. Fashion City India Ltd" className="h-10 rounded-lg border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary/20" />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="sellerGstNumber" className="text-xs font-bold uppercase tracking-wider text-primary">GSTIN</Label>

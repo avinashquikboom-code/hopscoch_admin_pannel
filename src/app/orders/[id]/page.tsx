@@ -90,7 +90,7 @@ export default function OrderDetailsPage({ params }: { params: any }) {
         numericId: rawOrder.id,
         id: rawOrder.orderNumber || `#${rawOrder.id}`,
         invoiceNumber: `INV-${rawOrder.id}`,
-        sellerName: rawOrder.sellerNameSnapshot || SELLER_CONFIG.name,
+        sellerName: (rawOrder.sellerNameSnapshot && rawOrder.sellerNameSnapshot !== 'FCI' && rawOrder.sellerNameSnapshot !== 'FCI Seller' ? rawOrder.sellerNameSnapshot : null) || SELLER_CONFIG.name,
         sellerContact: rawOrder.sellerContactSnapshot || SELLER_CONFIG.contactNumber,
         sellerAddress: rawOrder.sellerAddressSnapshot || '',
         customer: {
