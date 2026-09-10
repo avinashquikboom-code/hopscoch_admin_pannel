@@ -621,6 +621,18 @@ export default function InvoicesPage() {
     }
   };
 
+  const handlePrintReceipt = (inv: InvoiceItem) => {
+    const html = generateOrderReceiptHtml(inv.rawOrder, sellerInfo);
+    const printWin = window.open('', '_blank', 'width=950,height=850');
+    if (printWin) {
+      printWin.document.write(html);
+      printWin.document.close();
+      toast.success(`Opening print window for Payment Receipt (${inv.orderId})`);
+    } else {
+      toast.error('Popup blocked! Please allow popups to print/download receipt.');
+    }
+  };
+
   const handleSendEmail = (inv: InvoiceItem) => {
     toast.success(`Tax invoice ${inv.invoiceNumber} emailed to ${inv.customerEmail}`);
   };
@@ -785,10 +797,20 @@ export default function InvoicesPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all"
-                title="Print / Save PDF"
+                title="Print Tax Invoice"
                 onClick={() => handlePrint(inv)}
               >
                 <Printer className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg hover:bg-teal-500/10 text-teal-600 dark:text-teal-400 transition-all"
+                title="Print Payment Receipt"
+                onClick={() => handlePrintReceipt(inv)}
+              >
+                <Receipt className="h-3.5 w-3.5" />
               </Button>
 
               <Button
@@ -1138,8 +1160,31 @@ export default function InvoicesPage() {
 
               {/* Scrollable Body Content */}
               <div className="flex-1 p-6 space-y-6 overflow-y-auto min-h-0 border-b border-border/30">
-                {/* 2-Column Customer & Shipping Info */}
+                {/* Customer & Seller Info */}
                 <div className="grid grid-cols-1 gap-4">
+                  {/* Sold By (Seller Details) Card */}
+                  <Card className="border-border/30 bg-muted/15 rounded-xl shadow-sm">
+                    <CardContent className="p-4 space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                        <Building2 className="h-4 w-4" />
+                        <span>Sold By (Seller Details)</span>
+                      </div>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="font-bold text-foreground text-sm">
+                          {normalizeSellerName(selectedInvoice.rawOrder?.sellerNameSnapshot || selectedInvoice.rawOrder?.sellerName || sellerInfo.sellerLegalName || sellerInfo.sellerName)}
+                        </div>
+                        <p className="leading-relaxed">
+                          {selectedInvoice.rawOrder?.sellerAddressSnapshot || [sellerInfo.sellerAddress, sellerInfo.sellerCity, sellerInfo.sellerState, sellerInfo.sellerPincode].filter(Boolean).join(', ') || SELLER_CONFIG.fullAddress}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1 font-mono text-[11px]">
+                          <span className="text-primary font-bold">GSTIN: {selectedInvoice.gstNumber || SELLER_CONFIG.gstin}</span>
+                          <span>Email: {sellerInfo.sellerEmail || SELLER_CONFIG.supportEmail}</span>
+                          <span>Phone: {sellerInfo.sellerContactNumber || SELLER_CONFIG.contactNumber}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Billed Customer Card */}
                   <Card className="border-border/30 bg-muted/15 rounded-xl shadow-sm">
                     <CardContent className="p-4 space-y-2.5">
@@ -1155,7 +1200,7 @@ export default function InvoicesPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Destination Address & GSTIN Card */}
+                  {/* Destination Address Card */}
                   <Card className="border-border/30 bg-muted/15 rounded-xl shadow-sm">
                     <CardContent className="p-4 space-y-2.5">
                       <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
@@ -1165,10 +1210,6 @@ export default function InvoicesPage() {
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {selectedInvoice.shippingAddress}
                       </p>
-                      <div className="pt-1 text-[11px] font-mono text-primary flex items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5" />
-                        <span>GSTIN: {selectedInvoice.gstNumber}</span>
-                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1259,11 +1300,19 @@ export default function InvoicesPage() {
                     <Mail className="h-3.5 w-3.5 text-sky-500" /> Email Customer
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg text-xs font-bold gap-1.5 border-border/60 hover:bg-muted"
+                    onClick={() => handlePrintReceipt(selectedInvoice)}
+                  >
+                    <Receipt className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" /> Print Receipt
+                  </Button>
+                  <Button
                     size="sm"
                     className="bg-primary text-white rounded-lg text-xs font-bold gap-1.5 shadow-md"
                     onClick={() => handlePrint(selectedInvoice)}
                   >
-                    <Printer className="h-3.5 w-3.5" /> Print / Save PDF
+                    <Printer className="h-3.5 w-3.5" /> Print Tax Invoice
                   </Button>
                 </div>
               </div>
