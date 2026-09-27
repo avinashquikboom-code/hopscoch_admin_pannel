@@ -4,6 +4,7 @@ import { API_BASE } from '@/lib/api';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -71,8 +72,8 @@ export default function LoginPage() {
       } else {
         throw new Error(resData.message || 'Login was not successful.');
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +106,7 @@ export default function LoginPage() {
         {/* Brand Logo */}
         <div className="relative z-10 flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-md bg-white p-1">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
           </div>
           <span className="text-xl font-black tracking-[0.2em] text-white">
             FCI SELLER
@@ -197,7 +198,7 @@ export default function LoginPage() {
             {/* Heading */}
             <div className="space-y-1.5 mb-8">
               <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Welcome back
+                Hi, Welcome back
               </h2>
               <p className="text-sm text-slate-500 dark:text-zinc-400 font-light">
                 Sign in to your admin console.
