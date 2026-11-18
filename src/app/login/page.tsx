@@ -342,6 +342,12 @@ export default function LoginPage() {
           <p className="text-center text-xs text-slate-400 dark:text-zinc-600 mt-5 font-light">
             Protected by FCISeller Enterprise Secure Shield • v2.4.0
           </p>
+          <p className="text-center text-xs text-slate-500 dark:text-zinc-400 mt-3">
+            Need to delete your FCI Seller app account?{' '}
+            <Link href="/delete-account" className="font-semibold text-teal-700 underline dark:text-teal-400">
+              Request account deletion
+            </Link>
+          </p>
         </motion.div>
       </div>
     </div>
